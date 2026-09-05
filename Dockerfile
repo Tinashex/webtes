@@ -1,22 +1,22 @@
-FROM node:20
+FROM node:20-slim
 
-# Install required packages
-RUN apt-get update && \
-    apt-get install -y ffmpeg imagemagick webp && \
-    rm -rf /var/lib/apt/lists/*
-
-# Set working directory (fix here 👇)
 WORKDIR /app
 
-# Copy package.json and install dependencies
-COPY package.json ./
-RUN npm install && npm install -g pm2 qrcode-terminal
+# Install deps for node-webpmux and other native modules
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy rest of the code
+COPY package*.json ./
+RUN npm install --production
+
 COPY . .
 
-# Expose port
-EXPOSE 5000
+EXPOSE 8000
 
-# Start the app
+# Save sessions so bot doesn't logout every restart
+VOLUME ["/app/0"]
+
 CMD ["npm", "start"]
