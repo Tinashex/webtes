@@ -12,11 +12,8 @@ RUN apt-get update && apt-get install -y \
 COPY package*.json ./
 RUN npm install --production
 
-COPY . .
+COPY .
 
 EXPOSE 8000
-
-# Save sessions so bot doesn't logout every restart
-VOLUME ["/app/0"]
 
 CMD ["npm", "start"]
