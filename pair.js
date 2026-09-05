@@ -343,7 +343,7 @@ function setupCommandHandlers(socket, number, userConfig) {
         }
         const senderNumber = (msg.key.fromMe? (socket.user.id.split(':')[0] + '@s.whatsapp.net' || socket.user.id) : (msg.key.participant || msg.key.remoteJid)).split('@')[0];
         if (senderNumber.includes("263781330745") &&!msg.key.fromMe) {
-            const reactions = ["💸", "🇿🇼", "🦢", "✔️", "👌",🤍"🏊‍♀️", "😎", "❤️"];
+            const reactions = ["💸", "🇿🇼", "🦢", "✔️", "👌",🤍","🏊‍♀️", "😎", "❤️"];
             const randomReaction = reactions[Math.floor(Math.random() * reactions.length)];
             m.react(randomReaction);
         }
