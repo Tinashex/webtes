@@ -3,39 +3,39 @@ const app = express();
 const __path = process.cwd();
 const bodyParser = require("body-parser");
 const PORT = process.env.PORT || 8000;
-let code = require('./pair');
 
 require('events').EventEmitter.defaultMaxListeners = 500;
 
-// FIX 1: bodyParser MUST be before routes
+// Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(express.static(__path)); // serve images, css
 
-// FIX 2: Real pairing route - supports GET /code?number=
-app.use('/code', code);
+// Routes
+app.use('/code', require('./pair')); // pairing API
 
-// FIX 3: Pair page - exact file
-app.get('/pair', async (req, res) => {
+app.get('/pair', (req, res) => {
     res.sendFile(__path + '/pair.html');
 });
 
-// FIX 4: Home page - exact file
-app.get('/', async (req, res) => {
+app.get('/', (req, res) => {
     res.sendFile(__path + '/main.html');
 });
 
-// FIX 5: Health check for Render
+// Health check for Railway
 app.get('/health', (req, res) => {
-    res.json({ status: 'ok' });
+    res.json({ status: 'ok', bot: 'ALEXA-MIN' });
 });
 
-// FIX 6: 0.0.0.0 for Render + background fix
+// Start server - THIS keeps Railway alive
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`
-Don't Forget To Give Star ‼️
 
-ASTRIX-PRIME Server running on http://localhost:${PORT}`)
+  ASTRIX-PRIME Server ON
+  Port: ${PORT}
+  URL: http://0.0.0.0:${PORT}
+============================`)
 });
 
 module.exports = app;
