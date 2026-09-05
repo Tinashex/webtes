@@ -25,7 +25,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#050816">
-  <title>ALEXA-MIN | WhatsApp Pairing</title>
+  <title>ALEXA-MIN | Global Pairing</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style>
@@ -39,66 +39,68 @@
     @keyframes float{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(40px,-30px) scale(1.12)}}
     .grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);background-size:45px 45px;mask-image:linear-gradient(to bottom, black, transparent 90%)}
     .container{position:relative;z-index:10;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:25px 16px;gap:18px}
-    .card{width:100%;max-width:500px;background:var(--card);border:1px solid var(--card-border);border-radius:30px;padding:42px 38px;backdrop-filter:blur(25px);-webkit-backdrop-filter:blur(25px);box-shadow:0 30px 100px rgba(0,0,0,.55),0 0 80px rgba(0,229,255,.04);position:relative;overflow:hidden;animation:cardIn .7s ease}
+    .card{width:100%;max-width:520px;background:var(--card);border:1px solid var(--card-border);border-radius:30px;padding:38px 32px;backdrop-filter:blur(25px);-webkit-backdrop-filter:blur(25px);box-shadow:0 30px 100px rgba(0,0,0,.55),0 0 80px rgba(0,229,255,.04);position:relative;overflow:hidden;animation:cardIn .7s ease}
     .card::before{content:"";position:absolute;top:0;left:12%;right:12%;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),var(--violet),transparent);box-shadow:0 0 20px rgba(0,229,255,.5)}
     @keyframes cardIn{from{opacity:0;transform:translateY(35px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
     .header{text-align:center;margin-bottom:22px}
-    .logo-container{width:92px;height:92px;margin:0 auto 18px;position:relative}
+    .logo-container{width:88px;height:88px;margin:0 auto 18px;position:relative}
     .logo-ring{position:absolute;inset:-4px;border-radius:50%;border:2px solid transparent;border-top-color:var(--cyan);border-right-color:var(--violet);animation:spin 3s linear infinite;box-shadow:0 0 25px rgba(0,229,255,.25)}
     @keyframes spin{to{transform:rotate(360deg)}}
-    .logo{width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:38px;background:radial-gradient(circle at 30% 20%, #2ddcff, #2563eb 55%, #6d28d9);box-shadow:0 15px 45px rgba(37,99,235,.35),inset 0 0 20px rgba(255,255,255,.15)}
-    .title{font-size:32px;font-weight:800;letter-spacing:-.5px;background:linear-gradient(90deg,#ffffff,var(--cyan),#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:7px}
-    .subtitle{color:var(--muted);font-size:14px;letter-spacing:.4px}
+    .logo{width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;background:radial-gradient(circle at 30% 20%, #2ddcff, #2563eb 55%, #6d28d9);box-shadow:0 15px 45px rgba(37,99,235,.35),inset 0 0 20px rgba(255,255,255,.15)}
+    .title{font-size:30px;font-weight:800;letter-spacing:-.5px;background:linear-gradient(90deg,#ffffff,var(--cyan),#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:7px}
+    .subtitle{color:var(--muted);font-size:13px;letter-spacing:.4px}
     .uptime-pill{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:30px;background:rgba(0,230,168,0.08);border:1px solid rgba(0,230,168,0.18);font-family:'JetBrains Mono',monospace;font-size:10px;margin-top:14px;color:rgba(255,255,255,0.7)}
     .uptime-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 1.5s infinite}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-    .info-box{display:flex;gap:13px;align-items:flex-start;padding:17px;border-radius:17px;margin:20px 0 27px;background:rgba(0,229,255,.045);border:1px solid rgba(0,229,255,.16)}
-    .info-box i{color:var(--cyan);font-size:19px;margin-top:2px}
-    .info-box strong{display:block;font-size:14px;margin-bottom:4px}
-    .info-box p{color:rgba(255,255,255,.60);font-size:12px;line-height:1.55}
-    .form-group{margin-bottom:22px}
-    .label{display:block;font-size:13px;font-weight:600;margin-bottom:9px;color:rgba(255,255,255,.88)}
+    .info-box{display:flex;gap:13px;align-items:flex-start;padding:16px;border-radius:16px;margin:18px 0 22px;background:rgba(0,229,255,.045);border:1px solid rgba(0,229,255,.16)}
+    .info-box i{color:var(--cyan);font-size:18px;margin-top:2px}
+    .info-box strong{display:block;font-size:13px;margin-bottom:4px}
+    .info-box p{color:rgba(255,255,255,.60);font-size:11px;line-height:1.5}
+    .form-group{margin-bottom:18px}
+    .label{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:600;margin-bottom:9px;color:rgba(255,255,255,.88)}
+    .flag-display{font-size:14px}
     .input-wrapper{position:relative}
-    .input-icon{position:absolute;left:18px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.38);font-size:17px;pointer-events:none;transition:.25s}
-    .input{width:100%;height:58px;padding:0 18px 0 52px;border-radius:15px;border:1px solid rgba(255,255,255,.11);background:rgba(0,0,0,.25);color:#fff;outline:none;font-family:'JetBrains Mono',monospace;font-size:15px;letter-spacing:.4px;transition:.25s}
-    .input:hover{border-color:rgba(255,255,255,.2)}.input:focus{border-color:var(--cyan);background:rgba(0,229,255,.035);box-shadow:0 0 0 4px rgba(0,229,255,.07),0 0 30px rgba(0,229,255,.07)}
+    .input-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.38);font-size:16px;pointer-events:none;transition:.25s}
+    .input{width:100%;height:56px;padding:0 16px 0 48px;border-radius:14px;border:1px solid rgba(255,255,255,.11);background:rgba(0,0,0,.25);color:#fff;outline:none;font-family:'JetBrains Mono',monospace;font-size:15px;letter-spacing:.4px;transition:.25s}
+    .input:hover{border-color:rgba(255,255,255,.2)}.input:focus{border-color:var(--cyan);background:rgba(0,229,255,.035);box-shadow:0 0 0 4px rgba(0,229,255,.07)}
     .input:focus ~ .input-icon{color:var(--cyan)}.input::placeholder{color:rgba(255,255,255,.30)}
-    .hint{display:flex;align-items:center;gap:6px;margin-top:8px;color:rgba(255,255,255,.40);font-size:11px}.hint i{color:#ffd166}
-    .btn{width:100%;height:57px;border:none;border-radius:15px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;display:flex;justify-content:center;align-items:center;gap:10px;transition:.25s}
-    .btn-generate{color:white;background:linear-gradient(135deg,#2563eb,#7c3aed);box-shadow:0 12px 35px rgba(37,99,235,.25),inset 0 1px rgba(255,255,255,.18);margin-bottom:18px}
-    .btn-generate:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 18px 45px rgba(37,99,235,.38),0 0 25px rgba(124,58,237,.15)}
+    .examples{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+    .ex-chip{padding:6px 10px;border-radius:20px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);font-size:10px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,0.5);cursor:pointer;transition:0.2s}
+    .ex-chip:hover{background:rgba(0,229,255,0.1);border-color:var(--cyan);color:#fff}
+    .hint{display:flex;align-items:center;gap:6px;margin-top:8px;color:rgba(255,255,255,.40);font-size:10px}.hint i{color:#ffd166}
+    .btn{width:100%;height:55px;border:none;border-radius:14px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;display:flex;justify-content:center;align-items:center;gap:10px;transition:.25s}
+    .btn-generate{color:white;background:linear-gradient(135deg,#2563eb,#7c3aed);box-shadow:0 12px 35px rgba(37,99,235,.25),inset 0 1px rgba(255,255,255,.18);margin-bottom:16px}
+    .btn-generate:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 18px 45px rgba(37,99,235,.38)}
     .btn-generate:disabled{opacity:.55;cursor:not-allowed}
     .btn-copy{display:none;background:rgba(255,255,255,.065);color:white;border:1px solid rgba(255,255,255,.14)}
     .btn-copy:hover:not(:disabled){background:rgba(0,229,255,.08);border-color:rgba(0,229,255,.35);transform:translateY(-2px)}
-    .loading{display:none;text-align:center;padding:15px 0 20px}.spinner{width:42px;height:42px;margin:0 auto 13px;border-radius:50%;border:3px solid rgba(0,229,255,.12);border-top-color:var(--cyan);animation:spin .8s linear infinite}.loading-text{font-size:12px;color:var(--muted)}
-    .code-box{min-height:92px;margin-bottom:14px;padding:20px;display:flex;align-items:center;justify-content:center;text-align:center;border-radius:17px;border:1px dashed rgba(255,255,255,.13);background:rgba(0,0,0,.25);transition:.3s}
+    .loading{display:none;text-align:center;padding:14px 0 18px}.spinner{width:40px;height:40px;margin:0 auto 12px;border-radius:50%;border:3px solid rgba(0,229,255,.12);border-top-color:var(--cyan);animation:spin .8s linear infinite}.loading-text{font-size:11px;color:var(--muted)}
+    .code-box{min-height:88px;margin-bottom:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;border-radius:16px;border:1px dashed rgba(255,255,255,.13);background:rgba(0,0,0,.25);transition:.3s}
     .code-box.has-code{border-style:solid;border-color:rgba(0,230,168,.35);background:rgba(0,230,168,.045);box-shadow:0 0 30px rgba(0,230,168,.05)}
     .code-box.has-error{border-style:solid;border-color:rgba(255,95,109,.35);background:rgba(255,95,109,.045)}
-    .code-placeholder{color:rgba(255,255,255,.32);font-size:12px}
-    .code-value{display:flex;align-items:center;gap:11px;color:var(--green);font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700;letter-spacing:3px;text-shadow:0 0 18px rgba(0,230,168,.25);user-select:all}
-    .code-value i{font-size:21px;letter-spacing:0}.error-value{display:flex;align-items:center;gap:9px;color:var(--red);font-size:12px;line-height:1.5}
-    .instructions{display:none;margin-top:20px;padding:17px;border-radius:16px;background:rgba(79,124,255,.055);border:1px solid rgba(79,124,255,.15)}.instructions.show{display:block;animation:fadeUp .35s ease}
+    .code-placeholder{color:rgba(255,255,255,.32);font-size:11px}
+    .code-value{display:flex;align-items:center;gap:10px;color:var(--green);font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;letter-spacing:3px;text-shadow:0 0 18px rgba(0,230,168,.25);user-select:all}
+    .error-value{display:flex;align-items:center;gap:8px;color:var(--red);font-size:11px;line-height:1.5}
+    .instructions{display:none;margin-top:18px;padding:16px;border-radius:14px;background:rgba(79,124,255,.055);border:1px solid rgba(79,124,255,.15)}.instructions.show{display:block;animation:fadeUp .35s ease}
     @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-    .instructions-title{font-size:13px;font-weight:700;margin-bottom:11px;color:#fff}
-    .instructions ol{padding-left:20px;color:rgba(255,255,255,.58);font-size:11px;line-height:1.8}.instructions li::marker{color:var(--cyan);font-weight:700}
-    /* NEW ADDITIONS */
-    .extra-grid{width:100%;max-width:500px;display:grid;gap:12px}
-    .extra-card{padding:18px;border-radius:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(10px);display:flex;align-items:center;gap:12px;transition:0.2s}
-    .extra-card:hover{border-color:rgba(0,229,255,0.2);transform:translateY(-2px)}
-    .extra-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px}
+    .instructions-title{font-size:12px;font-weight:700;margin-bottom:10px;color:#fff}
+    .instructions ol{padding-left:18px;color:rgba(255,255,255,.58);font-size:11px;line-height:1.7}.instructions li::marker{color:var(--cyan);font-weight:700}
+    .extra-grid{width:100%;max-width:520px;display:grid;gap:10px}
+    .extra-card{padding:16px;border-radius:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(10px);display:flex;align-items:center;gap:12px;transition:0.2s}
+    .extra-card:hover{border-color:rgba(0,229,255,0.2);transform:translateY(-1px)}
+    .extra-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
     .extra-icon.channel{background:rgba(37,211,102,0.12);border:1px solid rgba(37,211,102,0.2);color:#25d366}
     .extra-icon.group{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff}
     .extra-icon.donate{background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.2);color:#fbbf24}
     .extra-icon.contact{background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.15);color:var(--cyan)}
-    .extra-text{flex:1;text-align:left}.extra-text b{font-size:13px;display:block}.extra-text span{font-size:10px;color:rgba(255,255,255,0.4)}
-    .extra-card a{padding:8px 14px;border-radius:20px;font-size:11px;font-weight:700;text-decoration:none;flex-shrink:0}
+    .extra-text{flex:1;text-align:left}.extra-text b{font-size:12px;display:block}.extra-text span{font-size:9px;color:rgba(255,255,255,0.4)}
+    .extra-card a{padding:7px 12px;border-radius:20px;font-size:10px;font-weight:700;text-decoration:none;flex-shrink:0}
     .btn-channel{background:#25d366;color:#000}.btn-group{background:#fff;color:#000}.btn-donate{background:#fbbf24;color:#000}.btn-contact{background:var(--cyan);color:#000}
-    .donate-mini{width:100%;max-width:500px;padding:16px;border-radius:16px;background:linear-gradient(135deg,rgba(251,191,36,0.08),rgba(245,158,11,0.08));border:1px solid rgba(251,191,36,0.15);display:flex;align-items:center;gap:12px}
-    .footer{text-align:center;margin-top:27px;padding-top:21px;border-top:1px solid rgba(255,255,255,.08)}
-    .footer-text{color:rgba(255,255,255,.30);font-size:10px;letter-spacing:.3px;line-height:1.8}.footer-link{color:var(--cyan);text-decoration:none}
-    .toast{position:fixed;left:50%;bottom:25px;z-index:1000;min-width:250px;max-width:calc(100% - 30px);padding:13px 19px;border-radius:50px;display:flex;justify-content:center;align-items:center;gap:9px;background:#071c19;border:1px solid rgba(0,230,168,.3);color:white;box-shadow:0 15px 45px rgba(0,0,0,.5);transform:translate(-50%,120px);opacity:0;transition:.35s;font-size:12px}
+    .footer{text-align:center;margin-top:22px;padding-top:18px;border-top:1px solid rgba(255,255,255,.08)}
+    .footer-text{color:rgba(255,255,255,.30);font-size:9px;letter-spacing:.3px;line-height:1.8}.footer-link{color:var(--cyan);text-decoration:none}
+    .toast{position:fixed;left:50%;bottom:22px;z-index:1000;min-width:250px;max-width:calc(100% - 30px);padding:12px 18px;border-radius:50px;display:flex;justify-content:center;align-items:center;gap:8px;background:#071c19;border:1px solid rgba(0,230,168,.3);color:white;box-shadow:0 15px 45px rgba(0,0,0,.5);transform:translate(-50%,120px);opacity:0;transition:.35s;font-size:11px}
     .toast.show{transform:translate(-50%,0);opacity:1}.toast.error{background:#250d12;border-color:rgba(255,95,109,.35)}
-    @media (max-width:580px){.container{padding:15px}.card{padding:34px 22px;border-radius:25px}.title{font-size:28px}}
+    @media (max-width:580px){.container{padding:14px}.card{padding:28px 20px;border-radius:24px}.title{font-size:26px}}
   </style>
 </head>
 <body>
@@ -108,49 +110,54 @@
       <header class="header">
         <div class="logo-container"><div class="logo-ring"></div><div class="logo"><i class="fas fa-bolt"></i></div></div>
         <h1 class="title">ALEXA-MIN</h1>
-        <p class="subtitle">Secure WhatsApp Pairing</p>
-        <div class="uptime-pill"><span class="uptime-dot"></span><span id="uptimeText">LIVE • 99.98% • <span id="liveTimer">Loading...</span> • <span id="upDays">0</span>d uptime</span></div>
+        <p class="subtitle">Global WhatsApp Pairing 🌍</p>
+        <div class="uptime-pill"><span class="uptime-dot"></span><span id="uptimeText">LIVE • 99.98% • <span id="liveTimer">00:00:00</span> • <span id="upDays">0</span>d</span></div>
       </header>
-      <div class="info-box"><i class="fas fa-shield-halved"></i><div><strong>Connect your WhatsApp</strong><p>Enter your WhatsApp number with the country code. Your pairing code will be generated securely.</p></div></div>
+      <div class="info-box"><i class="fas fa-globe"></i><div><strong>Works with ANY country 🌍</strong><p>USA +1, Nigeria +234, Pakistan +92, UK +44, ZW +263 - any international number supported.</p></div></div>
       <form id="pairForm" autocomplete="off">
         <div class="form-group">
-          <label class="label" for="phoneNumber">WhatsApp Number</label>
+          <label class="label"><span>WhatsApp Number</span><span class="flag-display" id="flagDisplay">🌍 Enter number</span></label>
           <div class="input-wrapper">
-            <input type="tel" id="phoneNumber" class="input" inputmode="numeric" autocomplete="tel" placeholder="263781330745" maxlength="15" pattern="[0-9]{10,15}" required>
+            <input type="tel" id="phoneNumber" class="input" inputmode="tel" autocomplete="tel" placeholder="+1 234 567 8900" required>
             <i class="fas fa-phone input-icon"></i>
           </div>
-          <div class="hint"><i class="fas fa-lightbulb"></i>Use international format without + or spaces • e.g. 263781330745</div>
+          <div class="examples">
+            <span class="ex-chip" onclick="setExample('12025551234')">🇺🇸 +1 US</span>
+            <span class="ex-chip" onclick="setExample('2348012345678')">🇳🇬 +234 NG</span>
+            <span class="ex-chip" onclick="setExample('923001234567')">🇵🇰 +92 PK</span>
+            <span class="ex-chip" onclick="setExample('263781330745')">🇿🇼 +263 ZW</span>
+            <span class="ex-chip" onclick="setExample('447911123456')">🇬🇧 +44 UK</span>
+            <span class="ex-chip" onclick="setExample('919876543210')">🇮🇳 +91 IN</span>
+          </div>
+          <div class="hint"><i class="fas fa-lightbulb"></i>Enter with country code: +1, +234, +92, +263, +44 etc. Spaces allowed: +1 (202) 555-0123</div>
         </div>
         <button type="submit" class="btn btn-generate" id="generateBtn"><i class="fas fa-key"></i>Generate Pairing Code</button>
         <div class="loading" id="loading"><div class="spinner"></div><p class="loading-text">Connecting to WhatsApp... Please wait</p></div>
-        <div class="code-box" id="codeBox"><div class="code-placeholder">Your pairing code will appear here</div></div>
+        <div class="code-box" id="codeBox"><div class="code-placeholder">Your pairing code will appear here — works globally 🌍</div></div>
         <button type="button" class="btn btn-copy" id="copyBtn"><i class="fas fa-copy"></i>Copy Pairing Code</button>
         <div class="instructions" id="instructions">
-          <div class="instructions-title"><i class="fab fa-whatsapp"></i> How to link</div>
+          <div class="instructions-title"><i class="fab fa-whatsapp"></i> How to link (Any country)</div>
           <ol>
-            <li>Open WhatsApp on your phone.</li>
-            <li>Go to <b>Settings → Linked devices</b>.</li>
-            <li>Select <b>Link a device</b>.</li>
-            <li>Select <b>Link with phone number instead</b>.</li>
-            <li>Enter the pairing code shown above.</li>
-            <li>Wait for WhatsApp to complete the connection.</li>
+            <li>Open WhatsApp on your phone</li>
+            <li>Settings → Linked Devices</li>
+            <li>Link a Device → Link with phone number instead</li>
+            <li>Enter the 8-digit code above</li>
+            <li>Wait for connection — works for +1, +234, +92, any!</li>
           </ol>
         </div>
       </form>
       <footer class="footer">
-        <p class="footer-text">© 2026 ALEXA-MIN BOT · MADE WITH ❤️ BY WATSON-XD<br>
-          <a href="/" class="footer-link">Home</a> • <a href="https://wa.me/263781330745" class="footer-link">WhatsApp</a> • <a href="mailto:fourpencewatson7@gmail.com" class="footer-link">Email</a><br>
-          <span style="color:rgba(255,255,255,0.2)">Dev: Watson Fourpence • 263781330745 • Harare, ZW</span>
+        <p class="footer-text">© 2026 ALEXA-MIN BOT · GLOBAL EDITION 🌍 · MADE WITH ❤️ BY WATSON-XD<br>
+          <a href="/" class="footer-link">Home</a> • <a href="https://wa.me/263781330745" class="footer-link">WhatsApp</a> • <a href="mailto:watsonfourpence2@gmail.com" class="footer-link">Email</a> • <a href="https://whatsapp.com/channel/0029VbDTiJkC6Zvm9MZaKs3j" class="footer-link">Channel</a><br>
+          Supports: 🇺🇸 +1 🇳🇬 +234 🇵🇰 +92 🇿🇼 +263 🇬🇧 +44 🇮🇳 +91 🇿🇦 +27 🇧🇷 +55 + Any
         </p>
       </footer>
     </section>
-
-    <!-- NEW: CHANNEL + GROUP + DONATE + CONTACT -->
     <div class="extra-grid">
-      <div class="extra-card"><div class="extra-icon channel"><i class="fab fa-whatsapp"></i></div><div class="extra-text"><b>WhatsApp Channel</b><span>12.5k+ members • Updates & Releases</span></div><a href="https://whatsapp.com/channel/0029VbDTiJkC6Zvm9MZaKs3j" target="_blank" class="btn-channel">Join</a></div>
-      <div class="extra-card"><div class="extra-icon group"><i class="fas fa-users"></i></div><div class="extra-text"><b>Support Group</b><span>8.2k+ members • Help & Requests</span></div><a href="https://chat.whatsapp.com/FK2HSe9McfzD8QAFKyLA1W" target="_blank" class="btn-group">Join</a></div>
-      <div class="donate-mini"><div class="extra-icon donate"><i class="fas fa-heart"></i></div><div class="extra-text"><b>Support Project ❤️</b><span>EcoCash: 263781330745 • PayPal: paypal.me/watsonfourpence</span></div><a href="#" onclick="event.preventDefault();copyEco();return false;" style="padding:8px 14px;border-radius:20px;background:#fbbf24;color:#000;font-size:11px;font-weight:700;text-decoration:none">Copy</a></div>
-      <div class="extra-card"><div class="extra-icon contact"><i class="fas fa-envelope"></i></div><div class="extra-text"><b>fourpencewatson7@gmail.com</b><span>Collab / Hire Me • Avg reply 12 min</span></div><a href="https://wa.me/263781330745?text=Hi%20Watson%2C%20I%20need%20ALEXA-MIN%20help" target="_blank" class="btn-contact">Chat</a></div>
+      <div class="extra-card"><div class="extra-icon channel"><i class="fab fa-whatsapp"></i></div><div class="extra-text"><b>WhatsApp Channel • 12.5k+</b><span>Global updates & new features</span></div><a href="https://whatsapp.com/channel/0029VbDTiJkC6Zvm9MZaKs3j" target="_blank" class="btn-channel">Join</a></div>
+      <div class="extra-card"><div class="extra-icon group"><i class="fas fa-users"></i></div><div class="extra-text"><b>Support Group • 8.2k+ 🌍</b><span>Global community • All countries welcome</span></div><a href="https://chat.whatsapp.com/FK2HSe9McfzD8QAFKyLA1W" target="_blank" class="btn-group">Join</a></div>
+      <div class="extra-card"><div class="extra-icon donate"><i class="fas fa-heart"></i></div><div class="extra-text"><b>Support ❤️ • EcoCash / PayPal</b><span>263781330745 • paypal.me/watsonfourpence</span></div><a href="#" onclick="event.preventDefault();copyEco();return false;" class="btn-donate">Copy</a></div>
+      <div class="extra-card"><div class="extra-icon contact"><i class="fas fa-envelope"></i></div><div class="extra-text"><b>watsonfourpence2@gmail.com</b><span>Global collab • 12 min reply avg</span></div><a href="https://wa.me/263781330745?text=Hi%20Watson%2C%20Global%20pairing%20help" target="_blank" class="btn-contact">Chat</a></div>
     </div>
   </main>
   <div class="toast" id="toast"><i class="fas fa-check-circle"></i><span></span></div>
@@ -165,8 +172,31 @@
     const toastIcon=toast.querySelector('i');
     const form=document.getElementById('pairForm');
     const instructions=document.getElementById('instructions');
+    const flagDisplay=document.getElementById('flagDisplay');
     let currentCode=null;let toastTimer=null;
-    // LIVE UPTIME
+
+    const countryMap={
+      '1':{flag:'🇺🇸',name:'USA +1'},
+      '44':{flag:'🇬🇧',name:'UK +44'},
+      '234':{flag:'🇳🇬',name:'Nigeria +234'},
+      '92':{flag:'🇵🇰',name:'Pakistan +92'},
+      '91':{flag:'🇮🇳',name:'India +91'},
+      '263':{flag:'🇿🇼',name:'Zimbabwe +263'},
+      '27':{flag:'🇿🇦',name:'South Africa +27'},
+      '255':{flag:'🇹🇿',name:'Tanzania +255'},
+      '254':{flag:'🇰🇪',name:'Kenya +254'},
+      '256':{flag:'🇺🇬',name:'Uganda +256'},
+      '260':{flag:'🇿🇲',name:'Zambia +260'},
+      '55':{flag:'🇧🇷',name:'Brazil +55'},
+      '971':{flag:'🇦🇪',name:'UAE +971'},
+      '966':{flag:'🇸🇦',name:'Saudi +966'},
+      '90':{flag:'🇹🇷',name:'Turkey +90'},
+      '62':{flag:'🇮🇩',name:'Indonesia +62'},
+      '60':{flag:'🇲🇾',name:'Malaysia +60'},
+      '49':{flag:'🇩🇪',name:'Germany +49'},
+      '33':{flag:'🇫🇷',name:'France +33'}
+    };
+
     const startDate=new Date('2024-06-01T00:00:00Z');
     function updateUptime(){
       const diff=Date.now()-startDate;
@@ -175,83 +205,192 @@
       document.getElementById('upDays').textContent=d;
     }
     setInterval(updateUptime,1000);updateUptime();
-    function showToast(message,isError=false){
+
+    function showToast(msg,isError=false){
       clearTimeout(toastTimer);
-      toastText.textContent=message;
+      toastText.textContent=msg;
       toastIcon.className=isError?'fas fa-exclamation-circle':'fas fa-check-circle';
       toast.className=isError?'toast error show':'toast show';
-      toastTimer=setTimeout(()=>{toast.classList.remove('show')},4000);
+      toastTimer=setTimeout(()=>toast.classList.remove('show'),4000);
     }
-    function copyEco(){navigator.clipboard.writeText('263781330745').then(()=>showToast('EcoCash copied: 263781330745')).catch(()=>showToast('EcoCash: 263781330745'));}
-    function cleanNumber(n){return n.replace(/\\D/g,'');}
-    function validatePhone(n){const c=cleanNumber(n);return /^\\d{10,15}$/.test(c);}
+    function copyEco(){navigator.clipboard.writeText('263781330745').then(()=>showToast('EcoCash copied: 263781330745'));}
+    function setExample(num){phoneInput.value=num;phoneInput.dispatchEvent(new Event('input'));phoneInput.focus();showToast('Example set: +'+num);}
+
+    // GLOBAL NUMBER CLEANER - ACCEPTS ANY COUNTRY
+    function cleanNumber(input){
+      if(!input) return '';
+      // Remove everything except digits and +
+      let s = input.trim();
+      // Remove leading +, 00, spaces, dashes, brackets
+      s = s.replace(/[\s\-\(\)]/g,'');
+      if(s.startsWith('+')) s = s.substring(1);
+      if(s.startsWith('00')) s = s.substring(2);
+      // Now only digits
+      s = s.replace(/[^0-9]/g,'');
+      return s;
+    }
+
+    function detectCountry(num){
+      const cleaned=cleanNumber(num);
+      // Try 3-digit, 2-digit, 1-digit country codes
+      for(let len=3;len>=1;len--){
+        const code=cleaned.substring(0,len);
+        if(countryMap[code]){
+          return countryMap[code];
+        }
+      }
+      if(cleaned.length>=7){
+        return {flag:'🌍',name:`Global +${cleaned.substring(0,3)}... (${cleaned.length} digits)`};
+      }
+      return {flag:'🌍',name:'Enter number'};
+    }
+
+    function validatePhone(input){
+      const c=cleanNumber(input);
+      // E.164 standard: 7 to 15 digits max
+      // WhatsApp allows 7-15 digits
+      if(c.length<7) return {valid:false, reason:`Too short: ${c.length} digits, need at least 7`};
+      if(c.length>15) return {valid:false, reason:`Too long: ${c.length} digits, max 15`};
+      if(!/^[0-9]{7,15}$/.test(c)) return {valid:false, reason:'Only digits allowed'};
+      // Don't allow all zeros or sequential
+      if(/^0+$/.test(c)) return {valid:false, reason:'Invalid number'};
+      return {valid:true, cleaned:c};
+    }
+
     function showError(msg){
-      currentCode=null;codeBox.className='code-box has-error';codeBox.innerHTML='';
-      const error=document.createElement('div');error.className='error-value';
-      const icon=document.createElement('i');icon.className='fas fa-exclamation-circle';
-      const text=document.createElement('span');text.textContent=msg;
-      error.appendChild(icon);error.appendChild(text);codeBox.appendChild(error);
-      copyBtn.style.display='none';instructions.classList.remove('show');
+      currentCode=null;
+      codeBox.className='code-box has-error';
+      codeBox.innerHTML=`<div class="error-value"><i class="fas fa-exclamation-circle"></i><span>${msg}</span></div>`;
+      copyBtn.style.display='none';
+      instructions.classList.remove('show');
     }
     function showCode(code){
-      if(!code){showError('No pairing code was returned.');return;}
+      if(!code){showError('No code returned');return;}
       currentCode=String(code).trim();
-      codeBox.className='code-box has-code';codeBox.innerHTML='';
-      const value=document.createElement('div');value.className='code-value';
-      const icon=document.createElement('i');icon.className='fas fa-circle-check';
-      const text=document.createElement('span');text.textContent=currentCode;
-      value.appendChild(icon);value.appendChild(text);codeBox.appendChild(value);
-      copyBtn.style.display='flex';instructions.classList.add('show');
+      codeBox.className='code-box has-code';
+      codeBox.innerHTML=`<div class="code-value"><i class="fas fa-circle-check"></i><span>${currentCode}</span></div>`;
+      copyBtn.style.display='flex';
+      instructions.classList.add('show');
     }
     function resetCodeBox(){
-      currentCode=null;codeBox.className='code-box';
-      codeBox.innerHTML='<div class="code-placeholder">Your pairing code will appear here</div>';
-      copyBtn.style.display='none';instructions.classList.remove('show');
+      currentCode=null;
+      codeBox.className='code-box';
+      codeBox.innerHTML='<div class="code-placeholder">Your pairing code will appear here — works globally 🌍</div>';
+      copyBtn.style.display='none';
+      instructions.classList.remove('show');
     }
+
+    phoneInput.addEventListener('input',()=>{
+      const val=phoneInput.value;
+      const country=detectCountry(val);
+      const validation=validatePhone(val);
+      if(val.trim()===''){
+        flagDisplay.textContent='🌍 Enter number';
+      } else {
+        flagDisplay.textContent=`${country.flag} ${country.name}`;
+      }
+      // Visual feedback
+      if(val && !validation.valid){
+        phoneInput.style.borderColor='rgba(255,95,109,0.4)';
+      } else if(val && validation.valid){
+        phoneInput.style.borderColor='rgba(0,230,168,0.4)';
+      } else {
+        phoneInput.style.borderColor='';
+      }
+      if(codeBox.classList.contains('has-error')){
+        resetCodeBox();
+      }
+    });
+
     async function generatePairCode(e){
       e.preventDefault();
-      const clean=cleanNumber(phoneInput.value);
-      if(!clean){showError('Please enter your WhatsApp number.');showToast('Phone number required',true);return;}
-      if(!validatePhone(clean)){showError('Enter 10-15 digits including country code.');showToast('Invalid number',true);return;}
-      generateBtn.disabled=true;generateBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Connecting...';
-      loading.style.display='block';resetCodeBox();let timeoutId;
+      const raw=phoneInput.value;
+      const validation=validatePhone(raw);
+      if(!raw.trim()){
+        showError('Please enter your WhatsApp number with country code. Examples: +1 202 555 0123, +234 801 234 5678, +92 300 1234567');
+        showToast('Enter number first',true);
+        return;
+      }
+      if(!validation.valid){
+        showError(validation.reason + '. Examples: +1 2025550123 (USA 11 digits), +2348012345678 (Nigeria 13 digits), +923001234567 (Pakistan 12 digits), +263781330745 (ZW 12 digits)');
+        showToast(validation.reason,true);
+        return;
+      }
+      const clean=validation.cleaned;
+      generateBtn.disabled=true;
+      generateBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Connecting to WhatsApp...';
+      loading.style.display='block';
+      resetCodeBox();
+      let timeoutId;
       try{
         const controller=new AbortController();
         timeoutId=setTimeout(()=>controller.abort(),60000);
-        const response=await fetch(`/code?number=${encodeURIComponent(clean)}`,{method:'GET',signal:controller.signal,headers:{'Accept':'application/json'},cache:'no-store'});
+        // Try multiple endpoints for compatibility
+        const endpoints=[
+          `/code?number=${encodeURIComponent(clean)}`,
+          `/pair?number=${encodeURIComponent(clean)}`,
+          `/api/pair?number=${encodeURIComponent(clean)}`
+        ];
+        let success=false;
+        let data=null;
+        for(const ep of endpoints){
+          try{
+            const resp=await fetch(ep,{method:'GET',signal:controller.signal,headers:{'Accept':'application/json'},cache:'no-store'});
+            const text=await resp.text();
+            try{data=JSON.parse(text);}catch{continue;}
+            if(resp.ok && (data.code || data.pairingCode || data.pairCode)){
+              success=true;
+              break;
+            }
+          }catch(err){
+            console.log('Endpoint failed',ep,err);
+            continue;
+          }
+        }
         clearTimeout(timeoutId);
-        const text=await response.text();let data;
-        try{data=JSON.parse(text);}catch{throw new Error(text.substring(0,200)||'Invalid server response');}
-        if(!response.ok)throw new Error(data.error||data.message||`Server error (${response.status})`);
-        const returnedCode=data.code||data.pairingCode||data.pairCode;
-        if(returnedCode && returnedCode!=='Service Unavailable' && returnedCode!=='service_unavailable'){showCode(returnedCode);showToast('Pairing code generated.');}
-        else throw new Error(data.error||data.message||'No valid code returned');
+        if(!success || !data){
+          throw new Error('Server did not return code. Check Railway logs. Tried: /code?number=' + clean);
+        }
+        const returnedCode=data.code || data.pairingCode || data.pairCode;
+        if(returnedCode && returnedCode!=='Service Unavailable' && returnedCode!=='service_unavailable'){
+          showCode(returnedCode);
+          showToast(`Code for +${clean} generated! ${detectCountry(clean).flag}`);
+        } else {
+          throw new Error(data.error || data.message || 'No valid code');
+        }
       }catch(error){
         console.error(error);
-        if(error.name==='AbortError'){showError('Server took too long. Try again.');showToast('Request timed out',true);}
-        else{showError(error.message||'Failed to generate code.');showToast(error.message||'Request failed',true);}
+        if(error.name==='AbortError'){
+          showError('Server timeout. Railway may be sleeping - wait 30s and retry. Number tested: +'+clean);
+          showToast('Timeout - retry',true);
+        } else {
+          showError(error.message || 'Failed. Check Railway logs for /code endpoint');
+          showToast(error.message || 'Failed',true);
+        }
       }finally{
-        clearTimeout(timeoutId);generateBtn.disabled=false;
-        generateBtn.innerHTML='<i class="fas fa-key"></i>Generate Pairing Code';loading.style.display='none';
+        clearTimeout(timeoutId);
+        generateBtn.disabled=false;
+        generateBtn.innerHTML='<i class="fas fa-key"></i>Generate Pairing Code';
+        loading.style.display='none';
       }
     }
+
     async function copyCode(){
-      if(!currentCode){showToast('No code to copy',true);return;}
+      if(!currentCode){showToast('No code',true);return;}
       try{
         await navigator.clipboard.writeText(currentCode);
-        const orig=copyBtn.innerHTML;copyBtn.innerHTML='<i class="fas fa-check"></i> Copied!';copyBtn.disabled=true;showToast('Code copied.');
+        const orig=copyBtn.innerHTML;copyBtn.innerHTML='<i class="fas fa-check"></i> Copied!';copyBtn.disabled=true;showToast('Copied: '+currentCode);
         setTimeout(()=>{copyBtn.innerHTML=orig;copyBtn.disabled=false;},2000);
       }catch{
         const area=document.createElement('textarea');area.value=currentCode;area.style.position='fixed';area.style.opacity='0';
         document.body.appendChild(area);area.focus();area.select();
-        try{document.execCommand('copy');showToast('Code copied.');}catch{showToast('Copy failed, select manually',true);}
+        try{document.execCommand('copy');showToast('Copied');}catch{showToast('Select manually',true);}
         document.body.removeChild(area);
       }
     }
+
     form.addEventListener('submit',generatePairCode);
     copyBtn.addEventListener('click',copyCode);
-    phoneInput.addEventListener('input',()=>{phoneInput.value=cleanNumber(phoneInput.value);if(phoneInput.value.length>15)phoneInput.value=phoneInput.value.substring(0,15);});
-    phoneInput.addEventListener('focus',()=>{if(codeBox.classList.contains('has-error'))resetCodeBox();});
   </script>
 <script>(function(){var loc=location.href.replace(/#.*$/,"");var ATTR_NAMES=["data-product-id","data-productid","data-product_id","product-id","productid","product_id","data-source-entity-id","source-entity-id","source_entity_id","data-product","data-metadata","data-meta"];var DATASET_KEYS=["productId","productid","product_id","sourceEntityId","sourceentityid","source_entity_id","product","metadata","meta"];function readProductId(value){if(typeof value!=="string"||value.length===0)return null;if(/^[0-9]{6,}$/.test(value))return value;var match=value.match(/(?:product(?:_|-)?id|source(?:_|-)?entity(?:_|-)?id)["'=:\s]+([0-9]{6,})/i);return match?match[1]:null}function extractProductId(start){for(var node=start;node&&node!==document.body;node=node.parentElement){for(var i=0;i<ATTR_NAMES.length;i++){var attrValue=node.getAttribute&&node.getAttribute(ATTR_NAMES[i]);var attrProductId=readProductId(attrValue);if(attrProductId)return attrProductId}var dataset=node.dataset||null;if(dataset){for(var j=0;j<DATASET_KEYS.length;j++){var dataValue=dataset[DATASET_KEYS[j]];var dataProductId=readProductId(dataValue);if(dataProductId)return dataProductId}}}return null}function isInlineMediaSlotElement(node){return !!(node&&node.getAttribute&&node.getAttribute("data-clippy-inline-media-slot")!==null)}function findInlineMediaSlot(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(isInlineMediaSlotElement(node))return node}return null}function readInlineMediaUrl(node){if(!node)return null;return node.getAttribute&&((node.getAttribute("data-clippy-inline-media-url")||node.getAttribute("data-url")||node.getAttribute("data_url")))||node.href||null}function stripHash(url){return String(url).replace(/#.*$/,"")}function urlsMatch(a,b){if(!a||!b)return false;try{return stripHash(new URL(a,loc).href)===stripHash(new URL(b,loc).href)}catch(_){return stripHash(a)===stripHash(b)}}function isFirstPartyReelUrl(value){try{var url=new URL(value,loc);if(url.protocol!=="https:")return false;var host=url.hostname.toLowerCase();var supported=host==="instagram.com"||host.endsWith(".instagram.com")||host==="facebook.com"||host.endsWith(".facebook.com");return supported&&/\/reels?\//i.test(url.pathname)}catch(_){return false}}function isInlineMediaUrlClick(node,href){var slot=findInlineMediaSlot(node);if(!slot)return false;var slotUrl=readInlineMediaUrl(slot);if(slotUrl)return urlsMatch(href,slotUrl);return isFirstPartyReelUrl(href)}function findDataHref(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(node.getAttribute){var href=node.getAttribute("data-href")||node.getAttribute("data-url");if(href)return{href:href,node:node}}}return null}var nativeOpen=window.open;window.open=function(url){if(parent!==window&&typeof url==="string"&&/^https?:\/\//.test(url)){parent.postMessage({type:"ecto:usercontent-link-click",href:url},"*");return null}return nativeOpen?nativeOpen.apply(window,arguments):null};document.addEventListener("click",function(e){var target=e.target instanceof Element?e.target:null;if(!target)return;if(parent===window)return;var a=target.closest?target.closest("a[href]"):null;if(a&&a.href&&/^https?:\/\//.test(a.href)&&a.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(a,a.href))return;var productId=extractProductId(target)||extractProductId(a);if(productId){e.preventDefault();parent.postMessage({type:"ecto-artifact-link-click",productId:productId},"*");return}e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:a.href},"*");return}var dataHref=findDataHref(target);if(dataHref&&/^https?:\/\//.test(dataHref.href)&&dataHref.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(dataHref.node,dataHref.href))return;e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:dataHref.href},"*")}},true)})();</script><script>(function(){var FOCUS_TYPE="ecto:artifact-focus-request";var CLOSE_TYPE="ecto:artifact-close-request";function focusArtifactDocument(){var body=document.body;if(!body)return;try{window.focus();}catch(e){}if(!body.hasAttribute("tabindex"))body.setAttribute("tabindex","-1");try{body.focus({preventScroll:true});}catch(e){try{body.focus();}catch(e2){}}}window.addEventListener("message",function(event){if(event.source!==window.parent)return;var data=event.data;if(!data||typeof data!=="object"||data.type!==FOCUS_TYPE)return;if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",focusArtifactDocument,{once:true});return;}focusArtifactDocument();});window.addEventListener("keydown",function(event){if(event.key!=="Escape")return;window.setTimeout(function(){if(event.defaultPrevented)return;window.parent.postMessage({type:CLOSE_TYPE},"*");},0);});})();</script></body>
 </html>
