@@ -1,736 +1,132 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><style>
+@font-face {
+  font-family: "Optimistic";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("/fonts/OptimisticAI_VF_Optimized.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Optimistic Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/OptimisticMono_W_TextRegular.woff2") format("woff2");
+}
+:where(html) {
+  font-family: "Optimistic", system-ui, sans-serif;
+}
+:where(code, pre, kbd, samp) {
+  font-family: "Optimistic Mono", ui-monospace, monospace;
+}
+</style>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#050816">
   <title>ALEXA-MIN | WhatsApp Pairing</title>
-
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    :root {
-      --bg: #050816;
-      --card: rgba(11, 18, 38, .82);
-      --card-border: rgba(255,255,255,.10);
-      --cyan: #00e5ff;
-      --blue: #4f7cff;
-      --violet: #8b5cf6;
-      --green: #00e6a8;
-      --red: #ff5f6d;
-      --text: #ffffff;
-      --muted: rgba(255,255,255,.58);
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    /* ================= BACKGROUND ================= */
-
-    .background {
-      position: fixed;
-      inset: 0;
-      overflow: hidden;
-      z-index: 0;
-      background:
-        radial-gradient(circle at 15% 15%, rgba(0,229,255,.12), transparent 32%),
-        radial-gradient(circle at 85% 20%, rgba(139,92,246,.15), transparent 35%),
-        radial-gradient(circle at 50% 100%, rgba(79,124,255,.12), transparent 40%),
-        #050816;
-    }
-
-    .orb {
-      position: absolute;
-      width: 500px;
-      height: 500px;
-      border-radius: 50%;
-      filter: blur(110px);
-      opacity: .18;
-      animation: float 18s ease-in-out infinite;
-    }
-
-    .orb.one {
-      background: #00e5ff;
-      top: -280px;
-      left: -220px;
-    }
-
-    .orb.two {
-      background: #8b5cf6;
-      right: -260px;
-      top: 20%;
-      animation-delay: -7s;
-    }
-
-    .orb.three {
-      background: #2563eb;
-      bottom: -300px;
-      left: 25%;
-      animation-delay: -12s;
-    }
-
-    @keyframes float {
-      0%, 100% {
-        transform: translate(0,0) scale(1);
-      }
-      50% {
-        transform: translate(40px,-30px) scale(1.12);
-      }
-    }
-
-    .grid {
-      position: absolute;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
-      background-size: 45px 45px;
-      mask-image: linear-gradient(to bottom, black, transparent 90%);
-    }
-
-    /* ================= CONTAINER ================= */
-
-    .container {
-      position: relative;
-      z-index: 10;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 25px 16px;
-    }
-
-    /* ================= CARD ================= */
-
-    .card {
-      width: 100%;
-      max-width: 500px;
-      background: var(--card);
-      border: 1px solid var(--card-border);
-      border-radius: 30px;
-      padding: 42px 38px;
-      backdrop-filter: blur(25px);
-      -webkit-backdrop-filter: blur(25px);
-      box-shadow:
-        0 30px 100px rgba(0,0,0,.55),
-        0 0 80px rgba(0,229,255,.04);
-      position: relative;
-      overflow: hidden;
-      animation: cardIn .7s ease;
-    }
-
-    .card::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 12%;
-      right: 12%;
-      height: 2px;
-      background: linear-gradient(
-        90deg,
-        transparent,
-        var(--cyan),
-        var(--violet),
-        transparent
-      );
-      box-shadow: 0 0 20px rgba(0,229,255,.5);
-    }
-
-    @keyframes cardIn {
-      from {
-        opacity: 0;
-        transform: translateY(35px) scale(.97);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-
-    /* ================= HEADER ================= */
-
-    .header {
-      text-align: center;
-      margin-bottom: 32px;
-    }
-
-    .logo-container {
-      width: 92px;
-      height: 92px;
-      margin: 0 auto 22px;
-      position: relative;
-    }
-
-    .logo-ring {
-      position: absolute;
-      inset: -4px;
-      border-radius: 50%;
-      border: 2px solid transparent;
-      border-top-color: var(--cyan);
-      border-right-color: var(--violet);
-      animation: spin 3s linear infinite;
-      box-shadow: 0 0 25px rgba(0,229,255,.25);
-    }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
-
-    .logo {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 38px;
-      background:
-        radial-gradient(circle at 30% 20%, #2ddcff, #2563eb 55%, #6d28d9);
-      box-shadow:
-        0 15px 45px rgba(37,99,235,.35),
-        inset 0 0 20px rgba(255,255,255,.15);
-    }
-
-    .title {
-      font-size: 32px;
-      font-weight: 800;
-      letter-spacing: -.5px;
-      background: linear-gradient(
-        90deg,
-        #ffffff,
-        var(--cyan),
-        #a78bfa
-      );
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 7px;
-    }
-
-    .subtitle {
-      color: var(--muted);
-      font-size: 14px;
-      letter-spacing: .4px;
-    }
-
-    /* ================= INFO ================= */
-
-    .info-box {
-      display: flex;
-      gap: 13px;
-      align-items: flex-start;
-      padding: 17px;
-      border-radius: 17px;
-      margin-bottom: 27px;
-      background: rgba(0,229,255,.045);
-      border: 1px solid rgba(0,229,255,.16);
-    }
-
-    .info-box i {
-      color: var(--cyan);
-      font-size: 19px;
-      margin-top: 2px;
-    }
-
-    .info-box strong {
-      display: block;
-      font-size: 14px;
-      margin-bottom: 4px;
-    }
-
-    .info-box p {
-      color: rgba(255,255,255,.60);
-      font-size: 12px;
-      line-height: 1.55;
-    }
-
-    /* ================= FORM ================= */
-
-    .form-group {
-      margin-bottom: 22px;
-    }
-
-    .label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      margin-bottom: 9px;
-      color: rgba(255,255,255,.88);
-    }
-
-    .input-wrapper {
-      position: relative;
-    }
-
-    .input-icon {
-      position: absolute;
-      left: 18px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: rgba(255,255,255,.38);
-      font-size: 17px;
-      pointer-events: none;
-      transition: .25s;
-    }
-
-    .input {
-      width: 100%;
-      height: 58px;
-      padding: 0 18px 0 52px;
-      border-radius: 15px;
-      border: 1px solid rgba(255,255,255,.11);
-      background: rgba(0,0,0,.25);
-      color: #fff;
-      outline: none;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 15px;
-      letter-spacing: .4px;
-      transition: .25s;
-    }
-
-    .input:hover {
-      border-color: rgba(255,255,255,.2);
-    }
-
-    .input:focus {
-      border-color: var(--cyan);
-      background: rgba(0,229,255,.035);
-      box-shadow:
-        0 0 0 4px rgba(0,229,255,.07),
-        0 0 30px rgba(0,229,255,.07);
-    }
-
-    .input:focus ~ .input-icon {
-      color: var(--cyan);
-    }
-
-    .input::placeholder {
-      color: rgba(255,255,255,.30);
-    }
-
-    .hint {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-top: 8px;
-      color: rgba(255,255,255,.40);
-      font-size: 11px;
-    }
-
-    .hint i {
-      color: #ffd166;
-    }
-
-    /* ================= BUTTON ================= */
-
-    .btn {
-      width: 100%;
-      height: 57px;
-      border: none;
-      border-radius: 15px;
-      font-family: inherit;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 10px;
-      transition: .25s;
-    }
-
-    .btn-generate {
-      color: white;
-      background: linear-gradient(
-        135deg,
-        #2563eb,
-        #7c3aed
-      );
-      box-shadow:
-        0 12px 35px rgba(37,99,235,.25),
-        inset 0 1px rgba(255,255,255,.18);
-      margin-bottom: 18px;
-    }
-
-    .btn-generate:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow:
-        0 18px 45px rgba(37,99,235,.38),
-        0 0 25px rgba(124,58,237,.15);
-    }
-
-    .btn-generate:active:not(:disabled) {
-      transform: scale(.985);
-    }
-
-    .btn-generate:disabled {
-      opacity: .55;
-      cursor: not-allowed;
-    }
-
-    .btn-copy {
-      display: none;
-      background: rgba(255,255,255,.065);
-      color: white;
-      border: 1px solid rgba(255,255,255,.14);
-    }
-
-    .btn-copy:hover:not(:disabled) {
-      background: rgba(0,229,255,.08);
-      border-color: rgba(0,229,255,.35);
-      transform: translateY(-2px);
-    }
-
-    /* ================= LOADING ================= */
-
-    .loading {
-      display: none;
-      text-align: center;
-      padding: 15px 0 20px;
-    }
-
-    .spinner {
-      width: 42px;
-      height: 42px;
-      margin: 0 auto 13px;
-      border-radius: 50%;
-      border: 3px solid rgba(0,229,255,.12);
-      border-top-color: var(--cyan);
-      animation: spin .8s linear infinite;
-    }
-
-    .loading-text {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    /* ================= CODE ================= */
-
-    .code-box {
-      min-height: 92px;
-      margin-bottom: 14px;
-      padding: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      border-radius: 17px;
-      border: 1px dashed rgba(255,255,255,.13);
-      background: rgba(0,0,0,.25);
-      transition: .3s;
-    }
-
-    .code-box.has-code {
-      border-style: solid;
-      border-color: rgba(0,230,168,.35);
-      background: rgba(0,230,168,.045);
-      box-shadow: 0 0 30px rgba(0,230,168,.05);
-    }
-
-    .code-box.has-error {
-      border-style: solid;
-      border-color: rgba(255,95,109,.35);
-      background: rgba(255,95,109,.045);
-    }
-
-    .code-placeholder {
-      color: rgba(255,255,255,.32);
-      font-size: 12px;
-    }
-
-    .code-value {
-      display: flex;
-      align-items: center;
-      gap: 11px;
-      color: var(--green);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 26px;
-      font-weight: 700;
-      letter-spacing: 3px;
-      text-shadow: 0 0 18px rgba(0,230,168,.25);
-      user-select: all;
-    }
-
-    .code-value i {
-      font-size: 21px;
-      letter-spacing: 0;
-    }
-
-    .error-value {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      color: var(--red);
-      font-size: 12px;
-      line-height: 1.5;
-    }
-
-    /* ================= INSTRUCTIONS ================= */
-
-    .instructions {
-      display: none;
-      margin-top: 20px;
-      padding: 17px;
-      border-radius: 16px;
-      background: rgba(79,124,255,.055);
-      border: 1px solid rgba(79,124,255,.15);
-    }
-
-    .instructions.show {
-      display: block;
-      animation: fadeUp .35s ease;
-    }
-
-    @keyframes fadeUp {
-      from {
-        opacity: 0;
-        transform: translateY(8px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .instructions-title {
-      font-size: 13px;
-      font-weight: 700;
-      margin-bottom: 11px;
-      color: #fff;
-    }
-
-    .instructions ol {
-      padding-left: 20px;
-      color: rgba(255,255,255,.58);
-      font-size: 11px;
-      line-height: 1.8;
-    }
-
-    .instructions li::marker {
-      color: var(--cyan);
-      font-weight: 700;
-    }
-
-    /* ================= FOOTER ================= */
-
-    .footer {
-      text-align: center;
-      margin-top: 27px;
-      padding-top: 21px;
-      border-top: 1px solid rgba(255,255,255,.08);
-    }
-
-    .footer-text {
-      color: rgba(255,255,255,.30);
-      font-size: 10px;
-      letter-spacing: .3px;
-    }
-
-    .footer-link {
-      color: var(--cyan);
-      text-decoration: none;
-    }
-
-    /* ================= TOAST ================= */
-
-    .toast {
-      position: fixed;
-      left: 50%;
-      bottom: 25px;
-      z-index: 1000;
-      min-width: 250px;
-      max-width: calc(100% - 30px);
-      padding: 13px 19px;
-      border-radius: 50px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 9px;
-      background: #071c19;
-      border: 1px solid rgba(0,230,168,.3);
-      color: white;
-      box-shadow: 0 15px 45px rgba(0,0,0,.5);
-      transform: translate(-50%, 120px);
-      opacity: 0;
-      transition: .35s;
-      font-size: 12px;
-    }
-
-    .toast.show {
-      transform: translate(-50%, 0);
-      opacity: 1;
-    }
-
-    .toast.error {
-      background: #250d12;
-      border-color: rgba(255,95,109,.35);
-    }
-
-    /* ================= MOBILE ================= */
-
-    @media (max-width: 580px) {
-      .container {
-        padding: 15px;
-      }
-
-      .card {
-        padding: 34px 22px;
-        border-radius: 25px;
-      }
-
-      .logo-container {
-        width: 82px;
-        height: 82px;
-      }
-
-      .title {
-        font-size: 28px;
-      }
-
-      .subtitle {
-        font-size: 13px;
-      }
-
-      .info-box {
-        padding: 15px;
-      }
-
-      .code-value {
-        font-size: 22px;
-        letter-spacing: 2px;
-      }
-
-      .code-value i {
-        font-size: 18px;
-      }
-
-      .orb {
-        width: 350px;
-        height: 350px;
-      }
-    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{--bg:#050816;--card:rgba(11,18,38,.82);--card-border:rgba(255,255,255,.10);--cyan:#00e5ff;--blue:#4f7cff;--violet:#8b5cf6;--green:#00e6a8;--red:#ff5f6d;--text:#ffffff;--muted:rgba(255,255,255,.58)}
+    html{scroll-behavior:smooth}
+    body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+    .background{position:fixed;inset:0;overflow:hidden;z-index:0;background:radial-gradient(circle at 15% 15%, rgba(0,229,255,.12), transparent 32%),radial-gradient(circle at 85% 20%, rgba(139,92,246,.15), transparent 35%),radial-gradient(circle at 50% 100%, rgba(79,124,255,.12), transparent 40%),#050816}
+    .orb{position:absolute;width:500px;height:500px;border-radius:50%;filter:blur(110px);opacity:.18;animation:float 18s ease-in-out infinite}
+    .orb.one{background:#00e5ff;top:-280px;left:-220px}.orb.two{background:#8b5cf6;right:-260px;top:20%;animation-delay:-7s}.orb.three{background:#2563eb;bottom:-300px;left:25%;animation-delay:-12s}
+    @keyframes float{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(40px,-30px) scale(1.12)}}
+    .grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);background-size:45px 45px;mask-image:linear-gradient(to bottom, black, transparent 90%)}
+    .container{position:relative;z-index:10;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:25px 16px;gap:18px}
+    .card{width:100%;max-width:500px;background:var(--card);border:1px solid var(--card-border);border-radius:30px;padding:42px 38px;backdrop-filter:blur(25px);-webkit-backdrop-filter:blur(25px);box-shadow:0 30px 100px rgba(0,0,0,.55),0 0 80px rgba(0,229,255,.04);position:relative;overflow:hidden;animation:cardIn .7s ease}
+    .card::before{content:"";position:absolute;top:0;left:12%;right:12%;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),var(--violet),transparent);box-shadow:0 0 20px rgba(0,229,255,.5)}
+    @keyframes cardIn{from{opacity:0;transform:translateY(35px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+    .header{text-align:center;margin-bottom:22px}
+    .logo-container{width:92px;height:92px;margin:0 auto 18px;position:relative}
+    .logo-ring{position:absolute;inset:-4px;border-radius:50%;border:2px solid transparent;border-top-color:var(--cyan);border-right-color:var(--violet);animation:spin 3s linear infinite;box-shadow:0 0 25px rgba(0,229,255,.25)}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .logo{width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:38px;background:radial-gradient(circle at 30% 20%, #2ddcff, #2563eb 55%, #6d28d9);box-shadow:0 15px 45px rgba(37,99,235,.35),inset 0 0 20px rgba(255,255,255,.15)}
+    .title{font-size:32px;font-weight:800;letter-spacing:-.5px;background:linear-gradient(90deg,#ffffff,var(--cyan),#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:7px}
+    .subtitle{color:var(--muted);font-size:14px;letter-spacing:.4px}
+    .uptime-pill{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:30px;background:rgba(0,230,168,0.08);border:1px solid rgba(0,230,168,0.18);font-family:'JetBrains Mono',monospace;font-size:10px;margin-top:14px;color:rgba(255,255,255,0.7)}
+    .uptime-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 1.5s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+    .info-box{display:flex;gap:13px;align-items:flex-start;padding:17px;border-radius:17px;margin:20px 0 27px;background:rgba(0,229,255,.045);border:1px solid rgba(0,229,255,.16)}
+    .info-box i{color:var(--cyan);font-size:19px;margin-top:2px}
+    .info-box strong{display:block;font-size:14px;margin-bottom:4px}
+    .info-box p{color:rgba(255,255,255,.60);font-size:12px;line-height:1.55}
+    .form-group{margin-bottom:22px}
+    .label{display:block;font-size:13px;font-weight:600;margin-bottom:9px;color:rgba(255,255,255,.88)}
+    .input-wrapper{position:relative}
+    .input-icon{position:absolute;left:18px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.38);font-size:17px;pointer-events:none;transition:.25s}
+    .input{width:100%;height:58px;padding:0 18px 0 52px;border-radius:15px;border:1px solid rgba(255,255,255,.11);background:rgba(0,0,0,.25);color:#fff;outline:none;font-family:'JetBrains Mono',monospace;font-size:15px;letter-spacing:.4px;transition:.25s}
+    .input:hover{border-color:rgba(255,255,255,.2)}.input:focus{border-color:var(--cyan);background:rgba(0,229,255,.035);box-shadow:0 0 0 4px rgba(0,229,255,.07),0 0 30px rgba(0,229,255,.07)}
+    .input:focus ~ .input-icon{color:var(--cyan)}.input::placeholder{color:rgba(255,255,255,.30)}
+    .hint{display:flex;align-items:center;gap:6px;margin-top:8px;color:rgba(255,255,255,.40);font-size:11px}.hint i{color:#ffd166}
+    .btn{width:100%;height:57px;border:none;border-radius:15px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;display:flex;justify-content:center;align-items:center;gap:10px;transition:.25s}
+    .btn-generate{color:white;background:linear-gradient(135deg,#2563eb,#7c3aed);box-shadow:0 12px 35px rgba(37,99,235,.25),inset 0 1px rgba(255,255,255,.18);margin-bottom:18px}
+    .btn-generate:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 18px 45px rgba(37,99,235,.38),0 0 25px rgba(124,58,237,.15)}
+    .btn-generate:disabled{opacity:.55;cursor:not-allowed}
+    .btn-copy{display:none;background:rgba(255,255,255,.065);color:white;border:1px solid rgba(255,255,255,.14)}
+    .btn-copy:hover:not(:disabled){background:rgba(0,229,255,.08);border-color:rgba(0,229,255,.35);transform:translateY(-2px)}
+    .loading{display:none;text-align:center;padding:15px 0 20px}.spinner{width:42px;height:42px;margin:0 auto 13px;border-radius:50%;border:3px solid rgba(0,229,255,.12);border-top-color:var(--cyan);animation:spin .8s linear infinite}.loading-text{font-size:12px;color:var(--muted)}
+    .code-box{min-height:92px;margin-bottom:14px;padding:20px;display:flex;align-items:center;justify-content:center;text-align:center;border-radius:17px;border:1px dashed rgba(255,255,255,.13);background:rgba(0,0,0,.25);transition:.3s}
+    .code-box.has-code{border-style:solid;border-color:rgba(0,230,168,.35);background:rgba(0,230,168,.045);box-shadow:0 0 30px rgba(0,230,168,.05)}
+    .code-box.has-error{border-style:solid;border-color:rgba(255,95,109,.35);background:rgba(255,95,109,.045)}
+    .code-placeholder{color:rgba(255,255,255,.32);font-size:12px}
+    .code-value{display:flex;align-items:center;gap:11px;color:var(--green);font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700;letter-spacing:3px;text-shadow:0 0 18px rgba(0,230,168,.25);user-select:all}
+    .code-value i{font-size:21px;letter-spacing:0}.error-value{display:flex;align-items:center;gap:9px;color:var(--red);font-size:12px;line-height:1.5}
+    .instructions{display:none;margin-top:20px;padding:17px;border-radius:16px;background:rgba(79,124,255,.055);border:1px solid rgba(79,124,255,.15)}.instructions.show{display:block;animation:fadeUp .35s ease}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .instructions-title{font-size:13px;font-weight:700;margin-bottom:11px;color:#fff}
+    .instructions ol{padding-left:20px;color:rgba(255,255,255,.58);font-size:11px;line-height:1.8}.instructions li::marker{color:var(--cyan);font-weight:700}
+    /* NEW ADDITIONS */
+    .extra-grid{width:100%;max-width:500px;display:grid;gap:12px}
+    .extra-card{padding:18px;border-radius:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(10px);display:flex;align-items:center;gap:12px;transition:0.2s}
+    .extra-card:hover{border-color:rgba(0,229,255,0.2);transform:translateY(-2px)}
+    .extra-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px}
+    .extra-icon.channel{background:rgba(37,211,102,0.12);border:1px solid rgba(37,211,102,0.2);color:#25d366}
+    .extra-icon.group{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff}
+    .extra-icon.donate{background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.2);color:#fbbf24}
+    .extra-icon.contact{background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.15);color:var(--cyan)}
+    .extra-text{flex:1;text-align:left}.extra-text b{font-size:13px;display:block}.extra-text span{font-size:10px;color:rgba(255,255,255,0.4)}
+    .extra-card a{padding:8px 14px;border-radius:20px;font-size:11px;font-weight:700;text-decoration:none;flex-shrink:0}
+    .btn-channel{background:#25d366;color:#000}.btn-group{background:#fff;color:#000}.btn-donate{background:#fbbf24;color:#000}.btn-contact{background:var(--cyan);color:#000}
+    .donate-mini{width:100%;max-width:500px;padding:16px;border-radius:16px;background:linear-gradient(135deg,rgba(251,191,36,0.08),rgba(245,158,11,0.08));border:1px solid rgba(251,191,36,0.15);display:flex;align-items:center;gap:12px}
+    .footer{text-align:center;margin-top:27px;padding-top:21px;border-top:1px solid rgba(255,255,255,.08)}
+    .footer-text{color:rgba(255,255,255,.30);font-size:10px;letter-spacing:.3px;line-height:1.8}.footer-link{color:var(--cyan);text-decoration:none}
+    .toast{position:fixed;left:50%;bottom:25px;z-index:1000;min-width:250px;max-width:calc(100% - 30px);padding:13px 19px;border-radius:50px;display:flex;justify-content:center;align-items:center;gap:9px;background:#071c19;border:1px solid rgba(0,230,168,.3);color:white;box-shadow:0 15px 45px rgba(0,0,0,.5);transform:translate(-50%,120px);opacity:0;transition:.35s;font-size:12px}
+    .toast.show{transform:translate(-50%,0);opacity:1}.toast.error{background:#250d12;border-color:rgba(255,95,109,.35)}
+    @media (max-width:580px){.container{padding:15px}.card{padding:34px 22px;border-radius:25px}.title{font-size:28px}}
   </style>
 </head>
-
 <body>
-
-  <div class="background">
-    <div class="grid"></div>
-    <div class="orb one"></div>
-    <div class="orb two"></div>
-    <div class="orb three"></div>
-  </div>
-
+  <div class="background"><div class="grid"></div><div class="orb one"></div><div class="orb two"></div><div class="orb three"></div></div>
   <main class="container">
     <section class="card">
-
       <header class="header">
-        <div class="logo-container">
-          <div class="logo-ring"></div>
-          <div class="logo">
-            <i class="fas fa-bolt"></i>
-          </div>
-        </div>
-
+        <div class="logo-container"><div class="logo-ring"></div><div class="logo"><i class="fas fa-bolt"></i></div></div>
         <h1 class="title">ALEXA-MIN</h1>
         <p class="subtitle">Secure WhatsApp Pairing</p>
+        <div class="uptime-pill"><span class="uptime-dot"></span><span id="uptimeText">LIVE • 99.98% • <span id="liveTimer">Loading...</span> • <span id="upDays">0</span>d uptime</span></div>
       </header>
-
-      <div class="info-box">
-        <i class="fas fa-shield-halved"></i>
-
-        <div>
-          <strong>Connect your WhatsApp</strong>
-          <p>
-            Enter your WhatsApp number with the country code.
-            Your pairing code will be generated securely.
-          </p>
-        </div>
-      </div>
-
+      <div class="info-box"><i class="fas fa-shield-halved"></i><div><strong>Connect your WhatsApp</strong><p>Enter your WhatsApp number with the country code. Your pairing code will be generated securely.</p></div></div>
       <form id="pairForm" autocomplete="off">
-
         <div class="form-group">
-          <label class="label" for="phoneNumber">
-            WhatsApp Number
-          </label>
-
+          <label class="label" for="phoneNumber">WhatsApp Number</label>
           <div class="input-wrapper">
-            <input
-              type="tel"
-              id="phoneNumber"
-              class="input"
-              inputmode="numeric"
-              autocomplete="tel"
-              placeholder="263771234567"
-              maxlength="15"
-              pattern="[0-9]{10,15}"
-              required
-            >
-
+            <input type="tel" id="phoneNumber" class="input" inputmode="numeric" autocomplete="tel" placeholder="263781330745" maxlength="15" pattern="[0-9]{10,15}" required>
             <i class="fas fa-phone input-icon"></i>
           </div>
-
-          <div class="hint">
-            <i class="fas fa-lightbulb"></i>
-            Use international format without + or spaces
-          </div>
+          <div class="hint"><i class="fas fa-lightbulb"></i>Use international format without + or spaces • e.g. 263781330745</div>
         </div>
-
-        <button
-          type="submit"
-          class="btn btn-generate"
-          id="generateBtn"
-        >
-          <i class="fas fa-key"></i>
-          Generate Pairing Code
-        </button>
-
-        <div class="loading" id="loading">
-          <div class="spinner"></div>
-          <p class="loading-text">
-            Connecting to WhatsApp... Please wait
-          </p>
-        </div>
-
-        <div class="code-box" id="codeBox">
-          <div class="code-placeholder">
-            Your pairing code will appear here
-          </div>
-        </div>
-
-        <button
-          type="button"
-          class="btn btn-copy"
-          id="copyBtn"
-        >
-          <i class="fas fa-copy"></i>
-          Copy Pairing Code
-        </button>
-
+        <button type="submit" class="btn btn-generate" id="generateBtn"><i class="fas fa-key"></i>Generate Pairing Code</button>
+        <div class="loading" id="loading"><div class="spinner"></div><p class="loading-text">Connecting to WhatsApp... Please wait</p></div>
+        <div class="code-box" id="codeBox"><div class="code-placeholder">Your pairing code will appear here</div></div>
+        <button type="button" class="btn btn-copy" id="copyBtn"><i class="fas fa-copy"></i>Copy Pairing Code</button>
         <div class="instructions" id="instructions">
-          <div class="instructions-title">
-            <i class="fab fa-whatsapp"></i>
-            How to link
-          </div>
-
+          <div class="instructions-title"><i class="fab fa-whatsapp"></i> How to link</div>
           <ol>
             <li>Open WhatsApp on your phone.</li>
             <li>Go to <b>Settings → Linked devices</b>.</li>
@@ -740,318 +136,122 @@
             <li>Wait for WhatsApp to complete the connection.</li>
           </ol>
         </div>
-
       </form>
-
       <footer class="footer">
-        <p class="footer-text">
-          © 2026 ALEXA-MIN BOT · MADE WITH ❤️ BY WATSON-XD
-          · <a href="/" class="footer-link">Home</a>
+        <p class="footer-text">© 2026 ALEXA-MIN BOT · MADE WITH ❤️ BY WATSON-XD<br>
+          <a href="/" class="footer-link">Home</a> • <a href="https://wa.me/263781330745" class="footer-link">WhatsApp</a> • <a href="mailto:fourpencewatson7@gmail.com" class="footer-link">Email</a><br>
+          <span style="color:rgba(255,255,255,0.2)">Dev: Watson Fourpence • 263781330745 • Harare, ZW</span>
         </p>
       </footer>
-
     </section>
+
+    <!-- NEW: CHANNEL + GROUP + DONATE + CONTACT -->
+    <div class="extra-grid">
+      <div class="extra-card"><div class="extra-icon channel"><i class="fab fa-whatsapp"></i></div><div class="extra-text"><b>WhatsApp Channel</b><span>12.5k+ members • Updates & Releases</span></div><a href="https://whatsapp.com/channel/0029VbDTiJkC6Zvm9MZaKs3j" target="_blank" class="btn-channel">Join</a></div>
+      <div class="extra-card"><div class="extra-icon group"><i class="fas fa-users"></i></div><div class="extra-text"><b>Support Group</b><span>8.2k+ members • Help & Requests</span></div><a href="https://chat.whatsapp.com/FK2HSe9McfzD8QAFKyLA1W" target="_blank" class="btn-group">Join</a></div>
+      <div class="donate-mini"><div class="extra-icon donate"><i class="fas fa-heart"></i></div><div class="extra-text"><b>Support Project ❤️</b><span>EcoCash: 263781330745 • PayPal: paypal.me/watsonfourpence</span></div><a href="#" onclick="event.preventDefault();copyEco();return false;" style="padding:8px 14px;border-radius:20px;background:#fbbf24;color:#000;font-size:11px;font-weight:700;text-decoration:none">Copy</a></div>
+      <div class="extra-card"><div class="extra-icon contact"><i class="fas fa-envelope"></i></div><div class="extra-text"><b>fourpencewatson7@gmail.com</b><span>Collab / Hire Me • Avg reply 12 min</span></div><a href="https://wa.me/263781330745?text=Hi%20Watson%2C%20I%20need%20ALEXA-MIN%20help" target="_blank" class="btn-contact">Chat</a></div>
+    </div>
   </main>
-
-  <div class="toast" id="toast">
-    <i class="fas fa-check-circle"></i>
-    <span></span>
-  </div>
-
+  <div class="toast" id="toast"><i class="fas fa-check-circle"></i><span></span></div>
   <script>
-    const phoneInput = document.getElementById('phoneNumber');
-    const generateBtn = document.getElementById('generateBtn');
-    const loading = document.getElementById('loading');
-    const codeBox = document.getElementById('codeBox');
-    const copyBtn = document.getElementById('copyBtn');
-    const toast = document.getElementById('toast');
-    const toastText = toast.querySelector('span');
-    const toastIcon = toast.querySelector('i');
-    const form = document.getElementById('pairForm');
-    const instructions = document.getElementById('instructions');
-
-    let currentCode = null;
-    let toastTimer = null;
-
-    function showToast(message, isError = false) {
+    const phoneInput=document.getElementById('phoneNumber');
+    const generateBtn=document.getElementById('generateBtn');
+    const loading=document.getElementById('loading');
+    const codeBox=document.getElementById('codeBox');
+    const copyBtn=document.getElementById('copyBtn');
+    const toast=document.getElementById('toast');
+    const toastText=toast.querySelector('span');
+    const toastIcon=toast.querySelector('i');
+    const form=document.getElementById('pairForm');
+    const instructions=document.getElementById('instructions');
+    let currentCode=null;let toastTimer=null;
+    // LIVE UPTIME
+    const startDate=new Date('2024-06-01T00:00:00Z');
+    function updateUptime(){
+      const diff=Date.now()-startDate;
+      const d=Math.floor(diff/86400000),h=Math.floor(diff%86400000/3600000),m=Math.floor(diff%3600000/60000),s=Math.floor(diff%60000/1000);
+      document.getElementById('liveTimer').textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      document.getElementById('upDays').textContent=d;
+    }
+    setInterval(updateUptime,1000);updateUptime();
+    function showToast(message,isError=false){
       clearTimeout(toastTimer);
-
-      toastText.textContent = message;
-      toastIcon.className = isError
-        ? 'fas fa-exclamation-circle'
-        : 'fas fa-check-circle';
-
-      toast.className = isError
-        ? 'toast error show'
-        : 'toast show';
-
-      toastTimer = setTimeout(() => {
-        toast.classList.remove('show');
-      }, 4000);
+      toastText.textContent=message;
+      toastIcon.className=isError?'fas fa-exclamation-circle':'fas fa-check-circle';
+      toast.className=isError?'toast error show':'toast show';
+      toastTimer=setTimeout(()=>{toast.classList.remove('show')},4000);
     }
-
-    function cleanNumber(number) {
-      return number.replace(/\D/g, '');
+    function copyEco(){navigator.clipboard.writeText('263781330745').then(()=>showToast('EcoCash copied: 263781330745')).catch(()=>showToast('EcoCash: 263781330745'));}
+    function cleanNumber(n){return n.replace(/\\D/g,'');}
+    function validatePhone(n){const c=cleanNumber(n);return /^\\d{10,15}$/.test(c);}
+    function showError(msg){
+      currentCode=null;codeBox.className='code-box has-error';codeBox.innerHTML='';
+      const error=document.createElement('div');error.className='error-value';
+      const icon=document.createElement('i');icon.className='fas fa-exclamation-circle';
+      const text=document.createElement('span');text.textContent=msg;
+      error.appendChild(icon);error.appendChild(text);codeBox.appendChild(error);
+      copyBtn.style.display='none';instructions.classList.remove('show');
     }
-
-    function validatePhone(number) {
-      const cleaned = cleanNumber(number);
-      return /^\d{10,15}$/.test(cleaned);
+    function showCode(code){
+      if(!code){showError('No pairing code was returned.');return;}
+      currentCode=String(code).trim();
+      codeBox.className='code-box has-code';codeBox.innerHTML='';
+      const value=document.createElement('div');value.className='code-value';
+      const icon=document.createElement('i');icon.className='fas fa-circle-check';
+      const text=document.createElement('span');text.textContent=currentCode;
+      value.appendChild(icon);value.appendChild(text);codeBox.appendChild(value);
+      copyBtn.style.display='flex';instructions.classList.add('show');
     }
-
-    function showError(message) {
-      currentCode = null;
-
-      codeBox.className = 'code-box has-error';
-
-      codeBox.innerHTML = '';
-
-      const error = document.createElement('div');
-      error.className = 'error-value';
-
-      const icon = document.createElement('i');
-      icon.className = 'fas fa-exclamation-circle';
-
-      const text = document.createElement('span');
-      text.textContent = message;
-
-      error.appendChild(icon);
-      error.appendChild(text);
-      codeBox.appendChild(error);
-
-      copyBtn.style.display = 'none';
-      instructions.classList.remove('show');
+    function resetCodeBox(){
+      currentCode=null;codeBox.className='code-box';
+      codeBox.innerHTML='<div class="code-placeholder">Your pairing code will appear here</div>';
+      copyBtn.style.display='none';instructions.classList.remove('show');
     }
-
-    function showCode(code) {
-      if (!code) {
-        showError('No pairing code was returned by the server.');
-        return;
-      }
-
-      currentCode = String(code).trim();
-
-      codeBox.className = 'code-box has-code';
-
-      codeBox.innerHTML = '';
-
-      const value = document.createElement('div');
-      value.className = 'code-value';
-
-      const icon = document.createElement('i');
-      icon.className = 'fas fa-circle-check';
-
-      const text = document.createElement('span');
-      text.textContent = currentCode;
-
-      value.appendChild(icon);
-      value.appendChild(text);
-      codeBox.appendChild(value);
-
-      copyBtn.style.display = 'flex';
-      instructions.classList.add('show');
-    }
-
-    function resetCodeBox() {
-      currentCode = null;
-
-      codeBox.className = 'code-box';
-
-      codeBox.innerHTML =
-        '<div class="code-placeholder">Your pairing code will appear here</div>';
-
-      copyBtn.style.display = 'none';
-      instructions.classList.remove('show');
-    }
-
-    async function generatePairCode(event) {
-      event.preventDefault();
-
-      const clean = cleanNumber(phoneInput.value);
-
-      if (!clean) {
-        showError('Please enter your WhatsApp number.');
-        showToast('Phone number is required.', true);
-        return;
-      }
-
-      if (!validatePhone(clean)) {
-        showError('Enter 10–15 digits including your country code.');
-        showToast('Invalid phone number.', true);
-        return;
-      }
-
-      generateBtn.disabled = true;
-      generateBtn.innerHTML =
-        '<i class="fas fa-spinner fa-spin"></i> Connecting...';
-
-      loading.style.display = 'block';
-      resetCodeBox();
-
-      let timeoutId;
-
-      try {
-        const controller = new AbortController();
-
-        timeoutId = setTimeout(() => {
-          controller.abort();
-        }, 60000);
-
-        const response = await fetch(
-          `/code?number=${encodeURIComponent(clean)}`,
-          {
-            method: 'GET',
-            signal: controller.signal,
-            headers: {
-              'Accept': 'application/json'
-            },
-            cache: 'no-store'
-          }
-        );
-
+    async function generatePairCode(e){
+      e.preventDefault();
+      const clean=cleanNumber(phoneInput.value);
+      if(!clean){showError('Please enter your WhatsApp number.');showToast('Phone number required',true);return;}
+      if(!validatePhone(clean)){showError('Enter 10-15 digits including country code.');showToast('Invalid number',true);return;}
+      generateBtn.disabled=true;generateBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Connecting...';
+      loading.style.display='block';resetCodeBox();let timeoutId;
+      try{
+        const controller=new AbortController();
+        timeoutId=setTimeout(()=>controller.abort(),60000);
+        const response=await fetch(`/code?number=${encodeURIComponent(clean)}`,{method:'GET',signal:controller.signal,headers:{'Accept':'application/json'},cache:'no-store'});
         clearTimeout(timeoutId);
-
-        const text = await response.text();
-
-        let data;
-
-        try {
-          data = JSON.parse(text);
-        } catch {
-          throw new Error(
-            text.substring(0, 200) ||
-            'The server returned an invalid response.'
-          );
-        }
-
-        if (!response.ok) {
-          throw new Error(
-            data.error ||
-            data.message ||
-            `Server error (${response.status})`
-          );
-        }
-
-        const returnedCode =
-          data.code ||
-          data.pairingCode ||
-          data.pairCode;
-
-        if (
-          returnedCode &&
-          returnedCode !== 'Service Unavailable' &&
-          returnedCode !== 'service_unavailable'
-        ) {
-          showCode(returnedCode);
-          showToast('Pairing code generated.');
-        } else {
-          throw new Error(
-            data.error ||
-            data.message ||
-            'The server did not return a valid pairing code.'
-          );
-        }
-
-      } catch (error) {
-        console.error('Pairing request failed:', error);
-
-        if (error.name === 'AbortError') {
-          showError(
-            'The server took too long to respond. Please try again.'
-          );
-
-          showToast('Request timed out.', true);
-        } else {
-          showError(
-            error.message ||
-            'Failed to generate the pairing code.'
-          );
-
-          showToast(
-            error.message ||
-            'Pairing request failed.',
-            true
-          );
-        }
-
-      } finally {
-        clearTimeout(timeoutId);
-
-        generateBtn.disabled = false;
-
-        generateBtn.innerHTML =
-          '<i class="fas fa-key"></i> Generate Pairing Code';
-
-        loading.style.display = 'none';
+        const text=await response.text();let data;
+        try{data=JSON.parse(text);}catch{throw new Error(text.substring(0,200)||'Invalid server response');}
+        if(!response.ok)throw new Error(data.error||data.message||`Server error (${response.status})`);
+        const returnedCode=data.code||data.pairingCode||data.pairCode;
+        if(returnedCode && returnedCode!=='Service Unavailable' && returnedCode!=='service_unavailable'){showCode(returnedCode);showToast('Pairing code generated.');}
+        else throw new Error(data.error||data.message||'No valid code returned');
+      }catch(error){
+        console.error(error);
+        if(error.name==='AbortError'){showError('Server took too long. Try again.');showToast('Request timed out',true);}
+        else{showError(error.message||'Failed to generate code.');showToast(error.message||'Request failed',true);}
+      }finally{
+        clearTimeout(timeoutId);generateBtn.disabled=false;
+        generateBtn.innerHTML='<i class="fas fa-key"></i>Generate Pairing Code';loading.style.display='none';
       }
     }
-
-    async function copyCode() {
-      if (!currentCode) {
-        showToast('There is no pairing code to copy.', true);
-        return;
-      }
-
-      try {
+    async function copyCode(){
+      if(!currentCode){showToast('No code to copy',true);return;}
+      try{
         await navigator.clipboard.writeText(currentCode);
-
-        const original = copyBtn.innerHTML;
-
-        copyBtn.innerHTML =
-          '<i class="fas fa-check"></i> Copied!';
-
-        copyBtn.disabled = true;
-
-        showToast('Pairing code copied.');
-
-        setTimeout(() => {
-          copyBtn.innerHTML = original;
-          copyBtn.disabled = false;
-        }, 2000);
-
-      } catch (error) {
-        const area = document.createElement('textarea');
-
-        area.value = currentCode;
-        area.style.position = 'fixed';
-        area.style.opacity = '0';
-
-        document.body.appendChild(area);
-        area.focus();
-        area.select();
-
-        try {
-          document.execCommand('copy');
-          showToast('Pairing code copied.');
-        } catch {
-          showToast(
-            'Copy failed. Please select the code manually.',
-            true
-          );
-        }
-
+        const orig=copyBtn.innerHTML;copyBtn.innerHTML='<i class="fas fa-check"></i> Copied!';copyBtn.disabled=true;showToast('Code copied.');
+        setTimeout(()=>{copyBtn.innerHTML=orig;copyBtn.disabled=false;},2000);
+      }catch{
+        const area=document.createElement('textarea');area.value=currentCode;area.style.position='fixed';area.style.opacity='0';
+        document.body.appendChild(area);area.focus();area.select();
+        try{document.execCommand('copy');showToast('Code copied.');}catch{showToast('Copy failed, select manually',true);}
         document.body.removeChild(area);
       }
     }
-
-    form.addEventListener('submit', generatePairCode);
-
-    copyBtn.addEventListener('click', copyCode);
-
-    phoneInput.addEventListener('input', () => {
-      phoneInput.value = cleanNumber(phoneInput.value);
-
-      if (phoneInput.value.length > 15) {
-        phoneInput.value = phoneInput.value.substring(0, 15);
-      }
-    });
-
-    phoneInput.addEventListener('focus', () => {
-      if (codeBox.classList.contains('has-error')) {
-        resetCodeBox();
-      }
-    });
+    form.addEventListener('submit',generatePairCode);
+    copyBtn.addEventListener('click',copyCode);
+    phoneInput.addEventListener('input',()=>{phoneInput.value=cleanNumber(phoneInput.value);if(phoneInput.value.length>15)phoneInput.value=phoneInput.value.substring(0,15);});
+    phoneInput.addEventListener('focus',()=>{if(codeBox.classList.contains('has-error'))resetCodeBox();});
   </script>
-
-</body>
-  </html>
+<script>(function(){var loc=location.href.replace(/#.*$/,"");var ATTR_NAMES=["data-product-id","data-productid","data-product_id","product-id","productid","product_id","data-source-entity-id","source-entity-id","source_entity_id","data-product","data-metadata","data-meta"];var DATASET_KEYS=["productId","productid","product_id","sourceEntityId","sourceentityid","source_entity_id","product","metadata","meta"];function readProductId(value){if(typeof value!=="string"||value.length===0)return null;if(/^[0-9]{6,}$/.test(value))return value;var match=value.match(/(?:product(?:_|-)?id|source(?:_|-)?entity(?:_|-)?id)["'=:\s]+([0-9]{6,})/i);return match?match[1]:null}function extractProductId(start){for(var node=start;node&&node!==document.body;node=node.parentElement){for(var i=0;i<ATTR_NAMES.length;i++){var attrValue=node.getAttribute&&node.getAttribute(ATTR_NAMES[i]);var attrProductId=readProductId(attrValue);if(attrProductId)return attrProductId}var dataset=node.dataset||null;if(dataset){for(var j=0;j<DATASET_KEYS.length;j++){var dataValue=dataset[DATASET_KEYS[j]];var dataProductId=readProductId(dataValue);if(dataProductId)return dataProductId}}}return null}function isInlineMediaSlotElement(node){return !!(node&&node.getAttribute&&node.getAttribute("data-clippy-inline-media-slot")!==null)}function findInlineMediaSlot(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(isInlineMediaSlotElement(node))return node}return null}function readInlineMediaUrl(node){if(!node)return null;return node.getAttribute&&((node.getAttribute("data-clippy-inline-media-url")||node.getAttribute("data-url")||node.getAttribute("data_url")))||node.href||null}function stripHash(url){return String(url).replace(/#.*$/,"")}function urlsMatch(a,b){if(!a||!b)return false;try{return stripHash(new URL(a,loc).href)===stripHash(new URL(b,loc).href)}catch(_){return stripHash(a)===stripHash(b)}}function isFirstPartyReelUrl(value){try{var url=new URL(value,loc);if(url.protocol!=="https:")return false;var host=url.hostname.toLowerCase();var supported=host==="instagram.com"||host.endsWith(".instagram.com")||host==="facebook.com"||host.endsWith(".facebook.com");return supported&&/\/reels?\//i.test(url.pathname)}catch(_){return false}}function isInlineMediaUrlClick(node,href){var slot=findInlineMediaSlot(node);if(!slot)return false;var slotUrl=readInlineMediaUrl(slot);if(slotUrl)return urlsMatch(href,slotUrl);return isFirstPartyReelUrl(href)}function findDataHref(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(node.getAttribute){var href=node.getAttribute("data-href")||node.getAttribute("data-url");if(href)return{href:href,node:node}}}return null}var nativeOpen=window.open;window.open=function(url){if(parent!==window&&typeof url==="string"&&/^https?:\/\//.test(url)){parent.postMessage({type:"ecto:usercontent-link-click",href:url},"*");return null}return nativeOpen?nativeOpen.apply(window,arguments):null};document.addEventListener("click",function(e){var target=e.target instanceof Element?e.target:null;if(!target)return;if(parent===window)return;var a=target.closest?target.closest("a[href]"):null;if(a&&a.href&&/^https?:\/\//.test(a.href)&&a.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(a,a.href))return;var productId=extractProductId(target)||extractProductId(a);if(productId){e.preventDefault();parent.postMessage({type:"ecto-artifact-link-click",productId:productId},"*");return}e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:a.href},"*");return}var dataHref=findDataHref(target);if(dataHref&&/^https?:\/\//.test(dataHref.href)&&dataHref.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(dataHref.node,dataHref.href))return;e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:dataHref.href},"*")}},true)})();</script><script>(function(){var FOCUS_TYPE="ecto:artifact-focus-request";var CLOSE_TYPE="ecto:artifact-close-request";function focusArtifactDocument(){var body=document.body;if(!body)return;try{window.focus();}catch(e){}if(!body.hasAttribute("tabindex"))body.setAttribute("tabindex","-1");try{body.focus({preventScroll:true});}catch(e){try{body.focus();}catch(e2){}}}window.addEventListener("message",function(event){if(event.source!==window.parent)return;var data=event.data;if(!data||typeof data!=="object"||data.type!==FOCUS_TYPE)return;if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",focusArtifactDocument,{once:true});return;}focusArtifactDocument();});window.addEventListener("keydown",function(event){if(event.key!=="Escape")return;window.setTimeout(function(){if(event.defaultPrevented)return;window.parent.postMessage({type:CLOSE_TYPE},"*");},0);});})();</script></body>
+</html>
