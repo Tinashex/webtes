@@ -1,0 +1,44 @@
+{
+  "name": "ALEXA-MIN",
+  "version": "1.0.0",
+  "description": "alexamin-md WhatsApp Bot",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.18",
+    "express": "^4.18.2",
+    "fs-extra": "^11.3.0",
+    "node-fetch": "^3.3.2",
+    "pino": "^8.19.0",
+    "jimp": "^0.22.12",
+    "@octokit/rest": "^20.0.2",
+    "@dark-yasiya/yt-dl.js": "1.0.5",
+    "denethdev-ytmp3": "1.0.3",
+    "yt-search": "2.12.1",
+    "axios": "^1.7.7",
+    "moment-timezone": "^0.5.45",
+    "cheerio": "^1.0.2",
+    "wa-sticker-formatter": "^4.4.4",
+    "form-data": "^4.0.2",
+    "node-webpmux": "^3.2.1",
+    "qrcode": "^1.5.3",
+    "file-type": "^16.5.4",
+    "body-parser": "^1.20.2"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=9.x"
+  },
+  "keywords": [
+    "whatsapp",
+    "ALEXA-MIN",
+    "multi-device",
+    "baileys",
+    "alexamin"
+  ],
+  "author": "watsonx",
+  "license": "MIT"
+}
