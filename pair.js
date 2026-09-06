@@ -4477,19 +4477,22 @@ case 'ytvideo': {
     break;
 }
 case 'video': {
-    if (!args.length) {
-        return await socket.sendMessage(sender, {
-            text:
+    try {
+        // Make absolutely sure query is a STRING
+        const query = Array.isArray(args)
+            ? args.join(' ').trim()
+            : String(args || '').trim();
+
+        if (!query) {
+            return await socket.sendMessage(sender, {
+                text:
 `❌ *Please enter a video name.*
 
 📌 *Example:*
-${prefix || '.'}video chill`
-        }, { quoted: msg });
-    }
+${config?.PREFIX || '.'}video chill`
+            }, { quoted: msg });
+        }
 
-    const query = args.join(' ').trim();
-
-    try {
         await socket.sendMessage(sender, {
             text:
 `🔎 *Searching video...*
@@ -4497,10 +4500,25 @@ ${prefix || '.'}video chill`
 🎬 ${query}`
         }, { quoted: msg });
 
-        // Search YouTube
-        const search = await yts(query);
+        // Load yt-search safely
+        const ytSearch = require('yt-search');
 
-        if (!search?.videos?.length) {
+        // Make sure the imported module is callable
+        const searchFunction =
+            typeof ytSearch === 'function'
+                ? ytSearch
+                : ytSearch.default;
+
+        if (typeof searchFunction !== 'function') {
+            throw new Error(
+                'yt-search is not loaded correctly. Run: npm install yt-search'
+            );
+        }
+
+        // Search YouTube
+        const search = await searchFunction(String(query));
+
+        if (!search || !Array.isArray(search.videos) || !search.videos.length) {
             return await socket.sendMessage(sender, {
                 text: `❌ *No videos found for:* ${query}`
             }, { quoted: msg });
@@ -4508,35 +4526,50 @@ ${prefix || '.'}video chill`
 
         const video = search.videos[0];
 
-        const cleanTitle =
-            video.title
-                ?.replace(/[\\/:*?"<>|]/g, '')
-                .slice(0, 100) ||
-            'youtube-video';
+        if (!video || !video.url) {
+            throw new Error('YouTube search returned an invalid video.');
+        }
+
+        // SAFELY convert title to string
+        const title = String(video.title || 'YouTube Video');
+
+        const cleanTitle = title
+            .replace(/[\\/:*?"<>|]/g, '')
+            .trim()
+            .slice(0, 100) || 'youtube-video';
+
+        const channel = String(
+            video.author?.name || 'Unknown'
+        );
+
+        const duration = String(
+            video.timestamp || 'Unknown'
+        );
+
+        const views =
+            typeof video.views === 'number'
+                ? video.views.toLocaleString()
+                : String(video.views || 'Unknown');
 
         const caption =
 `🎬 *YOUTUBE VIDEO*
 
-📌 *Title:* ${video.title || 'Unknown'}
-👤 *Channel:* ${video.author?.name || 'Unknown'}
-⏱️ *Duration:* ${video.timestamp || 'Unknown'}
-👁️ *Views:* ${
-    typeof video.views === 'number'
-        ? video.views.toLocaleString()
-        : 'Unknown'
-}
+📌 *Title:* ${title}
+👤 *Channel:* ${channel}
+⏱️ *Duration:* ${duration}
+👁️ *Views:* ${views}
 
 🔗 ${video.url}
 
 ⏳ *Downloading video...*`;
 
-        // Send thumbnail
+        // Send thumbnail first
         if (video.thumbnail) {
             await socket.sendMessage(sender, {
                 image: {
                     url: video.thumbnail
                 },
-                caption
+                caption: caption
             }, { quoted: msg });
         } else {
             await socket.sendMessage(sender, {
@@ -4544,9 +4577,14 @@ ${prefix || '.'}video chill`
             }, { quoted: msg });
         }
 
-        // Download API
+        // =========================
+        // YOUTUBE MP4 API
+        // =========================
+
         const apiUrl =
             `https://eliteprotech-apis.zone.id/ytmp4?url=${encodeURIComponent(video.url)}`;
+
+        console.log('YTMP4 REQUEST:', apiUrl);
 
         const response = await axios.get(apiUrl, {
             timeout: 120000,
@@ -4562,29 +4600,57 @@ ${prefix || '.'}video chill`
 
         const body = response.data;
 
-        const data =
-            body?.result ||
-            body?.data ||
-            body?.download ||
-            body;
+        // Handle different API response formats
+        let downloadUrl = null;
 
-        const downloadUrl =
-            typeof data === 'string'
-                ? data
-                : data?.downloadUrl ||
-                  data?.download_url ||
-                  data?.url ||
-                  data?.videoUrl ||
-                  data?.video_url ||
-                  data?.link;
+        if (typeof body === 'string') {
+            downloadUrl = body;
+        }
+
+        if (!downloadUrl && body?.url) {
+            downloadUrl = body.url;
+        }
+
+        if (!downloadUrl && body?.download) {
+            downloadUrl =
+                typeof body.download === 'string'
+                    ? body.download
+                    : body.download?.url ||
+                      body.download?.downloadUrl;
+        }
+
+        if (!downloadUrl && body?.result) {
+            downloadUrl =
+                typeof body.result === 'string'
+                    ? body.result
+                    : body.result?.url ||
+                      body.result?.downloadUrl ||
+                      body.result?.download_url ||
+                      body.result?.videoUrl;
+        }
+
+        if (!downloadUrl && body?.data) {
+            downloadUrl =
+                typeof body.data === 'string'
+                    ? body.data
+                    : body.data?.url ||
+                      body.data?.downloadUrl ||
+                      body.data?.download_url ||
+                      body.data?.videoUrl;
+        }
 
         if (
             !downloadUrl ||
             typeof downloadUrl !== 'string' ||
             !/^https?:\/\//i.test(downloadUrl)
         ) {
+            console.error(
+                'INVALID YTMP4 RESPONSE:',
+                body
+            );
+
             throw new Error(
-                'YTMP4 API did not return a valid video URL.'
+                'YTMP4 API did not return a valid video download URL.'
             );
         }
 
@@ -4593,7 +4659,10 @@ ${prefix || '.'}video chill`
             downloadUrl
         );
 
-        // Send video
+        // =========================
+        // SEND VIDEO
+        // =========================
+
         await socket.sendMessage(sender, {
             video: {
                 url: downloadUrl
@@ -4601,17 +4670,24 @@ ${prefix || '.'}video chill`
             mimetype: 'video/mp4',
             fileName: `${cleanTitle}.mp4`,
             caption:
-`🎬 *${video.title}*
+`🎬 *${title}*
 
 ✅ *VIDEO DOWNLOADED*
 
 > ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ`
         }, { quoted: msg });
 
+        await socket.sendMessage(sender, {
+            react: {
+                text: '✅',
+                key: msg.key
+            }
+        });
+
     } catch (error) {
         console.error(
             'VIDEO ERROR:',
-            error.response?.data || error.message
+            error.stack || error
         );
 
         await socket.sendMessage(sender, {
