@@ -1542,117 +1542,139 @@ ${e.message || 'Something went wrong.'}`
 case 'pinterest':
 case 'pin':
 case 'pinterestimg': {
-const axios = require('axios');
+    const axios = require('axios');
 
-try {
-    if (!args.length) {
-        return await socket.sendMessage(sender, {
-            text: `📌 *Usage:*\n${config?.PREFIX || '.'}pinterest <search query>\n\n📸 *Example:*\n${config?.PREFIX || '.'}pinterest cat`
-        }, { quoted: msg });
-    }
+    try {
+        if (!args.length) {
+            return await socket.sendMessage(sender, {
+                text:
+`📌 *Usage:*
+${config?.PREFIX || '.'}pinterest <search query>
 
-    const query = args.join(' ').trim();
-
-    await socket.sendMessage(sender, {
-        react: { text: '📌', key: msg.key }
-    });
-
-    await socket.sendMessage(sender, {
-        text: `📌 *Searching Pinterest for:* ${query}`
-    }, { quoted: msg });
-
-    const apiUrl =
-        `https://api.siputzx.my.id/api/s/pinterest?query=${encodeURIComponent(query)}&type=image`;
-
-    const response = await axios.get(apiUrl, {
-        timeout: 30000,
-        headers: {
-            'User-Agent': 'Mozilla/5.0'
-        }
-    });
-
-    console.log('PINTEREST RESPONSE:', response.data);
-
-    const data = response.data;
-
-    if (!data?.status || !Array.isArray(data?.data) || !data.data.length) {
-        return await socket.sendMessage(sender, {
-            text: `❌ No Pinterest images found for: *${query}*`
-        }, { quoted: msg });
-    }
-
-    const results = data.data;
-    const maxResults = Math.min(results.length, 5);
-
-    let sent = 0;
-
-    for (let i = 0; i < maxResults; i++) {
-        const item = results[i];
-
-        const imageUrl =
-            typeof item === 'string'
-                ? item
-                : item?.url ||
-                  item?.image ||
-                  item?.imageUrl ||
-                  item?.download ||
-                  item?.src ||
-                  item?.thumbnail;
-
-        if (!imageUrl || !imageUrl.startsWith('http')) {
-            continue;
+📸 *Example:*
+${config?.PREFIX || '.'}pinterest cat`
+            }, { quoted: msg });
         }
 
-        try {
-            await socket.sendMessage(sender, {
-                image: { url: imageUrl },
-                caption:
+        const query = args.join(' ').trim();
 
-`📌 PINTEREST SEARCH
+        await socket.sendMessage(sender, {
+            react: {
+                text: '📌',
+                key: msg.key
+            }
+        });
 
-🔎 Query: ${query}
-📸 Result: ${sent + 1}/${maxResults}
-
-«ALEXA-MIN`
-}, { quoted: msg });»
-
-            sent++;
-
-        } catch (err) {
-            console.log(
-                `Pinterest image ${i + 1} failed:`,
-                err.message
-            );
-        }
-    }
-
-    if (!sent) {
-        return await socket.sendMessage(sender, {
-            text: '❌ Pinterest returned results, but I could not send any of the images.'
+        await socket.sendMessage(sender, {
+            text: `📌 *Searching Pinterest for:* ${query}`
         }, { quoted: msg });
-    }
 
-    await socket.sendMessage(sender, {
-        react: { text: '✅', key: msg.key }
-    });
+        const apiUrl =
+            `https://api.siputzx.my.id/api/s/pinterest?query=${encodeURIComponent(query)}&type=image`;
 
-} catch (e) {
-    console.error(
-        'PINTEREST ERROR:',
-        e.response?.data || e.message
-    );
+        const response = await axios.get(apiUrl, {
+            timeout: 30000,
+            headers: {
+                'User-Agent': 'Mozilla/5.0'
+            }
+        });
 
-    await socket.sendMessage(sender, {
-        text:
+        console.log(
+            'PINTEREST RESPONSE:',
+            JSON.stringify(response.data, null, 2)
+        );
 
-`❌ Pinterest Error:
+        const data = response.data;
+
+        if (
+            !data ||
+            !Array.isArray(data.data) ||
+            data.data.length === 0
+        ) {
+            return await socket.sendMessage(sender, {
+                text:
+                    `❌ *No Pinterest images found for:* ${query}`
+            }, { quoted: msg });
+        }
+
+        const results = data.data;
+        const maxResults = Math.min(results.length, 5);
+
+        let sent = 0;
+
+        for (let i = 0; i < maxResults; i++) {
+            const item = results[i];
+
+            const imageUrl =
+                typeof item === 'string'
+                    ? item
+                    : item?.url ||
+                      item?.image ||
+                      item?.imageUrl ||
+                      item?.download ||
+                      item?.src ||
+                      item?.thumbnail;
+
+            if (
+                !imageUrl ||
+                !/^https?:\/\//i.test(imageUrl)
+            ) {
+                continue;
+            }
+
+            try {
+                await socket.sendMessage(sender, {
+                    image: {
+                        url: imageUrl
+                    },
+                    caption:
+`📌 *PINTEREST SEARCH*
+
+🔎 *Query:* ${query}
+📸 *Result:* ${sent + 1}/${maxResults}
+
+> ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ`
+                }, { quoted: msg });
+
+                sent++;
+
+            } catch (err) {
+                console.log(
+                    `Pinterest image ${i + 1} failed:`,
+                    err.message
+                );
+            }
+        }
+
+        if (sent === 0) {
+            return await socket.sendMessage(sender, {
+                text:
+                    '❌ Pinterest returned results, but I could not send any images.'
+            }, { quoted: msg });
+        }
+
+        await socket.sendMessage(sender, {
+            react: {
+                text: '✅',
+                key: msg.key
+            }
+        });
+
+    } catch (e) {
+        console.error(
+            'PINTEREST ERROR:',
+            e.response?.data || e.message
+        );
+
+        await socket.sendMessage(sender, {
+            text:
+`❌ *Pinterest Error:*
 
 ${e.message || 'Something went wrong.'}`
-}, { quoted: msg });
-}
+        }, { quoted: msg });
+    }
 
-break;
-
+    break;
 }
 case 'blur':
 case 'imageblur': {
@@ -4457,158 +4479,152 @@ case 'ytvideo': {
     break;
 }
 case 'video': {
-if (!args.length) {
-return await socket.sendMessage(sender, {
-text:
-`❌ Please enter a video name.
-
-📌 Example:
-${prefix || '.'}video chill`
-}, { quoted: msg });
-}
-
-const query = args.join(' ').trim();
-
-try {
-    await socket.sendMessage(sender, {
-        text:
-
-`🔎 Searching video...
-
-🎬 ${query}`
-}, { quoted: msg });
-
-    // Search YouTube
-    const search = await yts(query);
-
-    if (!search?.videos?.length) {
+    if (!args.length) {
         return await socket.sendMessage(sender, {
-            text: `❌ *No videos found for:* ${query}`
+            text:
+`❌ *Please enter a video name.*
+
+📌 *Example:*
+${prefix || '.'}video chill`
         }, { quoted: msg });
     }
 
-    const video = search.videos[0];
+    const query = args.join(' ').trim();
 
-    const cleanTitle =
-        video.title
-            ?.replace(/[\\/:*?"<>|]/g, '')
-            .slice(0, 100) ||
-        'youtube-video';
+    try {
+        await socket.sendMessage(sender, {
+            text:
+`🔎 *Searching video...*
 
-    const caption =
+🎬 ${query}`
+        }, { quoted: msg });
 
-`🎬 YOUTUBE VIDEO
+        // Search YouTube
+        const search = await yts(query);
 
-📌 Title: ${video.title || 'Unknown'}
-👤 Channel: ${video.author?.name || 'Unknown'}
-⏱️ Duration: ${video.timestamp || 'Unknown'}
-👁️ Views: ${
-typeof video.views === 'number'
-? video.views.toLocaleString()
-: 'Unknown'
+        if (!search?.videos?.length) {
+            return await socket.sendMessage(sender, {
+                text: `❌ *No videos found for:* ${query}`
+            }, { quoted: msg });
+        }
+
+        const video = search.videos[0];
+
+        const cleanTitle =
+            video.title
+                ?.replace(/[\\/:*?"<>|]/g, '')
+                .slice(0, 100) ||
+            'youtube-video';
+
+        const caption =
+`🎬 *YOUTUBE VIDEO*
+
+📌 *Title:* ${video.title || 'Unknown'}
+👤 *Channel:* ${video.author?.name || 'Unknown'}
+⏱️ *Duration:* ${video.timestamp || 'Unknown'}
+👁️ *Views:* ${
+    typeof video.views === 'number'
+        ? video.views.toLocaleString()
+        : 'Unknown'
 }
 
 🔗 ${video.url}
 
-⏳ Downloading video...`;
+⏳ *Downloading video...*`;
 
-    // Send thumbnail
-    if (video.thumbnail) {
-        await socket.sendMessage(sender, {
-            image: {
-                url: video.thumbnail
-            },
-            caption
-        }, { quoted: msg });
-    } else {
-        await socket.sendMessage(sender, {
-            text: caption
-        }, { quoted: msg });
-    }
-
-    // Download API
-    const apiUrl =
-        `https://eliteprotech-apis.zone.id/ytmp4?url=${encodeURIComponent(video.url)}`;
-
-    const response = await axios.get(apiUrl, {
-        timeout: 120000,
-        headers: {
-            'User-Agent': 'Mozilla/5.0'
+        // Send thumbnail
+        if (video.thumbnail) {
+            await socket.sendMessage(sender, {
+                image: {
+                    url: video.thumbnail
+                },
+                caption
+            }, { quoted: msg });
+        } else {
+            await socket.sendMessage(sender, {
+                text: caption
+            }, { quoted: msg });
         }
-    });
 
-    console.log(
-        'YTMP4 RESPONSE:',
-        JSON.stringify(response.data, null, 2)
-    );
+        // Download API
+        const apiUrl =
+            `https://eliteprotech-apis.zone.id/ytmp4?url=${encodeURIComponent(video.url)}`;
 
-    const body = response.data;
+        const response = await axios.get(apiUrl, {
+            timeout: 120000,
+            headers: {
+                'User-Agent': 'Mozilla/5.0'
+            }
+        });
 
-    // Handle different API response formats
-    const data =
-        body?.result ||
-        body?.data ||
-        body?.download ||
-        body;
-
-    const downloadUrl =
-        typeof data === 'string'
-            ? data
-            : data?.downloadUrl ||
-              data?.download_url ||
-              data?.url ||
-              data?.videoUrl ||
-              data?.video_url ||
-              data?.link;
-
-    if (
-        !downloadUrl ||
-        typeof downloadUrl !== 'string' ||
-        !/^https?:\/\//i.test(downloadUrl)
-    ) {
-        throw new Error(
-            'YTMP4 API did not return a valid video URL.'
+        console.log(
+            'YTMP4 RESPONSE:',
+            JSON.stringify(response.data, null, 2)
         );
-    }
 
-    console.log(
-        'YTMP4 DOWNLOAD URL:',
-        downloadUrl
-    );
+        const body = response.data;
 
-    // Send video
-    await socket.sendMessage(sender, {
-        video: {
-            url: downloadUrl
-        },
-        mimetype: 'video/mp4',
-        fileName: `${cleanTitle}.mp4`,
-        caption:
+        const data =
+            body?.result ||
+            body?.data ||
+            body?.download ||
+            body;
 
-`🎬 ${video.title}
+        const downloadUrl =
+            typeof data === 'string'
+                ? data
+                : data?.downloadUrl ||
+                  data?.download_url ||
+                  data?.url ||
+                  data?.videoUrl ||
+                  data?.video_url ||
+                  data?.link;
 
-✅ VIDEO DOWNLOADED
+        if (
+            !downloadUrl ||
+            typeof downloadUrl !== 'string' ||
+            !/^https?:\/\//i.test(downloadUrl)
+        ) {
+            throw new Error(
+                'YTMP4 API did not return a valid video URL.'
+            );
+        }
 
-«ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ`
-}, { quoted: msg });»
+        console.log(
+            'YTMP4 DOWNLOAD URL:',
+            downloadUrl
+        );
 
-} catch (error) {
-    console.error(
-        'VIDEO ERROR:',
-        error.response?.data || error.message
-    );
+        // Send video
+        await socket.sendMessage(sender, {
+            video: {
+                url: downloadUrl
+            },
+            mimetype: 'video/mp4',
+            fileName: `${cleanTitle}.mp4`,
+            caption:
+`🎬 *${video.title}*
 
-    await socket.sendMessage(sender, {
-        text:
+✅ *VIDEO DOWNLOADED*
 
-`❌ Video Error:
+> ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ`
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error(
+            'VIDEO ERROR:',
+            error.response?.data || error.message
+        );
+
+        await socket.sendMessage(sender, {
+            text:
+`❌ *Video Error:*
 
 ${error.message || 'Something went wrong.'}`
-}, { quoted: msg });
-}
+        }, { quoted: msg });
+    }
 
-break;
-
+    break;
 }
 
 // Case: pair  
