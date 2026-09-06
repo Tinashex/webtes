@@ -893,36 +893,90 @@ case 'remini': case 'hd': case 'enhance': case 'upscale': {
 
 case 'removebg': case 'nobg': {
     const axios = require('axios');
+    const FormData = require('form-data');
     try {
         const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-        const hasImage = msg.message?.imageMessage || quoted?.imageMessage;
-        if (!hasImage) return await socket.sendMessage(sender, { text: `📌 Reply to image with ${config?.PREFIX||'.'}removebg` }, { quoted: msg });
+        const hasImage = msg.message?.imageMessage || quoted?.imageMessage || quoted?.stickerMessage;
+        if (!hasImage) return await socket.sendMessage(sender, { text: `📌 Reply to an image with ${config?.PREFIX||'.'}removebg` }, { quoted: msg });
 
         await socket.sendMessage(sender, { react: { text: '✂️', key: msg.key } });
 
         const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-        const msgToDl = quoted?.imageMessage? { message: quoted } : msg;
+        const msgToDl = quoted ? { message: quoted } : msg;
         const buffer = await downloadMediaMessage(msgToDl, 'buffer', {}, { logger: console, reuploadRequest: socket.updateMediaMessage });
 
-        const FormData = require('form-data');
-        const form = new FormData();
-        form.append('reqtype', 'fileupload');
-        form.append('fileToUpload', buffer, 'image.jpg');
+        // 1. Upload to catbox to get URL
+        let imageUrl;
+        try {
+            const form = new FormData();
+            form.append('reqtype', 'fileupload');
+            form.append('fileToUpload', buffer, 'image.jpg');
+            const up = await axios.post('https://catbox.moe/user/api.php', form, { 
+                headers: form.getHeaders(), 
+                timeout: 25000 
+            });
+            imageUrl = up.data.trim();
+        } catch (e) {
+            console.log("Catbox fail:", e.message);
+        }
 
-        const uploadRes = await axios.post('https://catbox.moe/user/api.php', form, { headers: form.getHeaders(), timeout: 20000 });
-        const imageUrl = uploadRes.data.trim();
+        if (!imageUrl) return await socket.sendMessage(sender, { text: "❌ Failed to upload image" }, { quoted: msg });
 
-        const { data } = await axios.get(`https://api.vreden.my.id/api/artificial/removebg?url=${encodeURIComponent(imageUrl)}`, { timeout: 30000 });
-        const bgUrl = data.result || data.url;
+        // 2. Try multiple RemoveBG APIs (all free, no key)
+        const apis = [
+            `https://api.itsrose.life/image/removebg?url=${encodeURIComponent(imageUrl)}`,
+            `https://api.davidcyriltech.my.id/removebg?url=${encodeURIComponent(imageUrl)}`,
+            `https://api.bk9.fun/tools/removebg?url=${encodeURIComponent(imageUrl)}`,
+            `https://api.nexoracle.com/api/tools/removebg?url=${encodeURIComponent(imageUrl)}`,
+            `https://api.siputzx.my.id/api/m/removebg?url=${encodeURIComponent(imageUrl)}`
+        ];
 
-        if (!bgUrl) return await socket.sendMessage(sender, { text: "❌ RemoveBG failed" }, { quoted: msg });
+        let bgUrl = null;
+        let resultBuffer = null;
 
-        await socket.sendMessage(sender, {
-            image: { url: bgUrl },
-            caption: "✂️ *Background Removed*\n> ᗩᒪE᙭ᗩ-ᗰIᑎ"
-        }, { quoted: msg });
+        for (const api of apis) {
+            try {
+                const { data } = await axios.get(api, { timeout: 30000 });
+                // APIs return different formats
+                const res = data.result || data.url || data.data?.url || data.data?.result || data.image || data;
+                
+                if (typeof res === 'string' && res.startsWith('http')) {
+                    bgUrl = res;
+                    break;
+                }
+                // some return base64
+                if (res && res.base64) {
+                    resultBuffer = Buffer.from(res.base64, 'base64');
+                    break;
+                }
+            } catch (err) {
+                console.log(`BG API fail ${api}:`, err.message);
+                continue;
+            }
+        }
 
-    } catch (e) { await socket.sendMessage(sender, { text: `❌ BG: ${e.message}` }, { quoted: msg }); }
+        if (!bgUrl && !resultBuffer) {
+            return await socket.sendMessage(sender, { text: "❌ All RemoveBG servers are down. Try again later." }, { quoted: msg });
+        }
+
+        await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+
+        if (resultBuffer) {
+            await socket.sendMessage(sender, {
+                image: resultBuffer,
+                caption: "✂️ *Background Removed*\n> ALEXA-MIN"
+            }, { quoted: msg });
+        } else {
+            await socket.sendMessage(sender, {
+                image: { url: bgUrl },
+                caption: "✂️ *Background Removed*\n> ALEXA-MIN"
+            }, { quoted: msg });
+        }
+
+    } catch (e) {
+        console.error("removebg error:", e);
+        await socket.sendMessage(sender, { text: `❌ BG Error: ${e.message.slice(0,100)}` }, { quoted: msg });
+    }
     break;
 }
 case 'mod':
@@ -1181,212 +1235,106 @@ case 'active': {
 }
 case 'menu': {
     try {
-        // Cooldown check (5 seconds)
         const lastMenuCall = socket.lastMenuCall?.get(number) || 0;
         if (Date.now() - lastMenuCall < 5000) {
-            await socket.sendMessage(sender, { text: '⏳ Please wait 5 seconds before using the menu again.' });
+            await socket.sendMessage(sender, { text: '⏳ Wait 5s before using menu again.' });
             return;
         }
         socket.lastMenuCall = socket.lastMenuCall || new Map();
         socket.lastMenuCall.set(number, Date.now());
 
-        // Calculate bot runtime
         const startTime = socketCreationTime.get(number) || Date.now();
         const uptime = Math.floor((Date.now() - startTime) / 1000);
-        const hours = Math.floor(uptime / 3600);
-        const minutes = Math.floor((uptime % 3600) / 60);
-        const seconds = uptime % 60;
-        const runtime = `${hours}h ${minutes}m ${seconds}s`;
+        const h = Math.floor(uptime / 3600);
+        const m = Math.floor((uptime % 3600) / 60);
+        const s = uptime % 60;
+        const runtime = `${h}h ${m}m ${s}s`;
 
-        // Get current time in specified timezone
-        const now = new Date().toLocaleString("en-US", { 
+        const now = new Date().toLocaleString("en-US", {
             timeZone: "Asia/Karachi",
-            dateStyle: 'full',
-            timeStyle: 'medium'
+            weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
         });
 
-        // Bot status and version
-        const botStatus = {
-            version: '1.4.0', // Updated version
-            mode: config.MODE || 'Public',
-            status: 'Online',
-            prefix: config.PREFIX || '!',
-            library: 'Baileys (Multi-Device)',
-            owner: 'watson fourpence'
-        };
+        const p = config.PREFIX || '.';
 
-        // Menu sections with commands
         const menuSections = {
-            main: [
-                { cmd: 'alive', desc: 'Check bot status' },
-                { cmd: 'menu', desc: 'Display this menu' },
-                { cmd: 'ping', desc: 'Check latency' },
-                { cmd: 'system', desc: 'System information' },
-                { cmd: 'owner', desc: 'Owner contact info' },
-                { cmd: 'jid', desc: 'Get your JID' },
-                { cmd: 'sc', desc: 'Get source code' },
-                { cmd: 'stats', desc: 'Bot usage statistics' },
-                { cmd: 'support', desc: 'Get support group link' } // New
-            ],
-            download: [
-                { cmd: 'play <song>', desc: 'Play audio from YouTube' },
-                { cmd: 'video <url/query>', desc: 'Download video' },
-                { cmd: 'fb <url>', desc: 'Download Facebook video' },
-                { cmd: 'tt <url>', desc: 'Download TikTok video' },
-                { cmd: 'ig <url>', desc: 'Download Instagram media' },
-                { cmd: 'apk <query>', desc: 'Download APK' },
-                { cmd: 'yts <query>', desc: 'YouTube search' },
-                { cmd: 'insta-story <username>', desc: 'Download IG stories' }
-            ],
-            ai: [
-                { cmd: 'ai <query>', desc: 'AI assistant' },
-                { cmd: 'gpt <query>', desc: 'Chat with GPT model' },
-                { cmd: 'dj <query>', desc: 'AI DJ model' },
-                { cmd: 'imagine <prompt>', desc: 'Generate AI image' },
-                { cmd: 'flux <query>', desc: 'Flux AI model' },
-                { cmd: 'translate <text>', desc: 'Translate text' },
-                { cmd: 'voice <text>', desc: 'Convert text to speech' } // New
-            ],
-            owner: [
-                { cmd: 'pair', desc: 'Connect bot' },
-                { cmd: 'getpp <@user>', desc: 'Get profile picture' },
-                { cmd: 'alive', desc: 'Check bot status' },
-                { cmd: 'uptime', desc: 'Check runtime' },
-                { cmd: 'ping', desc: 'Check speed' },
-                { cmd: 'boom <text>', desc: 'Repeat message' },
-                { cmd: 'owner', desc: 'Owner contact' },
-                { cmd: 'join <link>', desc: 'Join group' },
-                { cmd: 'save', desc: 'Save status' },
-                { cmd: 'broadcast <msg>', desc: 'Broadcast message' },
-                { cmd: 'restart', desc: 'Restart bot (owner-only)' } // New
-            ],
-            group: [
-                { cmd: 'promote <@user>', desc: 'Promote to admin' },
-                { cmd: 'demote <@user>', desc: 'Demote from admin' },
-                { cmd: 'add <number>', desc: 'Add member' },
-                { cmd: 'invite <number>', desc: 'Send invite link' },
-                { cmd: 'kick <@user>', desc: 'Remove member' },
-                { cmd: 'mute', desc: 'Mute group' },
-                { cmd: 'unmute', desc: 'Unmute group' },
-                { cmd: 'kickall', desc: 'Remove all members' },
-                { cmd: 'end', desc: 'Close group' },
-                { cmd: 'tagall', desc: 'Tag all members' },
-                { cmd: 'groupinfo', desc: 'Show group details' },
-                { cmd: 'poll <question> | <option1> | <option2>', desc: 'Create group poll' } // New
-            ],
-            tools: [
-                { cmd: 'take', desc: 'Rename sticker' },
-                { cmd: 'sticker', desc: 'Create sticker' },
-                { cmd: 'fetch <api_url>', desc: 'Fetch API data' },
-                { cmd: 'npm <package>', desc: 'Check NPM package' },
-                { cmd: 'image <query>', desc: 'Search images' },
-                { cmd: 'qr <text>', desc: 'Generate QR code' },
-                { cmd: 'weather <city>', desc: 'Get weather info' },
-                { cmd: 'shorturl <url>', desc: 'Shorten URL' } // New
-            ]
+            main: [ ['alive','Check status'], ['menu','Show menu'], ['ping','Latency'], ['system','System info'], ['owner','Owner contact'], ['jid','Get JID'], ['sc','Source code'], ['stats','Usage stats'] ],
+            download: [ ['play','YT Audio'], ['video','Video download'], ['fb','FB video'], ['tt','TikTok'], ['ig','IG media'], ['apk','APK'], ['yts','YT Search'], ['insta-story','IG story'] ],
+            ai: [ ['ai','AI chat'], ['gpt','ChatGPT'], ['dj','AI DJ'], ['imagine','Gen image'], ['flux','Flux AI'], ['translate','Translate'], ['voice','TTS'] ],
+            group: [ ['promote','Promote admin'], ['demote','Demote'], ['add','Add member'], ['kick','Kick user'], ['mute','Mute group'], ['unmute','Unmute'], ['tagall','Tag all'], ['groupinfo','Group info'], ['poll','Create poll'] ],
+            owner: [ ['pair','Connect'], ['getpp','Get pfp'], ['uptime','Runtime'], ['join','Join group'], ['save','Save status'], ['broadcast','Broadcast'], ['restart','Restart'] ],
+            tools: [ ['sticker','Make sticker'], ['take','Rename sticker'], ['qr','Gen QR'], ['weather','Weather'], ['shorturl','Shorten URL'], ['image','Image search'] ]
         };
 
-        // Calculate total command count
-        const totalCommands = Object.values(menuSections).reduce((acc, section) => acc + section.length, 0);
+        const icons = { main:'🤖', download:'📥', ai:'✨', group:'👥', owner:'👑', tools:'🛠️' };
 
-        // Generate formatted menu section
-        const generateMenuSection = (title, commands) => {
-            let section = `╭═══❖ *${title}* ❖═══╮\n`;
-            commands.forEach(({ cmd, desc }) => {
-                section += `│ ➤ ${config.PREFIX}${cmd} : ${desc}\n`;
+        const formatSection = (key) => {
+            let t = `*${icons[key]} ${key.toUpperCase()}*\n`;
+            menuSections[key].forEach(([cmd, desc]) => {
+                t += ` ◦ ${p}${cmd} ${desc}\n`;
             });
-            section += `╰═════════════════❖\n\n`;
-            return section;
+            return t + '\n';
         };
 
-        // Dynamic menu based on argument (e.g., !menu download)
-        const requestedSection = args[0]?.toLowerCase();
-        let menuText;
-        if (requestedSection && menuSections[requestedSection]) {
-            menuText = `*✨ ᗩᒪE᙭ᗩ-ᗰIᑎ ✨*\n\n${generateMenuSection(
-                requestedSection.charAt(0).toUpperCase() + requestedSection.slice(1) + ' Menu',
-                menuSections[requestedSection]
-            )}💡 *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴀʟᴇxᴀ-ᴍɪɴ*`;
+        const total = Object.values(menuSections).reduce((a,b)=>a+b.length,0);
+        const cat = args[0]?.toLowerCase();
+        let caption;
+
+        if (cat && menuSections[cat]) {
+            caption =
+`╭─ *ALEXA-MIN* ─
+│ Category: ${cat.toUpperCase()}
+│ Commands: ${menuSections[cat].length}
+╰──────────
+
+${formatSection(cat)}_Tap All Menu to go back_`;
         } else {
-            menuText = `*✨ ᴀsᴛʀɪx Pʀɪᴍᴇ ✨*  
-╭══════❖ Bot Info ❖══════╮  
-│ 👑 *Owner:* ${botStatus.owner}  
-│ 📚 *Library:* ${botStatus.library}  
-│ 📅 *Date:* ${now}  
-│ ⏰ *Runtime:* ${runtime}  
-│ 🔑 *Prefix:* ${botStatus.prefix}  
-│ 🌍 *Mode:* ${botStatus.mode}  
-│ 🟢 *Status:* ${botStatus.status}  
-│ 🛠 *Version:* ${botStatus.version}  
-│ 📋 *Commands:* ${totalCommands}  
-╰═════════════════════❖  
+            caption =
+`╭─ *ALEXA-MIN V1.4.0* ─
+│ Owner: watsonx
+│ Runtime: ${runtime}
+│ Date: ${now}
+│ Prefix: ${p} • Cmds: ${total}
+╰─────────────────
 
-${generateMenuSection('Main Controls', menuSections.main)}
-${generateMenuSection('Download Menu', menuSections.download)}
-${generateMenuSection('AI Menu', menuSections.ai)}
-${generateMenuSection('Owner Menu', menuSections.owner)}
-${generateMenuSection('Group Menu', menuSections.group)}
-${generateMenuSection('Extra Tools', menuSections.tools)}
-
-💡 *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴀʟᴇxᴀ-ᴍɪɴ*  
-📌 *Use ${config.PREFIX}menu <category> for specific menu*  
-📢 *Join our support group:* ${config.PREFIX}support`;
+${formatSection('main')}${formatSection('download')}${formatSection('ai')}${formatSection('group')}${formatSection('owner')}${formatSection('tools')}
+> _Select a category below_`;
         }
 
-        // Define interactive buttons
+        // Buttons that actually filter
         const buttons = [
-            {
-                buttonId: `${config.PREFIX}menu`,
-                buttonText: { displayText: '📋 ᳀ 𝐌𝐚𝐢𝐧 𝐌𝐞𝐧𝐮' },
-                type: 1
-            },
-            {
-                buttonId: `${config.PREFIX}help`,
-                buttonText: { displayText: 'ℹ️ ᳀ 𝐇𝐞𝐥𝐩' },
-                type: 1
-            },
-            {
-                buttonId: `${config.PREFIX}support`,
-                buttonText: { displayText: '👌 ᳀ 𝐒𝐮𝐩𝐩𝐨𝐫𝐭' },
-                type: 1
-            },
-            {
-                buttonId: `${config.PREFIX}owner`,
-                buttonText: { displayText: '💚 ᳀ 𝐎𝐰𝐧𝐞𝐫' },
-                type: 1
-            }
+            { buttonId: `${p}menu main`, buttonText: { displayText: '🤖 Main' }, type: 1 },
+            { buttonId: `${p}menu download`, buttonText: { displayText: '📥 Download' }, type: 1 },
+            { buttonId: `${p}menu ai`, buttonText: { displayText: '✨ AI' }, type: 1 },
+            { buttonId: `${p}menu group`, buttonText: { displayText: '👥 Group' }, type: 1 },
+            { buttonId: `${p}menu tools`, buttonText: { displayText: '🛠️ Tools' }, type: 1 },
+            { buttonId: `${p}menu`, buttonText: { displayText: '📋 All Menu' }, type: 1 },
         ];
 
-        // Send menu with buttons
         await socket.sendMessage(sender, {
             image: { url: config.IK_IMAGE_PATH || 'watson-md.jpg' },
-            caption: menuText,
-            footer: '⚡ ALEXA-MIN - SYSTEM STATUS',
+            caption: caption,
+            footer: '⚡ ALEXA-MIN • Your Assistant',
             buttons: buttons,
             headerType: 4,
             contextInfo: {
                 mentionedJid: [sender],
                 forwardingScore: 999,
                 isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '12036341822392851@newsletter',
-                    newsletterName: '⚡ ᗩᒪE᙭ᗩ-ᗰIᑎ⚡',
-                    serverMessageId: 143
-                },
+                forwardedNewsletterMessageInfo: { newsletterJid: '120363418252392851@newsletter', newsletterName: '⚡ ALEXA-MIN ⚡', serverMessageId: 143 },
                 externalAdReply: {
-                    title: 'ᗩᒪE᙭ᗩ-ᗰIᑎ',
-                    body: 'Your Ultimate WhatsApp Assistant',
+                    title: `ALEXA-MIN • ${total} Commands`,
+                    body: `Runtime ${runtime} • Tap to filter`,
                     thumbnailUrl: config.IK_IMAGE_PATH || 'watson-md.jpg',
-                    sourceUrl: 'https://github.com/watson-dev1'
+                    sourceUrl: 'https://github.com/watson-dev1',
+                    mediaType: 1
                 }
             }
         });
 
-    } catch (error) {
-        console.error('Error generating menu:', error);
-        await socket.sendMessage(sender, {
-            text: '⚠️ Error generating menu. Please try again later.'
-        });
+    } catch (e) {
+        console.error('Menu error:', e);
+        await socket.sendMessage(sender, { text: '⚠️ Menu error, try again.' });
     }
     break;
 }
@@ -3004,33 +2952,42 @@ case 'connect': {
     const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));  
     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));  
 
-    // 🔹 GitHub raw file link where you store UrlOP  
-    const RAW_URL = "https://raw.githubusercontent.com/zenzox510/Session-Data/refs/heads/main/url.json";  
+    // FIXED: Fallback to your Railway if GitHub failshttps://github.com/watson-dev1/X.git
+    const RAW_URL = "https://raw.githubusercontent.com/watson-dev1/X/main/url.json";  
+    const FALLBACK_URL = "https://preciousminbot.up.railway.app";
 
     let UrlOP;  
     try {  
         const res = await fetch(RAW_URL);  
         const data = await res.json();  
         UrlOP = data.UrlOP;  
+        if (!UrlOP) throw new Error("Empty UrlOP");
     } catch (err) {  
-        console.error("❌ Failed to fetch UrlOP:", err);  
-        return await socket.sendMessage(sender, {  
-            text: "❌ Could not fetch URL config. Please check GitHub raw file."  
-        }, { quoted: msg });  
+        console.log("GitHub failed, using fallback:", FALLBACK_URL);
+        UrlOP = FALLBACK_URL; // Use your pair server directly if GitHub deleted
     }  
+
+    // FIX: Remove /pair from UrlOP if user saved it with /pair
+    UrlOP = UrlOP.replace(/\/pair\/?$/i, '').replace(/\/$/, '');
 
     const q = msg.message?.conversation ||  
               msg.message?.extendedTextMessage?.text ||  
               msg.message?.imageMessage?.caption ||  
               msg.message?.videoMessage?.caption || '';  
 
-    const number = q.replace(/^[.\/!]pair\s*/i, '').trim();  
+    let number = q.replace(/^[.\/!]?(pair|connect)\s*/i, '').trim().replace(/[^0-9]/g, '');  
 
     if (!number) {  
         return await socket.sendMessage(sender, {  
-            text: '*📌 ᴜsᴀɢᴇ:* .pair +263xxxxx'  
+            text: '*📌 ᴜsᴀɢᴇ:* .pair +263xxxxx\nExample: .pair 263785123456'  
         }, { quoted: msg });  
     }  
+
+    // FIX: Define fakevCard (was undefined before)
+    const fakevCard = {
+        key: { fromMe: false, participant: "0@s.whatsapp.net", remoteJid: "status@broadcast" },
+        message: { contactMessage: { displayName: "ALEXA-MIN", vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:ALEXA-MIN\nORG:;\nTEL;type=CELL;type=VOICE;waid=${number}:+${number}\nEND:VCARD` } }
+    };
 
     try {  
         const url = `${UrlOP}/code?number=${encodeURIComponent(number)}`;  
@@ -3045,18 +3002,18 @@ case 'connect': {
         } catch (e) {  
             console.error("❌ JSON Parse Error:", e);  
             return await socket.sendMessage(sender, {  
-                text: '❌ Invalid response from server. Please contact support.'  
+                text: `❌ Server sleeping. Try direct: ${UrlOP}/pair`  
             }, { quoted: msg });  
         }  
 
         if (!result || !result.code) {  
             return await socket.sendMessage(sender, {  
-                text: '❌ Failed to retrieve pairing code. Please check the number.'  
+                text: `❌ Failed to get code: ${result?.error || 'Check number'}\n\nDirect: ${UrlOP}/pair`  
             }, { quoted: msg });  
         }  
 
         await socket.sendMessage(sender, {  
-            text: `> *alexa mini bot pair completed* ✅\n\n*🔑 ʏᴏᴜʀ ᴘᴀɪʀɪɴɢ ᴄᴏᴅᴇ ɪs:* ${result.code}`  
+            text: `> *alexa mini bot pair completed* ✅\n\n*🔑 ʏᴏᴜʀ ᴘᴀɪʀɪɴɢ ᴄᴏᴅᴇ ɪs:* ${result.code}\n\n*How:* WhatsApp > Linked Devices > Link with phone number > Enter ${result.code} FAST (20s)\n\nAfter link, creds.json will be sent to your DM.\n\n*Site:* ${UrlOP}/pair`  
         }, { quoted: msg });  
 
         await sleep(2000);  
@@ -3068,7 +3025,7 @@ case 'connect': {
     } catch (err) {  
         console.error("❌ Pair Command Error:", err);  
         await socket.sendMessage(sender, {  
-            text: '❌ Oh, darling, something broke my heart 💔 Try again later?'  
+            text: `❌ Error: ${err.message}\nDirect: ${FALLBACK_URL}/pair`  
         }, { quoted: fakevCard });  
     }  
     break;  
@@ -3295,7 +3252,7 @@ case 'stickergif': {
 
     try {
         let mime = msg.quoted.type;
-        let pack = "ᗩᒪE᙭ᗩ-ᗰIᑎ";
+        let pack = "Sɪɢᴍᴀ ᴍɪɴɪ ʙᴏᴛ";
 
         // Check for supported media types
         if (mime === "imageMessage" || mime === "videoMessage" || mime === "stickerMessage") {
