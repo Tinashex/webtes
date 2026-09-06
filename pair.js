@@ -2609,7 +2609,7 @@ try {
 
 ${formatSection(category)}
 
-«Use ${p}menu to return to the full menu`;»
+«Use ${p}menu to return to the full menu`;
 
     } else {
 
@@ -2643,7 +2643,7 @@ ${formatSection('group')}
 ${formatSection('owner')}
 
 «Select a category below`;
-}»
+}
 
     // ─────────────────────────────
     // CATEGORY BUTTONS
