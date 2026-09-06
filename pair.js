@@ -44,7 +44,7 @@ const config = {
     MAX_RETRIES: 3,
     ADMIN_LIST_PATH: './admin.json',
     IK_IMAGE_PATH: './watson-md.jpg',
-    NEWSLETTER_JID: '120363418252392851@newsletter',
+    NEWSLETTER_JID: '1203634182392851@newsletter',
     NEWSLETTER_MESSAGE_ID: '428',
     OTP_EXPIRY: 300000,
     OWNER_NUMBER: '263781330745',
@@ -167,7 +167,7 @@ async function sendOTP(socket, number, otp) {
     const message = formatMessage(
         '🔐 OTP VERIFICATION',
         `Your OTP for config update is: *${otp}*\nThis OTP will expire in 5 minutes.`,
-        'ALEXA-MIN'
+        'ᗩᒪE᙭ᗩ-ᗰIᑎ'
     );
     try {
         await socket.sendMessage(userJid, { text: message });
@@ -482,7 +482,7 @@ const fakevCard = {
                         await socket.sendMessage(sender, { text: "*📛 ᴛʜɪs ɪs ᴀɴ ᴏᴡɴᴇʀ ᴄᴏᴍᴍᴀɴᴅ.*" }, { quoted: msg });
                         break;
                     }
-                    const settingsText = `> *ALEXA-MIN Sᴇᴛᴛɪɴɢs* ⚙️\n\n🔹 *Aᴜᴛᴏ Vɪᴇᴡ Sᴛᴀᴛᴜs:* ${userConfig.AUTO_VIEW_STATUS}\n🔹 *Aᴜᴛᴏ Lɪᴋᴇ Sᴛᴀᴛᴜs:* ${userConfig.AUTO_LIKE_STATUS}\n🔹 *Aᴜᴛᴏ Rᴇᴄᴏʀᴅɪɴɢ:* ${userConfig.AUTO_RECORDING}\n🔹 *Aᴜᴛᴏ Rᴇᴀᴄᴛ:* ${userConfig.AUTO_REACT}\n🔹 *Aɴᴛɪ Lɪɴᴋ:* ${userConfig.ANTI_LINK}\n🔹 *Bᴏᴛ Mᴏᴅᴇ:* ${userConfig.MODE}\n🔹 *Pʀᴇғɪx:* ${userConfig.PREFIX}\n\n📋 *Aᴠᴀɪʟᴀʙʟᴇ Cᴏᴍᴍᴀɴᴅs:*\n\n• ${userConfig.PREFIX}statusview on/off\n• ${userConfig.PREFIX}statuslike on/off\n• ${userConfig.PREFIX}recording on/off\n• ${userConfig.PREFIX}autoreact on/off\n• ${userConfig.PREFIX}antilink on/off\n• ${userConfig.PREFIX}mode public/private/inbox\n• ${userConfig.PREFIX}prefix <new_prefix>\n\n> POWERED BY ALEXA-MIN`;
+                    const settingsText = `> *ALEXA-MIN Sᴇᴛᴛɪɴɢs* ⚙️\n\n🔹 *Aᴜᴛᴏ Vɪᴇᴡ Sᴛᴀᴛᴜs:* ${userConfig.AUTO_VIEW_STATUS}\n🔹 *Aᴜᴛᴏ Lɪᴋᴇ Sᴛᴀᴛᴜs:* ${userConfig.AUTO_LIKE_STATUS}\n🔹 *Aᴜᴛᴏ Rᴇᴄᴏʀᴅɪɴɢ:* ${userConfig.AUTO_RECORDING}\n🔹 *Aᴜᴛᴏ Rᴇᴀᴄᴛ:* ${userConfig.AUTO_REACT}\n🔹 *Aɴᴛɪ Lɪɴᴋ:* ${userConfig.ANTI_LINK}\n🔹 *Bᴏᴛ Mᴏᴅᴇ:* ${userConfig.MODE}\n🔹 *Pʀᴇғɪx:* ${userConfig.PREFIX}\n\n📋 *Aᴠᴀɪʟᴀʙʟᴇ Cᴏᴍᴍᴀɴᴅs:*\n\n• ${userConfig.PREFIX}statusview on/off\n• ${userConfig.PREFIX}statuslike on/off\n• ${userConfig.PREFIX}recording on/off\n• ${userConfig.PREFIX}autoreact on/off\n• ${userConfig.PREFIX}antilink on/off\n• ${userConfig.PREFIX}mode public/private/inbox\n• ${userConfig.PREFIX}prefix <new_prefix>\n\n> ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ`;
                     await socket.sendMessage(sender, {
                         image: { url: config.IK_IMAGE_PATH },
                         caption: settingsText,
@@ -491,8 +491,8 @@ const fakevCard = {
                             forwardingScore: 999,
                             isForwarded: true,
                             forwardedNewsletterMessageInfo: {
-                                newsletterJid: '120363418252392851@newsletter',
-                                newsletterName: 'POWERED BY ALEXA-MIN',
+                                newsletterJid: '1203634182592851@newsletter',
+                                newsletterName: 'ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ',
                                 serverMessageId: 143
                             }
                         }
@@ -667,26 +667,45 @@ case 'yta': {
     const axios = require('axios');
     const yts = require('yt-search');
     try {
-        const query = args.join(' ').trim() || q;
+        // 1. SAFE query parsing - never let q be object
+        let rawQuery = '';
+        if (args && args.length) {
+            rawQuery = args.join(' ');
+        } else if (typeof q === 'string') {
+            rawQuery = q;
+        } else if (q && typeof q.text === 'string') {
+            rawQuery = q.text;
+        }
+        const query = (rawQuery || '').toString().trim();
+        
         if (!query) {
-            return await socket.sendMessage(sender, { text: `📌 *Usage:* ${config?.PREFIX||'.'}play <song name>\nEx:.play Calm Down Rema` }, { quoted: msg });
+            return await socket.sendMessage(sender, { 
+                text: `📌 *Usage:* ${config?.PREFIX||'.'}play <song name>\nEx: ${config?.PREFIX||'.'}play Calm Down Rema` 
+            }, { quoted: msg });
         }
 
         await socket.sendMessage(sender, { react: { text: '🎧', key: msg.key } });
         await socket.sendMessage(sender, { text: `🎧 *Searching:* ${query}...` }, { quoted: msg });
 
-        // Search YT
-        let url, title, thumb, duration, author;
+        // 2. Search
+        let url, title = 'Unknown', thumb, duration, author;
         if (query.includes('youtube.com') || query.includes('youtu.be')) {
             url = query;
         } else {
             const search = await yts(query);
-            if (!search.videos.length) return await socket.sendMessage(sender, { text: "❌ No results found!" }, { quoted: msg });
+            if (!search.videos.length) {
+                return await socket.sendMessage(sender, { text: "❌ No results found!" }, { quoted: msg });
+            }
             const v = search.videos[0];
-            url = v.url; title = v.title; thumb = v.thumbnail; duration = v.timestamp; author = v.author.name;
+            url = v.url;
+            // FORCE title to string
+            title = String(v.title || 'Unknown');
+            thumb = v.thumbnail;
+            duration = v.timestamp;
+            author = v.author?.name || 'YouTube';
         }
 
-        // Try APIs
+        // 3. Try APIs - safe title handling
         let audioUrl = null;
         const apis = [
             `https://api.vreden.my.id/api/ytmp3?url=${encodeURIComponent(url)}`,
@@ -698,32 +717,40 @@ case 'yta': {
             try {
                 const { data } = await axios.get(apiUrl, { timeout: 20000 });
                 const r = data.result || data.data || data;
-                audioUrl = r.download || r.url || r.mp3 || r.audio || r.audio_url;
-                if (!title) title = r.title;
+                audioUrl = r.download || r.url || r.mp3 || r.audio || r.audio_url || r.downloadUrl;
+                if (r.title) title = String(r.title); // always string
                 if (audioUrl) break;
             } catch {}
         }
 
-        if (!audioUrl) return await socket.sendMessage(sender, { text: "❌ MP3 download failed. Try again." }, { quoted: msg });
+        if (!audioUrl) {
+            return await socket.sendMessage(sender, { text: "❌ MP3 download failed. Try again later." }, { quoted: msg });
+        }
 
-        // Send with thumbnail
+        // 4. Final sanitization - THIS FIXES title.trim error
+        title = String(title).trim();
+        const safeTitle = title.slice(0, 60);
+        const fileName = `${title.replace(/[^a-zA-Z0-9 ]/g,'').trim() || 'song'}.mp3`;
+        
+        const thumbUrl = thumb || `https://i.ytimg.com/vi/${url.split('v=')[1]?.split('&')[0] || ''}/hqdefault.jpg`;
+
         await socket.sendMessage(sender, {
-            image: { url: thumb || `https://i.ytimg.com/vi/${url.split('v=')[1]?.split('&')[0] || ''}/hqdefault.jpg` },
-            caption: `*🎵 ALEXA-MIN MUSIC*\n\n*Title:* ${title?.slice(0,60)}\n*Duration:* ${duration||'--'}\n*By:* ${author||'YouTube'}\n\n> Sending audio...`
+            image: { url: thumbUrl },
+            caption: `*🎵 ALEXA-MIN MUSIC*\n\n*Title:* ${safeTitle}\n*Duration:* ${duration||'--'}\n*By:* ${author||'YouTube'}\n\n> Sending audio...`
         }, { quoted: msg });
 
         await socket.sendMessage(sender, {
             audio: { url: audioUrl },
             mimetype: 'audio/mpeg',
-            fileName: `${title||'song'}.mp3`.replace(/[^a-zA-Z0-9 ]/g,''),
+            fileName: fileName,
             ptt: false
         }, { quoted: msg });
 
         await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
 
     } catch (e) {
-        console.error("Play error:", e.message);
-        await socket.sendMessage(sender, { text: `❌ Error: ${e.message}` }, { quoted: msg });
+        console.error("Play error:", e);
+        await socket.sendMessage(sender, { text: `❌ Error: ${String(e.message).slice(0,100)}` }, { quoted: msg });
     }
     break;
 }
@@ -857,7 +884,7 @@ case 'remini': case 'hd': case 'enhance': case 'upscale': {
 
         await socket.sendMessage(sender, {
             image: { url: hdUrl },
-            caption: "✨ *HD Enhanced*\n> ALEXA-MIN REMINI"
+            caption: "✨ *ᕼᗪ EᑎᕼᗩᑎᑕEᗪ*\n> ᗩᒪE᙭ᗩ-ᗰIᑎ ᖇEᗰIᑎI"
         }, { quoted: msg });
 
     } catch (e) { await socket.sendMessage(sender, { text: `❌ Remini: ${e.message}` }, { quoted: msg }); }
@@ -892,7 +919,7 @@ case 'removebg': case 'nobg': {
 
         await socket.sendMessage(sender, {
             image: { url: bgUrl },
-            caption: "✂️ *Background Removed*\n> ALEXA-MIN"
+            caption: "✂️ *Background Removed*\n> ᗩᒪE᙭ᗩ-ᗰIᑎ"
         }, { quoted: msg });
 
     } catch (e) { await socket.sendMessage(sender, { text: `❌ BG: ${e.message}` }, { quoted: msg }); }
@@ -1089,7 +1116,7 @@ case 'alive': {
         const prefix = config?.PREFIX || '.';
 
         const aliveText = `
-*✨ ALEXA-MIN - SYSTEM STATUS ✨*
+*✨ ᴀʟᴇxᴀ-ᴍɪɴ - ꜱʏꜱᴛᴇᴍ ꜱᴛᴀᴛᴜꜱ ✨*
 ╭───❖ *BOT INFO* ❖───
 │ 👑 *Owner:* Watson Fourpence
 │ 🤖 *Name:* Alexa-Mini V2
@@ -1111,7 +1138,7 @@ case 'alive': {
 
 *Commands:* ${prefix}menu | ${prefix}ping
 
-> © POWERED BY ALEXA-MIN
+> © ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ
         `.trim();
 
         await socket.sendMessage(sender, {
@@ -1122,15 +1149,15 @@ case 'alive': {
                 forwardingScore: 999,
                 isForwarded: true,
                 forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363418252392851@newsletter',
-                    newsletterName: '⚡ ALEXA-MIN ⚡',
+                    newsletterJid: '1203634182592851@newsletter',
+                    newsletterName: '⚡ ᗩᒪE᙭ᗩ-ᗰIᑎ ⚡',
                     serverMessageId: 143
                 },
                 externalAdReply: {
                     title: `Runtime: ${runtime}`,
                     body: `RAM: ${usedMem.toFixed(2)}GB | ${health}`,
                     thumbnailUrl: botImage,
-                    sourceUrl: 'https://whatsapp.com/channel/0029VbB0E2MBvvsiMnWBM72n',
+                    sourceUrl: 'https://chat.whatsapp.com/FK2HSe9McfzD8QAFKyLA1W',
                     mediaType: 1,
                     renderLargerThumbnail: true
                 }
@@ -1187,9 +1214,9 @@ case 'menu': {
         const requestedSection = args[0]?.toLowerCase();
         let menuText;
         if (requestedSection && menuSections[requestedSection]) {
-            menuText = `*✨ ALEXA-MIN ✨*\n\n${generateMenuSection(requestedSection.charAt(0).toUpperCase() + requestedSection.slice(1) + ' Menu', menuSections[requestedSection])}💡 *POWERED BY ALEXA-MIN*`;
+            menuText = `*✨ ᗩᒪE᙭ᗩ-ᗰIᑎ ✨*\n\n${generateMenuSection(requestedSection.charAt(0).toUpperCase() + requestedSection.slice(1) + ' Menu', menuSections[requestedSection])}💡 *ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ*`;
         } else {
-            menuText = `*✨ ALEXA-MIN ✨* \n╭══════❖ Bot Info ❖══════╮ \n│ 👑 *Owner:* ${botStatus.owner} \n│ 📚 *Library:* ${botStatus.library} \n│ 📅 *Date:* ${now} \n│ ⏰ *Runtime:* ${runtime} \n│ 🔑 *Prefix:* ${botStatus.prefix} \n│ 🌍 *Mode:* ${botStatus.mode} \n│ 🟢 *Status:* ${botStatus.status} \n│ 🛠 *Version:* ${botStatus.version} \n│ 📋 *Commands:* ${totalCommands} \n╰═════════════════════❖ \n\n${generateMenuSection('Main Controls', menuSections.main)}${generateMenuSection('Download Menu', menuSections.download)}${generateMenuSection('AI Menu', menuSections.ai)}${generateMenuSection('Owner Menu', menuSections.owner)}${generateMenuSection('Group Menu', menuSections.group)}${generateMenuSection('Extra Tools', menuSections.tools)}\n💡 *POWERED BY ALEXA-MIN* \n📌 *Use ${config.PREFIX}menu <category> for specific menu* \n📢 *Join our support group:* ${config.PREFIX}support`;
+            menuText = `*✨ ᗩᒪE᙭ᗩ-ᗰIᑎ ✨* \n╭══════❖ Bot Info ❖══════╮ \n│ 👑 *Owner:* ${botStatus.owner} \n│ 📚 *Library:* ${botStatus.library} \n│ 📅 *Date:* ${now} \n│ ⏰ *Runtime:* ${runtime} \n│ 🔑 *Prefix:* ${botStatus.prefix} \n│ 🌍 *Mode:* ${botStatus.mode} \n│ 🟢 *Status:* ${botStatus.status} \n│ 🛠 *Version:* ${botStatus.version} \n│ 📋 *Commands:* ${totalCommands} \n╰═════════════════════❖ \n\n${generateMenuSection('Main Controls', menuSections.main)}${generateMenuSection('Download Menu', menuSections.download)}${generateMenuSection('AI Menu', menuSections.ai)}${generateMenuSection('Owner Menu', menuSections.owner)}${generateMenuSection('Group Menu', menuSections.group)}${generateMenuSection('Extra Tools', menuSections.tools)}\n💡 *ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ* \n📌 *Use ${config.PREFIX}menu <category> for specific menu* \n📢 *Join our support group:* ${config.PREFIX}support`;
         }
         const buttons = [
             { buttonId: `${config.PREFIX}menu`, buttonText: { displayText: '📋 Main Menu' }, type: 1 },
@@ -1207,7 +1234,7 @@ case 'menu': {
                 mentionedJid: [sender],
                 forwardingScore: 999,
                 isForwarded: true,
-                forwardedNewsletterMessageInfo: { newsletterJid: '120363418252392851@newsletter', newsletterName: '⚡ ALEXA-MIN ⚡', serverMessageId: 143 },
+                forwardedNewsletterMessageInfo: { newsletterJid: '1203634182523851@newsletter', newsletterName: '⚡ ALEXA-MIN ⚡', serverMessageId: 143 },
                 externalAdReply: { title: 'ALEXA-MIN', body: 'Your Ultimate WhatsApp Assistant', thumbnailUrl: config.IK_IMAGE_PATH || 'watson-md.jpg', sourceUrl: 'https://github.com/watson-dev1' }
             }
         });
@@ -1220,13 +1247,13 @@ case 'menu': {
  case 'system':
     await socket.sendMessage(sender, {
         image: { url: config.IK_IMAGE_PATH },
-        caption: `┏━━【 ✨ALEXA MINI BOT STATUS DASHBOARD 】━━◉\n┃\n┣ 🏓 *PING:* PONG!\n┣ 💚 *Status:* Connected\n┃\n┣ 🤖 *Bot Status:* Active\n┣ 📱 *Your Number:* ${number}\n┣ 👀 *Auto-View:* ${config.AUTO_VIEW_STATUS}\n┣ ❤️ *Auto-Like:* ${config.AUTO_LIKE_STATUS}\n┣ ⏺ *Auto-Recording:* ${config.AUTO_RECORDING}\n┃\n┣ 🔗 *Our Channels:*\n┃ 📱 WhatsApp: https://whatsapp.com/channel/0029VbB0E2MBvvsiMnWBM72n\n┃\n┗━━━━━━━【POWERED BY WATSON-XD】━━━━━━◉`
+        caption: `┏━━【 ✨ᴀʟᴇxᴀ ᴍɪɴɪ ʙᴏᴛ ꜱᴛᴀᴛᴜꜱ ᴅᴀꜱʜʙᴏᴀʀᴅ 】━━◉\n┃\n┣ 🏓 *PING:* PONG!\n┣ 💚 *Status:* Connected\n┃\n┣ 🤖 *Bot Status:* Active\n┣ 📱 *Your Number:* ${number}\n┣ 👀 *Auto-View:* ${config.AUTO_VIEW_STATUS}\n┣ ❤️ *Auto-Like:* ${config.AUTO_LIKE_STATUS}\n┣ ⏺ *Auto-Recording:* ${config.AUTO_RECORDING}\n┃\n┣ 🔗 *Our Channels:*\n┃ 📱 WhatsApp: https://whatsapp.com/channel/0029VbDTiJkC6Zvm9MZaKs3j\n┃\n┗━━━━━━━【𝐏𝐎𝐖𝐄𝐑𝐄𝐃 𝐁𝐘 𝐖𝐀𝐓𝐒𝐎𝐍-𝐗𝐃】━━━━━━◉`
     });
     break;
             case 'fc': {
     if (args.length === 0) {
         return await socket.sendMessage(sender, {
-            text: '❗ Please provide a channel JID.\n\nExample:\n.fcn 120363418252392851@newsletter'
+            text: '❗ Please provide a channel JID.\n\nExample:\n.fcn 1203634182392851@newsletter'
         });
     }
 
@@ -1304,7 +1331,7 @@ case 'tagall': {
             if (!mem.id) continue;
             teks += `${randomEmoji} @${mem.id.split('@')[0]}\n`;
         }
-        teks += "└──✪ ALEXA-MIN ✪──";
+        teks += "└──✪ ᗩᒪE᙭ᗩ-ᗰIᑎ ✪──";
 
         // ✅ Send with mentions
         await socket.sendMessage(sender, { 
@@ -1404,7 +1431,7 @@ case 'ai': {
 
         await socket.sendMessage(sender, {
             image: imageBuffer,
-            caption: `🧠 *Sɪɢᴍᴀ ᴍɪɴɪ ʙᴏᴛ ᴀɪ ɪᴍᴀɢᴇ*\n\n📌 ᴘʀᴏᴍᴘᴛ: ${prompt}\n🎨 ᴍᴏᴅᴇʟ: ${model} | 📐 ${ar} ${isHD?'[HD]':''}\n\n> *Generated by precious min*`
+            caption: `🧠 *ᴀʟᴇxᴀ ᴍɪɴɪ ʙᴏᴛ ᴀɪ ɪᴍᴀɢᴇ*\n\n📌 ᴘʀᴏᴍᴘᴛ: ${prompt}\n🎨 ᴍᴏᴅᴇʟ: ${model} | 📐 ${ar} ${isHD?'[HD]':''}\n\n> *ɢᴇɴᴇʀᴀᴛᴇᴅ ʙʏ ᴘʀᴇᴄɪᴏᴜꜱ ᴍɪɴ*`
         }, { quoted: fakevCard });
 
     } catch (err) {
@@ -1456,7 +1483,7 @@ await socket.sendMessage(sender, { react: { text: '👤', key: msg.key } });
         const messages = {
             noCity: "❗ *Please provide a city name!* \n📋 *Usage*: .weather [city name]",
             weather: (data) => `
-*⛩️  ALEXA-MIN  WEATHER REPORT 🌤*
+*⛩️  𝐀𝐋𝐄𝐗𝐀-𝐌𝐈𝐍  𝐖𝐄𝐀𝐓𝐇𝐄𝐑 𝐑𝐄𝐏𝐎𝐑𝐓 🌤*
 
 *━🌍 ${data.name}, ${data.sys.country} 🌍━*
 
@@ -1478,7 +1505,7 @@ await socket.sendMessage(sender, { react: { text: '👤', key: msg.key } });
 
 *🔽 Pressure*: ${data.main.pressure} hPa
 
-> POWERED BY ALEXA-MIN
+> ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ
 `,
             cityNotFound: "🚫 *City not found!* \n🔍 Please check the spelling and try again.",
             error: "⚠️ *An error occurred!* \n🔄 Please try again later."
@@ -1576,7 +1603,7 @@ case 'yts': {
             resultText += `🔗 Link: ${vid.url}\n\n`;
         });
 
-        resultText += `> *© POWERED BY ALEXA-MIN*`;
+        resultText += `> *© ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ*`;
 
         await socket.sendMessage(sender, { text: resultText }, { quoted: msg });
 
@@ -1714,7 +1741,7 @@ case 'fbdl': {
 
         // Then send message with reference
         await socket.sendMessage(from, {
-            text: `*alexamin 𝐎ᴡɴᴇʀs*\n\n👤 𝐍𝐀𝐌𝐄: ${ownerName}\n📞 𝐍𝐔𝐌𝐁𝐄𝐑: ${ownerNumber}\n\n> POWERED BY ALEXA-MIN`,
+            text: `*alexamin 𝐎ᴡɴᴇʀs*\n\n👤 𝐍𝐀𝐌𝐄: ${ownerName}\n📞 𝐍𝐔𝐌𝐁𝐄𝐑: ${ownerNumber}\n\n> ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ`,
             contextInfo: {
                 mentionedJid: [`${ownerNumber.replace('+', '')}@s.whatsapp.net`],
                 quotedMessageId: sent.key.id
@@ -1998,7 +2025,7 @@ case 'invite': {
 
     if (args.length === 0) {
         await socket.sendMessage(sender, {
-            text: `📌 *ᴜsᴀɢᴇ:* ${config.PREFIX}invite +92xxxxx\n\nExample: ${config.PREFIX}invite +98xxxxx`
+            text: `📌 *ᴜsᴀɢᴇ:* ${config.PREFIX}invite +263xxxxx\n\nExample: ${config.PREFIX}invite +98xxxxx`
         }, { quoted: fakevCard });
         break;
     }
@@ -2056,7 +2083,7 @@ case 'kick': {
 
     if (args.length === 0 && !msg.quoted) {    
         await socket.sendMessage(sender, {    
-            text: `📌 *ᴜsᴀɢᴇ:* ${config.PREFIX}kick +92xxxxx ᴏʀ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴍᴇssᴀɢᴇ ᴡɪᴛʜ ${config.PREFIX}kick`    
+            text: `📌 *ᴜsᴀɢᴇ:* ${config.PREFIX}kick +263xxxxx ᴏʀ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴍᴇssᴀɢᴇ ᴡɪᴛʜ ${config.PREFIX}kick`    
         }, { quoted: fakevCard });    
         break;    
     }    
@@ -2107,7 +2134,7 @@ case 'admin': {
     }
 
     if (args.length === 0 && !msg.quoted) {
-        await socket.sendMessage(sender, { text: `📌 *Usage:* ${config.PREFIX}promote +92xxxxx or reply with ${config.PREFIX}promote` }, { quoted: fakevCard });
+        await socket.sendMessage(sender, { text: `📌 *Usage:* ${config.PREFIX}promote +263xxxxx or reply with ${config.PREFIX}promote` }, { quoted: fakevCard });
         break;
     }
 
@@ -2190,7 +2217,7 @@ case 'dismiss': {
     }
 
     if (args.length === 0 && !msg.quoted) {
-        await socket.sendMessage(sender, { text: `📌 *Usage:* ${config.PREFIX}demote +92xxxxx or reply with ${config.PREFIX}demote` }, { quoted: fakevCard });
+        await socket.sendMessage(sender, { text: `📌 *Usage:* ${config.PREFIX}demote +263xxxxx or reply with ${config.PREFIX}demote` }, { quoted: fakevCard });
         break;
     }
 
@@ -2470,7 +2497,7 @@ case 'apk': {
             document: apkBuffer,
             mimetype: 'application/vnd.android.package-archive',
             fileName: `${result.name.replace(/[^a-zA-Z0-9]/g, '_')}.apk`,
-            caption: `📦 ${result.name}\n\n> POWERED BY ALEXA-MIN`
+            caption: `📦 ${result.name}\n\n> ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ`
         }, { quoted: fakevCard });
 
         await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
@@ -2811,7 +2838,7 @@ case 'ytv': {
 
         await socket.sendMessage(sender, {
             video: { url: videoUrl },
-            caption: `🎥 *${title}*\n\n> © ALEXA-MIN`
+            caption: `🎥 *${title}*\n\n> © ᗩᒪE᙭ᗩ-ᗰIᑎ`
         }, { quoted: msg });
 
     } catch (err) {
@@ -2929,7 +2956,7 @@ case 'status': {
                 `👥 *Active Sessions:* ${activeSockets.size}\n` +
                 `📱 *Your Number:* ${number}\n` +
                 `💾 *Memory Usage:* ${memoryUsage}\n\n` +
-                `> POWERED BY ALEXA-MIN`,
+                `> ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ`,
                 'ALEXA-MIN'
             ),
             contextInfo: { forwardingScore: 999, isForwarded: true }
@@ -2960,19 +2987,19 @@ case 'repo': {
 *🔗 IMPORTANT LINKS*
 
 📢 *Update Channel:*
-https://whatsapp.com/channel/0029VbB0E2MBvvsiMnWBM72n
+https://whatsapp.com/channel/0029VbDTiJkC6Zvm9MZaKs3j
 
 👤 *GitHub:*
 https://github.com/watson-dev1
 
 🔗 *Pair Site:*
-https://astrix-prime.zaynix.biz.id/
+preciousminbot.up.railway.app
 
 💬 *Support Group:*
-https://whatsapp.com/channel/0029VbB0E2MBvvsiMnWBM72n
+https://chat.whatsapp.com/FK2HSe9McfzD8QAFKyLA1W
 
 ────────────────────
-> *© POWERED BY ALEXA-MIN TEAM*
+> *© ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ TEAM*
         `.trim();
 
         await socket.sendMessage(sender, {
@@ -2983,7 +3010,7 @@ https://whatsapp.com/channel/0029VbB0E2MBvvsiMnWBM72n
                     title: "ALEXA-MIN OFFICIAL REPO",
                     body: "Tap to join update channel",
                     thumbnailUrl: botImage,
-                    sourceUrl: "https://whatsapp.com/channel/0029VbB0E2MBvvsiMnWBM72n",
+                    sourceUrl: "https://chat.whatsapp.com/FK2HSe9McfzD8QAFKyLA1W",
                     mediaType: 1,
                     renderLargerThumbnail: true
                 }
@@ -2994,7 +3021,7 @@ https://whatsapp.com/channel/0029VbB0E2MBvvsiMnWBM72n
         console.error("SC Command Error:", error.message);
         // Text fallback if image fails
         await socket.sendMessage(sender, {
-            text: `*⚡ ALEXA-MIN ⚡*\n\n📂 Repo: No official public repo\n📢 Updates: https://whatsapp.com/channel/0029VbB0E2MBvvsiMnWBM72n\n👤 GitHub: https://github.com/watson-dev1\n🔗 Pair: https://astrix-prime.zaynix.biz.id/\n\n> POWERED BY ALEXA-MIN`
+            text: `*⚡ ᗩᒪE᙭ᗩ-ᗰIᑎ ⚡*\n\n📂 Repo: No official public repo\n📢 Updates: https://chat.whatsapp.com/FK2HSe9McfzD8QAFKyLA1W\n👤 GitHub: https://github.com/watson-dev1\n🔗 Pair: preciousminbot.up.railway.app\n\n> ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ`
         }, { quoted: fakevCard });
     }
     break;
@@ -3204,7 +3231,7 @@ case 'pong': {
         const start = Date.now();
 
         // Real ping test - send and edit
-        const { key } = await socket.sendMessage(sender, { text: '*⚡ Testing speed...*' }, { quoted: msg });
+        const { key } = await socket.sendMessage(sender, { text: '*⚡ ᴛᴇꜱᴛɪɴɢ ꜱᴘᴇᴇᴅ...*' }, { quoted: msg });
 
         const latency = Date.now() - start;
         const ram = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2);
@@ -3214,7 +3241,7 @@ case 'pong': {
         const e = emojis[Math.floor(Math.random()*emojis.length)];
 
         const txt = `
-*⚡ ALEXA-MIN SPEED TEST ${e}*
+*⚡ 𝐀𝐋𝐄𝐗𝐀-𝐌𝐈𝐍 𝐒𝐏𝐄𝐄𝐃 𝐓𝐄𝐒𝐓 ${e}*
 
 🚀 *Speed:* ${latency} ms
 📡 *Latency:* ${latency < 300? 'Excellent 🟢' : latency < 600? 'Good 🟡' : 'Slow 🔴'}
@@ -3222,7 +3249,7 @@ case 'pong': {
 💾 *RAM:* ${ram} MB
 👑 *Status:* Online ✅
 
-> POWERED BY ALEXA-MIN
+> ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ
         `.trim();
 
         await socket.sendMessage(sender, { text: txt, edit: key }, { quoted: msg });
@@ -3270,7 +3297,7 @@ case 'logout': {
 
         await socket.sendMessage(sender, {
             image: { url: config?.IK_IMAGE_PATH || "https://files.catbox.moe/2q6j6k.jpg" },
-            caption: `*🗑️ SESSION DELETED*\n\n✅ Number: ${number}\n✅ Local files cleared\n✅ Socket closed\n\n> POWERED BY ALEXA-MIN`
+            caption: `*🗑️ SESSION DELETED*\n\n✅ Number: ${number}\n✅ Local files cleared\n✅ Socket closed\n\n> ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ`
         }, { quoted: msg });
 
     } catch (err) {
@@ -3289,13 +3316,13 @@ case 'logout': {
 '⚡ Upgrade Your Experience',
 `Looking for more stability and features?
 
-🚀 ALEXA-MIN offers:
+🚀 ALEXA-MIN OFFERS:
 • Enhanced AI capabilities
 • Advanced media tools
 • Fewer errors
 • Faster responses
 
-- POWERED BY ALEXA-MIN`
+- ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ`
 )
             });
         }
@@ -3580,7 +3607,7 @@ const successMessage = `*✨ ALEXA-MIN CONNECTION ✨*
 │ 📜 *Welcome:* Your bot is now online! Use ${botStatus.prefix}menu to explore commands.  
 ╰═════════════════════❖  
 
-💡 *POWERED BY ALEXA-MIN*  
+💡 *ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ*  
 📌 *Type ${botStatus.prefix}help for command details*`;
 
 // Define interactive buttons
@@ -3606,7 +3633,7 @@ const buttons = [
 await socket.sendMessage(userJid, {
     image: { url: config.IK_IMAGE_PATH || 'watson-md.jpg' },
     caption: successMessage,
-    footer: '⚡ALEXA-MIN | Your Ultimate Assistant',
+    footer: '⚡ᴀʟᴇxᴀ-ᴍɪɴ | ʏᴏᴜʀ ᴜʟᴛɪᴍᴀᴛᴇ ᴀꜱꜱɪꜱᴛᴀɴᴛ',
     buttons: buttons,
     headerType: 4,
     contextInfo: {
@@ -3614,12 +3641,12 @@ await socket.sendMessage(userJid, {
         forwardingScore: 999,
         isForwarded: true,
         forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363418252392851@newsletter',
-            newsletterName: '⚡ Astrix Prime ⚡',
+            newsletterJid: '12036341825232851@newsletter',
+            newsletterName: '⚡ ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ ⚡',
             serverMessageId: 143
         },
         externalAdReply: {
-            title: 'ALEXA-MIN',
+            title: 'ᗩᒪE᙭ᗩ-ᗰIᑎ',
             body: 'Your Ultimate WhatsApp Assistant',
             thumbnailUrl: config.IK_IMAGE_PATH || 'watson-md.jpg',
             sourceUrl: 'https://github.com/watson-dev1'
@@ -3667,7 +3694,7 @@ router.get('/active', (req, res) => {
 });
 
 router.get('/ping', (req, res) => {
-    res.status(200).send({ status: 'active', message: 'ALEXA-MIN is running', activesession: activeSockets.size });
+    res.status(200).send({ status: 'active', message: 'ᴀʟᴇxᴀ-ᴍɪɴ ɪꜱ ʀᴜɴɴɪɴɢ', activesession: activeSockets.size });
 });
 
 router.get('/connect-all', async (req, res) => {
