@@ -1181,6 +1181,7 @@ case 'active': {
 }
 case 'menu': {
     try {
+        // Cooldown check (5 seconds)
         const lastMenuCall = socket.lastMenuCall?.get(number) || 0;
         if (Date.now() - lastMenuCall < 5000) {
             await socket.sendMessage(sender, { text: '⏳ Please wait 5 seconds before using the menu again.' });
@@ -1188,59 +1189,204 @@ case 'menu': {
         }
         socket.lastMenuCall = socket.lastMenuCall || new Map();
         socket.lastMenuCall.set(number, Date.now());
+
+        // Calculate bot runtime
         const startTime = socketCreationTime.get(number) || Date.now();
         const uptime = Math.floor((Date.now() - startTime) / 1000);
         const hours = Math.floor(uptime / 3600);
         const minutes = Math.floor((uptime % 3600) / 60);
         const seconds = uptime % 60;
         const runtime = `${hours}h ${minutes}m ${seconds}s`;
-        const now = new Date().toLocaleString("en-US", { timeZone: "Asia/Karachi", dateStyle: 'full', timeStyle: 'medium' });
-        const botStatus = { version: '1.4.0', mode: config.MODE || 'Public', status: 'Online', prefix: config.PREFIX || '!', library: 'Baileys (Multi-Device)', owner: 'watsonx' };
-        const menuSections = {
-            main: [ { cmd: 'alive', desc: 'Check bot status' }, { cmd: 'menu', desc: 'Display this menu' }, { cmd: 'ping', desc: 'Check latency' }, { cmd: 'system', desc: 'System information' }, { cmd: 'owner', desc: 'Owner contact info' }, { cmd: 'jid', desc: 'Get your JID' }, { cmd: 'sc', desc: 'Get source code' }, { cmd: 'stats', desc: 'Bot usage statistics' }, { cmd: 'support', desc: 'Get support group link' } ],
-            download: [ { cmd: 'play <song>', desc: 'Play audio from YouTube' }, { cmd: 'video <url/query>', desc: 'Download video' }, { cmd: 'fb <url>', desc: 'Download Facebook video' }, { cmd: 'tt <url>', desc: 'Download TikTok video' }, { cmd: 'ig <url>', desc: 'Download Instagram media' }, { cmd: 'apk <query>', desc: 'Download APK' }, { cmd: 'yts <query>', desc: 'YouTube search' }, { cmd: 'insta-story <username>', desc: 'Download IG stories' } ],
-            ai: [ { cmd: 'ai <query>', desc: 'AI assistant' }, { cmd: 'gpt <query>', desc: 'Chat with GPT model' }, { cmd: 'dj <query>', desc: 'AI DJ model' }, { cmd: 'imagine <prompt>', desc: 'Generate AI image' }, { cmd: 'flux <query>', desc: 'Flux AI model' }, { cmd: 'translate <text>', desc: 'Translate text' }, { cmd: 'voice <text>', desc: 'Convert text to speech' } ],
-            owner: [ { cmd: 'pair', desc: 'Connect bot' }, { cmd: 'getpp <@user>', desc: 'Get profile picture' }, { cmd: 'alive', desc: 'Check bot status' }, { cmd: 'uptime', desc: 'Check runtime' }, { cmd: 'ping', desc: 'Check speed' }, { cmd: 'boom <text>', desc: 'Repeat message' }, { cmd: 'owner', desc: 'Owner contact' }, { cmd: 'join <link>', desc: 'Join group' }, { cmd: 'save', desc: 'Save status' }, { cmd: 'broadcast <msg>', desc: 'Broadcast message' }, { cmd: 'restart', desc: 'Restart bot (owner-only)' } ],
-            group: [ { cmd: 'promote <@user>', desc: 'Promote to admin' }, { cmd: 'demote <@user>', desc: 'Demote from admin' }, { cmd: 'add <number>', desc: 'Add member' }, { cmd: 'invite <number>', desc: 'Send invite link' }, { cmd: 'kick <@user>', desc: 'Remove member' }, { cmd: 'mute', desc: 'Mute group' }, { cmd: 'unmute', desc: 'Unmute group' }, { cmd: 'kickall', desc: 'Remove all members' }, { cmd: 'end', desc: 'Close group' }, { cmd: 'tagall', desc: 'Tag all members' }, { cmd: 'groupinfo', desc: 'Show group details' }, { cmd: 'poll <question> | <option1> | <option2>', desc: 'Create group poll' } ],
-            tools: [ { cmd: 'take', desc: 'Rename sticker' }, { cmd: 'sticker', desc: 'Create sticker' }, { cmd: 'fetch <api_url>', desc: 'Fetch API data' }, { cmd: 'npm <package>', desc: 'Check NPM package' }, { cmd: 'image <query>', desc: 'Search images' }, { cmd: 'qr <text>', desc: 'Generate QR code' }, { cmd: 'weather <city>', desc: 'Get weather info' }, { cmd: 'shorturl <url>', desc: 'Shorten URL' } ]
+
+        // Get current time in specified timezone
+        const now = new Date().toLocaleString("en-US", { 
+            timeZone: "Asia/Karachi",
+            dateStyle: 'full',
+            timeStyle: 'medium'
+        });
+
+        // Bot status and version
+        const botStatus = {
+            version: '1.4.0', // Updated version
+            mode: config.MODE || 'Public',
+            status: 'Online',
+            prefix: config.PREFIX || '!',
+            library: 'Baileys (Multi-Device)',
+            owner: 'watson fourpence'
         };
+
+        // Menu sections with commands
+        const menuSections = {
+            main: [
+                { cmd: 'alive', desc: 'Check bot status' },
+                { cmd: 'menu', desc: 'Display this menu' },
+                { cmd: 'ping', desc: 'Check latency' },
+                { cmd: 'system', desc: 'System information' },
+                { cmd: 'owner', desc: 'Owner contact info' },
+                { cmd: 'jid', desc: 'Get your JID' },
+                { cmd: 'sc', desc: 'Get source code' },
+                { cmd: 'stats', desc: 'Bot usage statistics' },
+                { cmd: 'support', desc: 'Get support group link' } // New
+            ],
+            download: [
+                { cmd: 'play <song>', desc: 'Play audio from YouTube' },
+                { cmd: 'video <url/query>', desc: 'Download video' },
+                { cmd: 'fb <url>', desc: 'Download Facebook video' },
+                { cmd: 'tt <url>', desc: 'Download TikTok video' },
+                { cmd: 'ig <url>', desc: 'Download Instagram media' },
+                { cmd: 'apk <query>', desc: 'Download APK' },
+                { cmd: 'yts <query>', desc: 'YouTube search' },
+                { cmd: 'insta-story <username>', desc: 'Download IG stories' }
+            ],
+            ai: [
+                { cmd: 'ai <query>', desc: 'AI assistant' },
+                { cmd: 'gpt <query>', desc: 'Chat with GPT model' },
+                { cmd: 'dj <query>', desc: 'AI DJ model' },
+                { cmd: 'imagine <prompt>', desc: 'Generate AI image' },
+                { cmd: 'flux <query>', desc: 'Flux AI model' },
+                { cmd: 'translate <text>', desc: 'Translate text' },
+                { cmd: 'voice <text>', desc: 'Convert text to speech' } // New
+            ],
+            owner: [
+                { cmd: 'pair', desc: 'Connect bot' },
+                { cmd: 'getpp <@user>', desc: 'Get profile picture' },
+                { cmd: 'alive', desc: 'Check bot status' },
+                { cmd: 'uptime', desc: 'Check runtime' },
+                { cmd: 'ping', desc: 'Check speed' },
+                { cmd: 'boom <text>', desc: 'Repeat message' },
+                { cmd: 'owner', desc: 'Owner contact' },
+                { cmd: 'join <link>', desc: 'Join group' },
+                { cmd: 'save', desc: 'Save status' },
+                { cmd: 'broadcast <msg>', desc: 'Broadcast message' },
+                { cmd: 'restart', desc: 'Restart bot (owner-only)' } // New
+            ],
+            group: [
+                { cmd: 'promote <@user>', desc: 'Promote to admin' },
+                { cmd: 'demote <@user>', desc: 'Demote from admin' },
+                { cmd: 'add <number>', desc: 'Add member' },
+                { cmd: 'invite <number>', desc: 'Send invite link' },
+                { cmd: 'kick <@user>', desc: 'Remove member' },
+                { cmd: 'mute', desc: 'Mute group' },
+                { cmd: 'unmute', desc: 'Unmute group' },
+                { cmd: 'kickall', desc: 'Remove all members' },
+                { cmd: 'end', desc: 'Close group' },
+                { cmd: 'tagall', desc: 'Tag all members' },
+                { cmd: 'groupinfo', desc: 'Show group details' },
+                { cmd: 'poll <question> | <option1> | <option2>', desc: 'Create group poll' } // New
+            ],
+            tools: [
+                { cmd: 'take', desc: 'Rename sticker' },
+                { cmd: 'sticker', desc: 'Create sticker' },
+                { cmd: 'fetch <api_url>', desc: 'Fetch API data' },
+                { cmd: 'npm <package>', desc: 'Check NPM package' },
+                { cmd: 'image <query>', desc: 'Search images' },
+                { cmd: 'qr <text>', desc: 'Generate QR code' },
+                { cmd: 'weather <city>', desc: 'Get weather info' },
+                { cmd: 'shorturl <url>', desc: 'Shorten URL' } // New
+            ]
+        };
+
+        // Calculate total command count
         const totalCommands = Object.values(menuSections).reduce((acc, section) => acc + section.length, 0);
+
+        // Generate formatted menu section
         const generateMenuSection = (title, commands) => {
             let section = `╭═══❖ *${title}* ❖═══╮\n`;
-            commands.forEach(({ cmd, desc }) => { section += `│ ➤ ${config.PREFIX}${cmd} : ${desc}\n`; });
+            commands.forEach(({ cmd, desc }) => {
+                section += `│ ➤ ${config.PREFIX}${cmd} : ${desc}\n`;
+            });
             section += `╰═════════════════❖\n\n`;
             return section;
         };
+
+        // Dynamic menu based on argument (e.g., !menu download)
         const requestedSection = args[0]?.toLowerCase();
         let menuText;
         if (requestedSection && menuSections[requestedSection]) {
-            menuText = `*✨ ᗩᒪE᙭ᗩ-ᗰIᑎ ✨*\n\n${generateMenuSection(requestedSection.charAt(0).toUpperCase() + requestedSection.slice(1) + ' Menu', menuSections[requestedSection])}💡 *ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ*`;
+            menuText = `*✨ ᗩᒪE᙭ᗩ-ᗰIᑎ ✨*\n\n${generateMenuSection(
+                requestedSection.charAt(0).toUpperCase() + requestedSection.slice(1) + ' Menu',
+                menuSections[requestedSection]
+            )}💡 *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴀʟᴇxᴀ-ᴍɪɴ*`;
         } else {
-            menuText = `*✨ ᗩᒪE᙭ᗩ-ᗰIᑎ ✨* \n╭══════❖ Bot Info ❖══════╮ \n│ 👑 *Owner:* ${botStatus.owner} \n│ 📚 *Library:* ${botStatus.library} \n│ 📅 *Date:* ${now} \n│ ⏰ *Runtime:* ${runtime} \n│ 🔑 *Prefix:* ${botStatus.prefix} \n│ 🌍 *Mode:* ${botStatus.mode} \n│ 🟢 *Status:* ${botStatus.status} \n│ 🛠 *Version:* ${botStatus.version} \n│ 📋 *Commands:* ${totalCommands} \n╰═════════════════════❖ \n\n${generateMenuSection('Main Controls', menuSections.main)}${generateMenuSection('Download Menu', menuSections.download)}${generateMenuSection('AI Menu', menuSections.ai)}${generateMenuSection('Owner Menu', menuSections.owner)}${generateMenuSection('Group Menu', menuSections.group)}${generateMenuSection('Extra Tools', menuSections.tools)}\n💡 *ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ* \n📌 *Use ${config.PREFIX}menu <category> for specific menu* \n📢 *Join our support group:* ${config.PREFIX}support`;
+            menuText = `*✨ ᴀsᴛʀɪx Pʀɪᴍᴇ ✨*  
+╭══════❖ Bot Info ❖══════╮  
+│ 👑 *Owner:* ${botStatus.owner}  
+│ 📚 *Library:* ${botStatus.library}  
+│ 📅 *Date:* ${now}  
+│ ⏰ *Runtime:* ${runtime}  
+│ 🔑 *Prefix:* ${botStatus.prefix}  
+│ 🌍 *Mode:* ${botStatus.mode}  
+│ 🟢 *Status:* ${botStatus.status}  
+│ 🛠 *Version:* ${botStatus.version}  
+│ 📋 *Commands:* ${totalCommands}  
+╰═════════════════════❖  
+
+${generateMenuSection('Main Controls', menuSections.main)}
+${generateMenuSection('Download Menu', menuSections.download)}
+${generateMenuSection('AI Menu', menuSections.ai)}
+${generateMenuSection('Owner Menu', menuSections.owner)}
+${generateMenuSection('Group Menu', menuSections.group)}
+${generateMenuSection('Extra Tools', menuSections.tools)}
+
+💡 *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴀʟᴇxᴀ-ᴍɪɴ*  
+📌 *Use ${config.PREFIX}menu <category> for specific menu*  
+📢 *Join our support group:* ${config.PREFIX}support`;
         }
+
+        // Define interactive buttons
         const buttons = [
-            { buttonId: `${config.PREFIX}menu`, buttonText: { displayText: '📋 Main Menu' }, type: 1 },
-            { buttonId: `${config.PREFIX}help`, buttonText: { displayText: 'ℹ️ Help' }, type: 1 },
-            { buttonId: `${config.PREFIX}support`, buttonText: { displayText: '🤝 Support' }, type: 1 },
-            { buttonId: `${config.PREFIX}owner`, buttonText: { displayText: '👑 Owner' }, type: 1 }
+            {
+                buttonId: `${config.PREFIX}menu`,
+                buttonText: { displayText: '📋 ᳀ 𝐌𝐚𝐢𝐧 𝐌𝐞𝐧𝐮' },
+                type: 1
+            },
+            {
+                buttonId: `${config.PREFIX}help`,
+                buttonText: { displayText: 'ℹ️ ᳀ 𝐇𝐞𝐥𝐩' },
+                type: 1
+            },
+            {
+                buttonId: `${config.PREFIX}support`,
+                buttonText: { displayText: '👌 ᳀ 𝐒𝐮𝐩𝐩𝐨𝐫𝐭' },
+                type: 1
+            },
+            {
+                buttonId: `${config.PREFIX}owner`,
+                buttonText: { displayText: '💚 ᳀ 𝐎𝐰𝐧𝐞𝐫' },
+                type: 1
+            }
         ];
+
+        // Send menu with buttons
         await socket.sendMessage(sender, {
             image: { url: config.IK_IMAGE_PATH || 'watson-md.jpg' },
             caption: menuText,
-            footer: '⚡ Alexa Min | Your Ultimate Assistant',
+            footer: '⚡ ALEXA-MIN - SYSTEM STATUS',
             buttons: buttons,
             headerType: 4,
             contextInfo: {
                 mentionedJid: [sender],
                 forwardingScore: 999,
                 isForwarded: true,
-                forwardedNewsletterMessageInfo: { newsletterJid: '1203634182523851@newsletter', newsletterName: '⚡ ALEXA-MIN ⚡', serverMessageId: 143 },
-                externalAdReply: { title: 'ALEXA-MIN', body: 'Your Ultimate WhatsApp Assistant', thumbnailUrl: config.IK_IMAGE_PATH || 'watson-md.jpg', sourceUrl: 'https://github.com/watson-dev1' }
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: '12036341822392851@newsletter',
+                    newsletterName: '⚡ ᗩᒪE᙭ᗩ-ᗰIᑎ⚡',
+                    serverMessageId: 143
+                },
+                externalAdReply: {
+                    title: 'ᗩᒪE᙭ᗩ-ᗰIᑎ',
+                    body: 'Your Ultimate WhatsApp Assistant',
+                    thumbnailUrl: config.IK_IMAGE_PATH || 'watson-md.jpg',
+                    sourceUrl: 'https://github.com/watson-dev1'
+                }
             }
         });
+
     } catch (error) {
         console.error('Error generating menu:', error);
-        await socket.sendMessage(sender, { text: '⚠️ Error generating menu. Please try again later.' });
+        await socket.sendMessage(sender, {
+            text: '⚠️ Error generating menu. Please try again later.'
+        });
     }
     break;
 }
@@ -3149,7 +3295,7 @@ case 'stickergif': {
 
     try {
         let mime = msg.quoted.type;
-        let pack = "Sɪɢᴍᴀ ᴍɪɴɪ ʙᴏᴛ";
+        let pack = "ᗩᒪE᙭ᗩ-ᗰIᑎ";
 
         // Check for supported media types
         if (mime === "imageMessage" || mime === "videoMessage" || mime === "stickerMessage") {
