@@ -4078,131 +4078,129 @@ case 'npmstalk': {
 }
 
 case 'fetch': {
-const axios = require('axios');
-
-try {
-    // Get URL from args first, then fallback to q
-    const url = (
-        args.join(' ') ||
-        q?.replace(/^[.\/!]fetch\s*/i, '').trim()
-    ).trim();
-
-    if (!url) {
-        return await socket.sendMessage(sender, {
-            text:
-
-`❌ Please provide a URL.
-
-📌 Usage:
-${config?.PREFIX || '.'}fetch https://api.github.com/users/github`
-}, { quoted: fakevCard });
-}
-
-    // Validate URL
-    let parsedUrl;
+    const axios = require('axios');
 
     try {
-        parsedUrl = new URL(url);
-    } catch {
-        return await socket.sendMessage(sender, {
-            text: '❌ Invalid URL.'
-        }, { quoted: fakevCard });
-    }
+        const url = (
+            args.join(' ') ||
+            q?.replace(/^[.\/!]fetch\s*/i, '').trim()
+        ).trim();
 
-    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-        return await socket.sendMessage(sender, {
-            text: '❌ URL must start with http:// or https://.'
-        }, { quoted: fakevCard });
-    }
+        if (!url) {
+            return await socket.sendMessage(sender, {
+                text:
+`❌ *Please provide a URL.*
 
-    await socket.sendMessage(sender, {
-        react: {
-            text: '🔎',
-            key: msg.key
+📌 *Usage:*
+${config?.PREFIX || '.'}fetch https://api.github.com/users/github`
+            }, { quoted: fakevCard });
         }
-    });
 
-    const response = await axios.get(url, {
-        timeout: 15000,
-        headers: {
-            'User-Agent': 'Alexa-Mini/3.0'
-        },
+        // Validate URL
+        let parsedUrl;
 
-        // Allows us to display non-2xx API responses
-        validateStatus: () => true
-    });
+        try {
+            parsedUrl = new URL(url);
+        } catch {
+            return await socket.sendMessage(sender, {
+                text: '❌ Invalid URL.'
+            }, { quoted: fakevCard });
+        }
 
-    const status = response.status;
-    const contentType =
-        response.headers['content-type'] || '';
+        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+            return await socket.sendMessage(sender, {
+                text: '❌ URL must start with http:// or https://.'
+            }, { quoted: fakevCard });
+        }
 
-    let content;
+        await socket.sendMessage(sender, {
+            react: {
+                text: '🔎',
+                key: msg.key
+            }
+        });
 
-    if (
-        typeof response.data === 'object' &&
-        response.data !== null
-    ) {
-        content = JSON.stringify(
-            response.data,
-            null,
-            2
-        );
-    } else {
-        content = String(response.data);
-    }
+        const response = await axios.get(url, {
+            timeout: 15000,
+            headers: {
+                'User-Agent': 'Alexa-Mini/3.0'
+            },
+            validateStatus: () => true
+        });
 
-    // WhatsApp message limit protection
-    if (content.length > 3500) {
-        content =
-            content.slice(0, 3500) +
-            '\n...truncated';
-    }
+        const status = response.status;
 
-    const statusEmoji =
-        status >= 200 && status < 300
-            ? '✅'
-            : '⚠️';
+        const contentType =
+            response.headers['content-type'] || 'Unknown';
 
-    await socket.sendMessage(sender, {
-        text:
+        let content;
 
-`🔍 FETCH RESULT
+        if (
+            typeof response.data === 'object' &&
+            response.data !== null
+        ) {
+            content = JSON.stringify(
+                response.data,
+                null,
+                2
+            );
+        } else {
+            content = String(response.data);
+        }
 
-╭───❖ REQUEST ❖───
-│ 🔗 URL: ${url}
-│ 📊 Status: ${statusEmoji} ${status}
-│ 📄 Type: ${contentType}
+        // Prevent huge WhatsApp messages
+        if (content.length > 3000) {
+            content =
+                content.slice(0, 3000) +
+                '\n...truncated';
+        }
+
+        const statusEmoji =
+            status >= 200 && status < 300
+                ? '✅'
+                : '⚠️';
+
+        // IMPORTANT:
+        // Don't use ``` inside a JS template literal.
+        const resultText =
+`🔍 *FETCH RESULT*
+
+╭───❖ *REQUEST* ❖───
+│ 🔗 *URL:* ${url}
+│ 📊 *Status:* ${statusEmoji} ${status}
+│ 📄 *Type:* ${contentType}
 ╰───────────────❖
 
-```json
-${content}
-````
-}, { quoted: fakevCard });
+📄 *Response:*
 
-    await socket.sendMessage(sender, {
-        react: {
-            text: '✅',
-            key: msg.key
-        }
-    });
+${content}`;
 
-} catch (e) {
-    console.error(
-        'FETCH COMMAND ERROR:',
-        e
-    );
+        await socket.sendMessage(sender, {
+            text: resultText
+        }, { quoted: fakevCard });
 
-    await socket.sendMessage(sender, {
-        text:
+        await socket.sendMessage(sender, {
+            react: {
+                text: '✅',
+                key: msg.key
+            }
+        });
 
-`❌ Fetch Error:
+    } catch (e) {
+        console.error(
+            'FETCH COMMAND ERROR:',
+            e.response?.data || e.message
+        );
+
+        await socket.sendMessage(sender, {
+            text:
+`❌ *Fetch Error:*
 
 ${e.message || 'Unable to fetch the URL.'}`
-}, { quoted: fakevCard });
-}
+        }, { quoted: fakevCard });
+    }
 
-break;
-
+    break;
 }
 case 'image':
 case 'img': {
