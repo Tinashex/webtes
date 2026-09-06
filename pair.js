@@ -1407,105 +1407,137 @@ case 'removebg': case 'nobg': {
 case 'googleimg':
 case 'image':
 case 'gis': {
-const axios = require('axios');
+    const axios = require('axios');
 
-try {
-    if (!args.length) {
-        return await socket.sendMessage(sender, {
-            text: `📌 *Usage:*\n${config?.PREFIX || '.'}googleimg <search query>\n\n🖼️ *Example:*\n${config?.PREFIX || '.'}googleimg dog`
+    try {
+        if (!args.length) {
+            return await socket.sendMessage(sender, {
+                text:
+`📌 *Usage:*
+${config?.PREFIX || '.'}googleimg <search query>
+
+🖼️ *Example:*
+${config?.PREFIX || '.'}googleimg dog`
+            }, { quoted: msg });
+        }
+
+        const query = args.join(' ').trim();
+
+        await socket.sendMessage(sender, {
+            react: {
+                text: '🔎',
+                key: msg.key
+            }
+        });
+
+        await socket.sendMessage(sender, {
+            text: `🔎 *Searching Google Images for:* ${query}`
         }, { quoted: msg });
-    }
 
-    const query = args.join(' ').trim();
+        const apiUrl =
+            `https://api.siputzx.my.id/api/s/googleimg?query=${encodeURIComponent(query)}`;
 
-    await socket.sendMessage(sender, {
-        react: { text: '🔎', key: msg.key }
-    });
+        const response = await axios.get(apiUrl, {
+            timeout: 30000,
+            headers: {
+                'User-Agent': 'Mozilla/5.0'
+            }
+        });
 
-    await socket.sendMessage(sender, {
-        text: `🔎 *Searching Google Images for:* ${query}`
-    }, { quoted: msg });
+        const data = response.data;
 
-    const apiUrl =
-        `https://api.siputzx.my.id/api/s/googleimg?query=${encodeURIComponent(query)}`;
+        console.log(
+            'GOOGLEIMG RESPONSE:',
+            JSON.stringify(data, null, 2)
+        );
 
-    const response = await axios.get(apiUrl, {
-        timeout: 30000,
-        headers: {
-            'User-Agent': 'Mozilla/5.0'
-        }
-    });
-
-    const data = response.data;
-
-    console.log('GOOGLEIMG RESPONSE:', data);
-
-    if (!data?.status || !Array.isArray(data?.data) || !data.data.length) {
-        return await socket.sendMessage(sender, {
-            text: `❌ No images found for: *${query}*`
-        }, { quoted: msg });
-    }
-
-    const results = data.data;
-
-    // Send up to 5 images
-    const maxResults = Math.min(results.length, 5);
-
-    for (let i = 0; i < maxResults; i++) {
-        const item = results[i];
-
-        const imageUrl =
-            typeof item === 'string'
-                ? item
-                : item?.url ||
-                  item?.image ||
-                  item?.imageUrl ||
-                  item?.thumbnail ||
-                  item?.src;
-
-        if (!imageUrl || !imageUrl.startsWith('http')) {
-            continue;
+        if (
+            !data ||
+            !Array.isArray(data.data) ||
+            data.data.length === 0
+        ) {
+            return await socket.sendMessage(sender, {
+                text: `❌ *No images found for:* ${query}`
+            }, { quoted: msg });
         }
 
-        try {
-            await socket.sendMessage(sender, {
-                image: { url: imageUrl },
-                caption:
+        const results = data.data;
+        const maxResults = Math.min(results.length, 5);
 
-`🖼️ GOOGLE IMAGE SEARCH
+        let sentCount = 0;
 
-🔎 Query: ${query}
-📸 Result: ${i + 1}/${maxResults}
+        for (let i = 0; i < maxResults; i++) {
+            const item = results[i];
 
-«ALEXA-MIN`
-}, { quoted: msg });»
+            const imageUrl =
+                typeof item === 'string'
+                    ? item
+                    : item?.url ||
+                      item?.image ||
+                      item?.imageUrl ||
+                      item?.thumbnail ||
+                      item?.src;
 
-        } catch (imageError) {
-            console.log(
-                `Google image ${i + 1} failed:`,
-                imageError.message
-            );
+            if (
+                !imageUrl ||
+                !/^https?:\/\//i.test(imageUrl)
+            ) {
+                continue;
+            }
+
+            try {
+                await socket.sendMessage(sender, {
+                    image: {
+                        url: imageUrl
+                    },
+                    caption:
+`🖼️ *GOOGLE IMAGE SEARCH*
+
+🔎 *Query:* ${query}
+📸 *Result:* ${i + 1}/${maxResults}
+
+> ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ`
+                }, { quoted: msg });
+
+                sentCount++;
+
+            } catch (imageError) {
+                console.log(
+                    `Google image ${i + 1} failed:`,
+                    imageError.message
+                );
+            }
         }
-    }
 
-    await socket.sendMessage(sender, {
-        react: { text: '✅', key: msg.key }
-    });
+        if (sentCount === 0) {
+            return await socket.sendMessage(sender, {
+                text:
+                    '❌ Found results, but none of the images could be sent.'
+            }, { quoted: msg });
+        }
 
-} catch (e) {
-    console.error('GOOGLEIMG ERROR:', e.response?.data || e.message);
+        await socket.sendMessage(sender, {
+            react: {
+                text: '✅',
+                key: msg.key
+            }
+        });
 
-    await socket.sendMessage(sender, {
-        text:
+    } catch (e) {
+        console.error(
+            'GOOGLEIMG ERROR:',
+            e.response?.data || e.message
+        );
 
-`❌ Google Image Error:
+        await socket.sendMessage(sender, {
+            text:
+`❌ *Google Image Error:*
 
 ${e.message || 'Something went wrong.'}`
-}, { quoted: msg });
-}
+        }, { quoted: msg });
+    }
 
-break;
-
+    break;
 }
 case 'pinterest':
 case 'pin':
