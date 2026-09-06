@@ -2952,38 +2952,30 @@ case 'connect': {
     const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));  
     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));  
 
-    // FIXED: Fallback to your Railway if GitHub failshttps://github.com/watson-dev1/X.git
-    const RAW_URL = "https://raw.githubusercontent.com/watson-dev1/X/main/url.json";  
+    // YOUR NEW REPO
+    const RAW_URL = "https://raw.githubusercontent.com/watson-dev1/watson-session/main/url.json";  
     const FALLBACK_URL = "https://preciousminbot.up.railway.app";
 
-    let UrlOP;  
+    let UrlOP = FALLBACK_URL;
     try {  
         const res = await fetch(RAW_URL);  
-        const data = await res.json();  
-        UrlOP = data.UrlOP;  
-        if (!UrlOP) throw new Error("Empty UrlOP");
+        if(res.ok){
+            const data = await res.json();  
+            UrlOP = data.UrlOP || FALLBACK_URL;
+        }
     } catch (err) {  
-        console.log("GitHub failed, using fallback:", FALLBACK_URL);
-        UrlOP = FALLBACK_URL; // Use your pair server directly if GitHub deleted
+        console.log("Using fallback:", FALLBACK_URL);
     }  
 
-    // FIX: Remove /pair from UrlOP if user saved it with /pair
     UrlOP = UrlOP.replace(/\/pair\/?$/i, '').replace(/\/$/, '');
 
-    const q = msg.message?.conversation ||  
-              msg.message?.extendedTextMessage?.text ||  
-              msg.message?.imageMessage?.caption ||  
-              msg.message?.videoMessage?.caption || '';  
-
+    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || msg.message?.videoMessage?.caption || '';  
     let number = q.replace(/^[.\/!]?(pair|connect)\s*/i, '').trim().replace(/[^0-9]/g, '');  
 
     if (!number) {  
-        return await socket.sendMessage(sender, {  
-            text: '*📌 ᴜsᴀɢᴇ:* .pair +263xxxxx\nExample: .pair 263785123456'  
-        }, { quoted: msg });  
+        return await socket.sendMessage(sender, { text: '*📌 ᴜsᴀɢᴇ:* .pair 263785123456' }, { quoted: msg });  
     }  
 
-    // FIX: Define fakevCard (was undefined before)
     const fakevCard = {
         key: { fromMe: false, participant: "0@s.whatsapp.net", remoteJid: "status@broadcast" },
         message: { contactMessage: { displayName: "ALEXA-MIN", vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:ALEXA-MIN\nORG:;\nTEL;type=CELL;type=VOICE;waid=${number}:+${number}\nEND:VCARD` } }
@@ -2993,40 +2985,20 @@ case 'connect': {
         const url = `${UrlOP}/code?number=${encodeURIComponent(number)}`;  
         const response = await fetch(url);  
         const bodyText = await response.text();  
-
         console.log("🌐 API Response:", bodyText);  
+        const result = JSON.parse(bodyText);
 
-        let result;  
-        try {  
-            result = JSON.parse(bodyText);  
-        } catch (e) {  
-            console.error("❌ JSON Parse Error:", e);  
-            return await socket.sendMessage(sender, {  
-                text: `❌ Server sleeping. Try direct: ${UrlOP}/pair`  
-            }, { quoted: msg });  
+        if (!result?.code) {  
+            return await socket.sendMessage(sender, { text: `❌ Failed. Try: ${UrlOP}/pair` }, { quoted: msg });  
         }  
 
-        if (!result || !result.code) {  
-            return await socket.sendMessage(sender, {  
-                text: `❌ Failed to get code: ${result?.error || 'Check number'}\n\nDirect: ${UrlOP}/pair`  
-            }, { quoted: msg });  
-        }  
-
-        await socket.sendMessage(sender, {  
-            text: `> *alexa mini bot pair completed* ✅\n\n*🔑 ʏᴏᴜʀ ᴘᴀɪʀɪɴɢ ᴄᴏᴅᴇ ɪs:* ${result.code}\n\n*How:* WhatsApp > Linked Devices > Link with phone number > Enter ${result.code} FAST (20s)\n\nAfter link, creds.json will be sent to your DM.\n\n*Site:* ${UrlOP}/pair`  
-        }, { quoted: msg });  
-
-        await sleep(2000);  
-
-        await socket.sendMessage(sender, {  
-            text: `${result.code}`  
-        }, { quoted: fakevCard });  
+        await socket.sendMessage(sender, { text: `> *alexa mini bot pair completed* ✅\n\n*🔑 CODE:* ${result.code}\n\n1. WhatsApp > Linked Devices > Link with phone number\n2. Enter ${result.code} FAST\n\nAfter link, DM will get creds.json\n\n*Site:* ${UrlOP}/pair` }, { quoted: msg });  
+        await sleep(1500);  
+        await socket.sendMessage(sender, { text: `${result.code}` }, { quoted: fakevCard });  
 
     } catch (err) {  
-        console.error("❌ Pair Command Error:", err);  
-        await socket.sendMessage(sender, {  
-            text: `❌ Error: ${err.message}\nDirect: ${FALLBACK_URL}/pair`  
-        }, { quoted: fakevCard });  
+        console.error("❌ Pair Error:", err);  
+        await socket.sendMessage(sender, { text: `❌ Error. Direct: ${FALLBACK_URL}/pair` }, { quoted: msg });  
     }  
     break;  
 }
