@@ -2353,254 +2353,281 @@ case 'active': {
     break;
 }
 case 'menu': {
-try {
-// ─────────────────────────────
-// MENU SPAM PROTECTION
-// ─────────────────────────────
+    try {
 
-    socket.lastMenuCall =
-        socket.lastMenuCall || new Map();
+        // ─────────────────────────────
+        // MENU SPAM PROTECTION
+        // ─────────────────────────────
 
-    const menuUser =
-        sender?.split('@')[0] || sender;
+        socket.lastMenuCall =
+            socket.lastMenuCall || new Map();
 
-    const lastMenuCall =
-        socket.lastMenuCall.get(menuUser) || 0;
+        const menuUser =
+            sender?.split('@')[0] || sender;
 
-    if (Date.now() - lastMenuCall < 5000) {
-        return await socket.sendMessage(
-            sender,
-            {
-                text: '⏳ Wait 5s before using menu again.'
-            },
-            { quoted: msg }
-        );
-    }
+        const lastMenuCall =
+            socket.lastMenuCall.get(menuUser) || 0;
 
-    socket.lastMenuCall.set(
-        menuUser,
-        Date.now()
-    );
-
-    // ─────────────────────────────
-    // REAL BOT RUNTIME
-    // ─────────────────────────────
-
-    const uptimeSec =
-        Math.floor(process.uptime());
-
-    const days =
-        Math.floor(uptimeSec / 86400);
-
-    const hours =
-        Math.floor((uptimeSec % 86400) / 3600);
-
-    const minutes =
-        Math.floor((uptimeSec % 3600) / 60);
-
-    const seconds =
-        uptimeSec % 60;
-
-    const runtime =
-        days > 0
-            ? `${days}d ${hours}h ${minutes}m ${seconds}s`
-            : `${hours}h ${minutes}m ${seconds}s`;
-
-    // ─────────────────────────────
-    // DATE / CONFIG
-    // ─────────────────────────────
-
-    const now =
-        new Date().toLocaleString(
-            'en-ZA',
-            {
-                timeZone: 'Africa/Harare',
-                weekday: 'short',
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            }
-        );
-
-    const p =
-        config?.PREFIX || '.';
-
-    const botName =
-        config?.BOT_NAME ||
-        'ALEXA-MIN V2';
-
-    const version =
-        config?.VERSION ||
-        '3.0.0 Stable';
-
-    const owner =
-        config?.OWNER_NAME ||
-        'Watson Fourpence';
-
-    const botImage =
-        config?.IK_IMAGE_PATH ||
-        config?.IMAGE_PATH ||
-        'https://files.catbox.moe/2q6j6k.jpg';
-
-    // ─────────────────────────────
-    // MENU COMMANDS
-    // ─────────────────────────────
-
-    const menuSections = {
-
-        main: [
-            ['alive', 'System status'],
-            ['uptime', 'Bot runtime'],
-            ['menu', 'Show menu'],
-            ['ping', 'Check latency'],
-            ['system', 'System information'],
-            ['owner', 'Owner contact'],
-            ['jid', 'Get JID'],
-            ['sc', 'Source code'],
-            ['stats', 'Usage statistics']
-        ],
-
-        download: [
-            ['play', 'YouTube audio'],
-            ['video', 'Video download'],
-            ['fb', 'Facebook video'],
-            ['tt', 'TikTok download'],
-            ['ig', 'Instagram media'],
-            ['apk', 'APK downloader'],
-            ['yts', 'YouTube search'],
-            ['artist', 'Artist information'],
-            ['insta-story', 'Instagram story']
-        ],
-
-        ai: [
-            ['ai', 'AI chat'],
-            ['gpt', 'ChatGPT'],
-            ['chatgpt', 'ChatGPT'],
-            ['dj', 'AI DJ'],
-            ['imagine', 'AI image'],
-            ['flux', 'Flux AI'],
-            ['translate', 'Translator'],
-            ['voice', 'Text to speech']
-        ],
-
-        image: [
-            ['googleimg', 'Google image search'],
-            ['gimage', 'Google image search'],
-            ['gis', 'Google image search'],
-            ['pinterest', 'Pinterest images'],
-            ['pin', 'Pinterest images'],
-            ['pinterestimg', 'Pinterest images'],
-            ['blur', 'Blur image'],
-            ['affect', 'Affect image'],
-            ['removebg', 'Remove background'],
-            ['nobg', 'Remove background'],
-            ['remini', 'HD enhance']
-        ],
-
-        effects: [
-            ['photooxy', 'Photooxy effects'],
-            ['photoox', 'Photooxy effects'],
-            ['skytext', 'Sky text effect'],
-            ['shadowtext', 'Shadow text effect']
-        ],
-
-        tools: [
-            ['sticker', 'Make sticker'],
-            ['s', 'Make sticker'],
-            ['stiker', 'Make sticker'],
-            ['take', 'Rename sticker'],
-            ['qr', 'Generate QR'],
-            ['weather', 'Weather'],
-            ['shorturl', 'Shorten URL'],
-            ['github', 'GitHub downloader'],
-            ['git', 'GitHub downloader'],
-            ['gist', 'GitHub Gist']
-        ],
-
-        group: [
-            ['promote', 'Promote admin'],
-            ['demote', 'Demote admin'],
-            ['add', 'Add member'],
-            ['kick', 'Remove member'],
-            ['mute', 'Mute group'],
-            ['unmute', 'Unmute group'],
-            ['tagall', 'Tag everyone'],
-            ['groupinfo', 'Group information'],
-            ['poll', 'Create poll']
-        ],
-
-        owner: [
-            ['pair', 'Connect bot'],
-            ['getpp', 'Get profile picture'],
-            ['join', 'Join group'],
-            ['save', 'Save status'],
-            ['broadcast', 'Broadcast message'],
-            ['restart', 'Restart bot']
-        ]
-    };
-
-    const icons = {
-        main: '🤖',
-        download: '📥',
-        ai: '✨',
-        image: '🖼️',
-        effects: '🎨',
-        tools: '🛠️',
-        group: '👥',
-        owner: '👑'
-    };
-
-    // ─────────────────────────────
-    // FORMAT SECTION
-    // ─────────────────────────────
-
-    const formatSection = (key) => {
-
-        let text =
-            `*${icons[key]} ${key.toUpperCase()}*\n`;
-
-        for (const [cmd, desc] of menuSections[key]) {
-            text +=
-                `│ ◦ ${p}${cmd} — ${desc}\n`;
+        if (Date.now() - lastMenuCall < 5000) {
+            return await socket.sendMessage(
+                sender,
+                {
+                    text: '⏳ Wait 5s before using menu again.'
+                },
+                { quoted: msg }
+            );
         }
 
-        return text + '\n';
-    };
+        socket.lastMenuCall.set(
+            menuUser,
+            Date.now()
+        );
 
-    // ─────────────────────────────
-    // TOTAL COMMANDS
-    // ─────────────────────────────
 
-    const total =
-        Object.values(menuSections)
-            .reduce(
-                (sum, section) =>
-                    sum + section.length,
-                0
+        // ─────────────────────────────
+        // REAL BOT RUNTIME
+        // ─────────────────────────────
+
+        const uptimeSec =
+            Math.floor(process.uptime());
+
+        const days =
+            Math.floor(uptimeSec / 86400);
+
+        const hours =
+            Math.floor(
+                (uptimeSec % 86400) / 3600
             );
 
-    // ─────────────────────────────
-    // CATEGORY
-    // ─────────────────────────────
+        const minutes =
+            Math.floor(
+                (uptimeSec % 3600) / 60
+            );
 
-    const category =
-        args[0]?.toLowerCase();
+        const seconds =
+            uptimeSec % 60;
 
-    let caption;
+        const runtime =
+            days > 0
+                ? `${days}d ${hours}h ${minutes}m ${seconds}s`
+                : `${hours}h ${minutes}m ${seconds}s`;
 
-    if (
-        category &&
-        menuSections[category]
-    ) {
 
-        const section =
-            menuSections[category];
+        // ─────────────────────────────
+        // DATE / CONFIG
+        // ─────────────────────────────
 
-        caption =
+        const now =
+            new Date().toLocaleString(
+                'en-ZA',
+                {
+                    timeZone: 'Africa/Harare',
+                    weekday: 'short',
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                }
+            );
 
+        const p =
+            config?.PREFIX || '.';
+
+        const botName =
+            config?.BOT_NAME ||
+            'ALEXA-MIN V2';
+
+        const version =
+            config?.VERSION ||
+            '3.0.0 Stable';
+
+        const owner =
+            config?.OWNER_NAME ||
+            'Watson Fourpence';
+
+        const botImage =
+            config?.IK_IMAGE_PATH ||
+            config?.IMAGE_PATH ||
+            'https://files.catbox.moe/2q6j6k.jpg';
+
+
+        // ─────────────────────────────
+        // MENU COMMANDS
+        // ─────────────────────────────
+
+        const menuSections = {
+
+            main: [
+                ['alive', 'System status'],
+                ['uptime', 'Bot runtime'],
+                ['menu', 'Show menu'],
+                ['ping', 'Check latency'],
+                ['system', 'System information'],
+                ['owner', 'Owner contact'],
+                ['jid', 'Get JID'],
+                ['sc', 'Source code'],
+                ['stats', 'Usage statistics']
+            ],
+
+            download: [
+                ['play', 'YouTube audio'],
+                ['video', 'Video download'],
+                ['fb', 'Facebook video'],
+                ['tt', 'TikTok download'],
+                ['ig', 'Instagram media'],
+                ['apk', 'APK downloader'],
+                ['yts', 'YouTube search'],
+                ['artist', 'Artist information'],
+                ['insta-story', 'Instagram story']
+            ],
+
+            ai: [
+                ['ai', 'AI chat'],
+                ['gpt', 'ChatGPT'],
+                ['chatgpt', 'ChatGPT'],
+                ['dj', 'AI DJ'],
+                ['imagine', 'AI image'],
+                ['flux', 'Flux AI'],
+                ['translate', 'Translator'],
+                ['voice', 'Text to speech']
+            ],
+
+            image: [
+                ['googleimg', 'Google image search'],
+                ['gimage', 'Google image search'],
+                ['gis', 'Google image search'],
+                ['pinterest', 'Pinterest images'],
+                ['pin', 'Pinterest images'],
+                ['pinterestimg', 'Pinterest images'],
+                ['blur', 'Blur image'],
+                ['affect', 'Affect image'],
+                ['removebg', 'Remove background'],
+                ['nobg', 'Remove background'],
+                ['remini', 'HD enhance']
+            ],
+
+            effects: [
+                ['photooxy', 'Photooxy effects'],
+                ['photoox', 'Photooxy effects'],
+                ['skytext', 'Sky text effect'],
+                ['shadowtext', 'Shadow text effect']
+            ],
+
+            tools: [
+                ['sticker', 'Make sticker'],
+                ['s', 'Make sticker'],
+                ['stiker', 'Make sticker'],
+                ['take', 'Rename sticker'],
+                ['qr', 'Generate QR'],
+                ['weather', 'Weather'],
+                ['shorturl', 'Shorten URL'],
+                ['github', 'GitHub downloader'],
+                ['git', 'GitHub downloader'],
+                ['gist', 'GitHub Gist'],
+                ['fetch', 'Fetch URL/API']
+            ],
+
+            group: [
+                ['promote', 'Promote admin'],
+                ['demote', 'Demote admin'],
+                ['add', 'Add member'],
+                ['kick', 'Remove member'],
+                ['mute', 'Mute group'],
+                ['unmute', 'Unmute group'],
+                ['tagall', 'Tag everyone'],
+                ['groupinfo', 'Group information'],
+                ['poll', 'Create poll']
+            ],
+
+            owner: [
+                ['pair', 'Connect bot'],
+                ['getpp', 'Get profile picture'],
+                ['join', 'Join group'],
+                ['save', 'Save status'],
+                ['broadcast', 'Broadcast message'],
+                ['restart', 'Restart bot']
+            ]
+        };
+
+
+        // ─────────────────────────────
+        // CATEGORY ICONS
+        // ─────────────────────────────
+
+        const icons = {
+            main: '🤖',
+            download: '📥',
+            ai: '✨',
+            image: '🖼️',
+            effects: '🎨',
+            tools: '🛠️',
+            group: '👥',
+            owner: '👑'
+        };
+
+
+        // ─────────────────────────────
+        // FORMAT CATEGORY
+        // ─────────────────────────────
+
+        const formatSection = (key) => {
+
+            let text =
+                `*${icons[key]} ${key.toUpperCase()}*\n`;
+
+            for (
+                const [cmd, desc]
+                of menuSections[key]
+            ) {
+
+                text +=
+                    `│ ◦ ${p}${cmd} — ${desc}\n`;
+            }
+
+            return text + '\n';
+        };
+
+
+        // ─────────────────────────────
+        // TOTAL COMMANDS
+        // ─────────────────────────────
+
+        const total =
+            Object.values(menuSections)
+                .reduce(
+                    (sum, section) =>
+                        sum + section.length,
+                    0
+                );
+
+
+        // ─────────────────────────────
+        // GET CATEGORY
+        // ─────────────────────────────
+
+        const category =
+            String(args?.[0] || '')
+                .toLowerCase()
+                .trim();
+
+
+        // ─────────────────────────────
+        // BUILD CAPTION
+        // ─────────────────────────────
+
+        let caption;
+
+        if (
+            category &&
+            menuSections[category]
+        ) {
+
+            const section =
+                menuSections[category];
+
+            caption =
 `╭───❖ ${botName} ❖───
 │ 📂 Category: ${category.toUpperCase()}
 │ 📚 Commands: ${section.length}
@@ -2609,12 +2636,11 @@ try {
 
 ${formatSection(category)}
 
-«Use ${p}menu to return to the full menu`;
+« Tap 📋 All Menu to return to the full menu »`;
 
-    } else {
+        } else {
 
-        caption =
-
+            caption =
 `✨ ᴀʟᴇxᴀ-ᴍɪɴ - ᴍᴀɪɴ ᴍᴇɴᴜ ✨
 
 ╭───❖ BOT INFO ❖───
@@ -2633,169 +2659,212 @@ ${formatSection(category)}
 │ 📚 Commands: ${total}
 ╰───────────────❖
 
-${formatSection('main')}
-${formatSection('download')}
-${formatSection('ai')}
-${formatSection('image')}
-${formatSection('effects')}
-${formatSection('tools')}
-${formatSection('group')}
-${formatSection('owner')}
+${formatSection('main')}${formatSection('download')}${formatSection('ai')}${formatSection('image')}${formatSection('effects')}${formatSection('tools')}${formatSection('group')}${formatSection('owner')}
 
-«Select a category below`;
-}
-
-    // ─────────────────────────────
-    // CATEGORY BUTTONS
-    // ─────────────────────────────
-
-    const buttons = [
-        {
-            buttonId: `${p}menu main`,
-            buttonText: {
-                displayText: '🤖 Main'
-            },
-            type: 1
-        },
-        {
-            buttonId: `${p}menu download`,
-            buttonText: {
-                displayText: '📥 Download'
-            },
-            type: 1
-        },
-        {
-            buttonId: `${p}menu ai`,
-            buttonText: {
-                displayText: '✨ AI'
-            },
-            type: 1
-        },
-        {
-            buttonId: `${p}menu image`,
-            buttonText: {
-                displayText: '🖼️ Images'
-            },
-            type: 1
-        },
-        {
-            buttonId: `${p}menu effects`,
-            buttonText: {
-                displayText: '🎨 Effects'
-            },
-            type: 1
-        },
-        {
-            buttonId: `${p}menu tools`,
-            buttonText: {
-                displayText: '🛠️ Tools'
-            },
-            type: 1
-        },
-        {
-            buttonId: `${p}menu group`,
-            buttonText: {
-                displayText: '👥 Group'
-            },
-            type: 1
-        },
-        {
-            buttonId: `${p}menu owner`,
-            buttonText: {
-                displayText: '👑 Owner'
-            },
-            type: 1
-        },
-        {
-            buttonId: `${p}menu`,
-            buttonText: {
-                displayText: '📋 All Menu'
-            },
-            type: 1
+« Select a category below »`;
         }
-    ];
 
-    // ─────────────────────────────
-    // SEND MENU
-    // ─────────────────────────────
 
-    await socket.sendMessage(
-        sender,
-        {
-            image: {
-                url: botImage
-            },
+        // ─────────────────────────────
+        // CATEGORY BUTTONS
+        // ─────────────────────────────
 
-            caption,
+        let buttons;
 
-            footer:
-                `⚡ ${botName} • ${total} Commands`,
+        /*
+         * If a category was selected:
+         *
+         * .menu download
+         *
+         * ONLY show:
+         * 📋 All Menu
+         *
+         * This prevents the other category
+         * buttons from appearing.
+         */
 
-            buttons,
+        if (
+            category &&
+            menuSections[category]
+        ) {
 
-            headerType: 4,
+            buttons = [
+                {
+                    buttonId: `${p}menu`,
+                    buttonText: {
+                        displayText: '📋 All Menu'
+                    },
+                    type: 1
+                }
+            ];
 
-            contextInfo: {
-                mentionedJid: [sender],
+        } else {
 
-                forwardingScore: 999,
-                isForwarded: true,
+            /*
+             * Main menu:
+             * Show all category buttons.
+             */
 
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid:
-                        '120363418252392851@newsletter',
+            buttons = [
 
-                    newsletterName:
-                        '⚡ ALEXA-MIN ⚡',
-
-                    serverMessageId: 143
+                {
+                    buttonId: `${p}menu main`,
+                    buttonText: {
+                        displayText: '🤖 Main'
+                    },
+                    type: 1
                 },
 
-                externalAdReply: {
-                    title:
-                        `${botName} • ${total} Commands`,
+                {
+                    buttonId: `${p}menu download`,
+                    buttonText: {
+                        displayText: '📥 Download'
+                    },
+                    type: 1
+                },
 
-                    body:
-                        `Runtime ${runtime} • ${category ? category.toUpperCase() : 'All Commands'}`,
+                {
+                    buttonId: `${p}menu ai`,
+                    buttonText: {
+                        displayText: '✨ AI'
+                    },
+                    type: 1
+                },
 
-                    thumbnailUrl:
-                        botImage,
+                {
+                    buttonId: `${p}menu image`,
+                    buttonText: {
+                        displayText: '🖼️ Images'
+                    },
+                    type: 1
+                },
 
-                    sourceUrl:
-                        'https://github.com/watson-dev1',
+                {
+                    buttonId: `${p}menu effects`,
+                    buttonText: {
+                        displayText: '🎨 Effects'
+                    },
+                    type: 1
+                },
 
-                    mediaType: 1,
+                {
+                    buttonId: `${p}menu tools`,
+                    buttonText: {
+                        displayText: '🛠️ Tools'
+                    },
+                    type: 1
+                },
 
-                    renderLargerThumbnail:
-                        true
+                {
+                    buttonId: `${p}menu group`,
+                    buttonText: {
+                        displayText: '👥 Group'
+                    },
+                    type: 1
+                },
+
+                {
+                    buttonId: `${p}menu owner`,
+                    buttonText: {
+                        displayText: '👑 Owner'
+                    },
+                    type: 1
                 }
-            }
-        },
-        { quoted: msg }
-    );
+            ];
+        }
 
-} catch (e) {
 
-    console.error(
-        'MENU ERROR:',
-        e
-    );
+        // ─────────────────────────────
+        // SEND MENU
+        // ─────────────────────────────
 
-    await socket.sendMessage(
-        sender,
-        {
-            text:
+        await socket.sendMessage(
+            sender,
+            {
 
-`⚠️ Menu Error
+                image: {
+                    url: botImage
+                },
+
+                caption: caption,
+
+                footer:
+                    `⚡ ${botName} • ${total} Commands`,
+
+                buttons: buttons,
+
+                headerType: 4,
+
+                contextInfo: {
+
+                    mentionedJid: [
+                        sender
+                    ],
+
+                    forwardingScore: 999,
+
+                    isForwarded: true,
+
+                    forwardedNewsletterMessageInfo: {
+
+                        newsletterJid:
+                            '120363418252392851@newsletter',
+
+                        newsletterName:
+                            '⚡ ALEXA-MIN ⚡',
+
+                        serverMessageId: 143
+                    },
+
+                    externalAdReply: {
+
+                        title:
+                            category
+                                ? `${icons[category]} ${category.toUpperCase()} MENU`
+                                : `${botName} • ${total} Commands`,
+
+                        body:
+                            category
+                                ? `${menuSections[category].length} Commands • Tap All Menu`
+                                : `Runtime ${runtime} • Select a category`,
+
+                        thumbnailUrl:
+                            botImage,
+
+                        sourceUrl:
+                            'https://github.com/watson-dev1',
+
+                        mediaType: 1,
+
+                        renderLargerThumbnail:
+                            true
+                    }
+                }
+
+            },
+            { quoted: msg }
+        );
+
+    } catch (e) {
+
+        console.error(
+            'MENU ERROR:',
+            e
+        );
+
+        await socket.sendMessage(
+            sender,
+            {
+                text:
+`⚠️ *Menu Error*
 
 ${e.message || 'Unable to load menu.'}`
-},
-{ quoted: msg }
-);
-}
+            },
+            { quoted: msg }
+        );
+    }
 
-break;
-
+    break;
 }
  case 'system':
     await socket.sendMessage(sender, {
