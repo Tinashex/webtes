@@ -4337,99 +4337,391 @@ process.on('uncaughtException', (err) => {
 });
 
 async function updateNumberListOnGitHub(newNumber) {
-    const sanitizedNumber = newNumber.replace(/[^0-9]/g, '');
     const pathOnGitHub = 'session/numbers.json';
-    let numbers = [];
-    try {
-        const { data } = await octokit.repos.getContent({ owner, repo, path: pathOnGitHub });
-        const content = Buffer.from(data.content, 'base64').toString('utf8');
-        numbers = JSON.parse(content);
-        if (!numbers.includes(sanitizedNumber)) {
-            numbers.push(sanitizedNumber);
-            await octokit.repos.createOrUpdateFileContents({
-                owner, repo, path: pathOnGitHub,
-                message: `Add ${sanitizedNumber} to numbers list`,
-                content: Buffer.from(JSON.stringify(numbers, null, 2)).toString('base64'),
-                sha: data.sha
-            });
-            console.log(`✅ Added ${sanitizedNumber} to GitHub numbers.json`);
-        }
-    } catch (err) {
-        if (err.status === 404) {
-            numbers = [sanitizedNumber];
-            await octokit.repos.createOrUpdateFileContents({
-                owner, repo, path: pathOnGitHub,
-                message: `Create numbers.json with ${sanitizedNumber}`,
-                content: Buffer.from(JSON.stringify(numbers, null, 2)).toString('base64')
-            });
-            console.log(`📁 Created GitHub numbers.json with ${sanitizedNumber}`);
-        } else {
-            console.error('❌ Failed to update numbers.json:', err.message);
-        }
-    }
-}
+    const sanitizedNumber = String(newNumber || '').replace(/[^0-9]/g, '');
 
-async function autoReconnectFromGitHub() {
+    if (!sanitizedNumber) {
+        console.error('❌ Cannot update GitHub numbers.json: invalid number');
+        return false;
+    }
+
     try {
-        const pathOnGitHub = 'session/numbers.json';
-        const url = `https://raw.githubusercontent.com/${owner}/${repo}/main/${pathOnGitHub}`;
-        const response = await axios.get(url, { timeout: 10000 });
-        const content = response.data;
-        const numbers = JSON.parse(content);
-        if (!Array.isArray(numbers)) {
-            console.error('❌ Invalid numbers format from GitHub');
-            return;
-        }
-        for (const number of numbers) {
-            if (!activeSockets.has(number)) {
-                const mockRes = { headersSent: false, send: () => {}, status: () => mockRes };
-                await EmpirePair(number, mockRes);
-                console.log(`🔁 Reconnected from GitHub: ${number}`);
-                await delay(1000);
+        let numbers = [];
+        let sha;
+
+        try {
+            const { data } = await octokit.repos.getContent({
+                owner,
+                repo,
+                path: pathOnGitHub,
+                ref: 'main'
+            });
+
+            if (!data || !data.content) {
+                throw new Error('GitHub returned empty numbers.json');
+            }
+
+            const content = Buffer
+                .from(data.content, 'base64')
+                .toString('utf8')
+                .trim();
+
+            if (content) {
+                try {
+                    numbers = JSON.parse(content);
+                } catch (parseError) {
+                    console.error(
+                        '❌ Invalid JSON in GitHub numbers.json:',
+                        parseError.message
+                    );
+                    return false;
+                }
+            }
+
+            sha = data.sha;
+
+            if (!Array.isArray(numbers)) {
+                console.error(
+                    '❌ Invalid numbers.json format. Expected an array.'
+                );
+                return false;
+            }
+
+        } catch (error) {
+            if (error.status === 404) {
+                console.log(
+                    '📁 numbers.json does not exist. Creating it...'
+                );
+
+                numbers = [];
+                sha = undefined;
+
+            } else {
+                throw error;
             }
         }
-        console.log(`✅ Successfully reconnected ${numbers.length} numbers from GitHub`);
-    } catch (error) {
-        if (error.code === 'ENOTFOUND' || error.code === 'ECONNABORTED') {
-            console.error('❌ Network error connecting to GitHub:', error.message);
-        } else if (error.response?.status === 404) {
-            console.error('❌ File not found on GitHub:', pathOnGitHub);
-        } else if (error.response?.status === 401 || error.response?.status === 403) {
-            console.error('❌ GitHub authentication failed. Make sure your repo is public or credentials are correct');
-        } else {
-            console.error('❌ autoReconnectFromGitHub error:', error.message);
-            console.error('Full error:', error.response?.data || error);
+
+        numbers = numbers
+            .map(number => String(number).replace(/[^0-9]/g, ''))
+            .filter(Boolean);
+
+        if (numbers.includes(sanitizedNumber)) {
+            console.log(
+                `ℹ️ ${sanitizedNumber} already exists in GitHub numbers.json`
+            );
+            return true;
         }
+
+        numbers.push(sanitizedNumber);
+
+        const fileData = {
+            owner,
+            repo,
+            path: pathOnGitHub,
+            message: `Add ${sanitizedNumber} to numbers list`,
+            content: Buffer
+                .from(JSON.stringify(numbers, null, 2) + '\n')
+                .toString('base64'),
+            branch: 'main'
+        };
+
+        if (sha) {
+            fileData.sha = sha;
+        }
+
+        await octokit.repos.createOrUpdateFileContents(fileData);
+
+        console.log(
+            `✅ Added ${sanitizedNumber} to GitHub numbers.json`
+        );
+
+        return true;
+
+    } catch (error) {
+        console.error(
+            '❌ Failed to update numbers.json on GitHub:',
+            error.message
+        );
+
+        if (error.status) {
+            console.error(`📌 GitHub status: ${error.status}`);
+        }
+
+        return false;
     }
 }
 
-async function loadNewsletterJIDsFromRaw() {
+
+let isAutoReconnecting = false;
+
+async function autoReconnectFromGitHub() {
+    const pathOnGitHub = 'session/numbers.json';
+
+    if (isAutoReconnecting) {
+        console.log(
+            '⏳ GitHub auto-reconnect is already running...'
+        );
+        return;
+    }
+
+    isAutoReconnecting = true;
+
     try {
-        const response = await axios.get('https://raw.githubusercontent.com/ziliyoxd/DB/refs/heads/main/newsletter.json', { timeout: 10000 });
-        if (!response.data) {
-            console.error('❌ Empty response from newsletter API');
-            return [];
+        const url =
+            `https://raw.githubusercontent.com/` +
+            `${owner}/${repo}/main/${pathOnGitHub}`;
+
+        console.log(
+            `🔄 Loading WhatsApp numbers from GitHub...`
+        );
+
+        const response = await axios.get(url, {
+            timeout: 15000,
+            responseType: 'json',
+            headers: {
+                'Cache-Control': 'no-cache',
+                'User-Agent': 'WATSON-XD-BOT'
+            }
+        });
+
+        let numbers = response.data;
+
+        if (typeof numbers === 'string') {
+            try {
+                numbers = JSON.parse(numbers);
+            } catch (parseError) {
+                console.error(
+                    '❌ Failed to parse GitHub numbers.json:',
+                    parseError.message
+                );
+                return;
+            }
         }
-        const data = response.data;
-        if (Array.isArray(data)) {
-            return data;
-        } else {
-            console.error('❌ Invalid newsletter data format:', typeof data);
-            return [];
+
+        if (!Array.isArray(numbers)) {
+            console.error(
+                '❌ Invalid numbers format from GitHub.'
+            );
+            console.error(
+                'Expected an array but received:',
+                typeof numbers
+            );
+            return;
         }
+
+        const cleanNumbers = [
+            ...new Set(
+                numbers
+                    .map(number =>
+                        String(number || '')
+                            .replace(/[^0-9]/g, '')
+                    )
+                    .filter(Boolean)
+            )
+        ];
+
+        if (!cleanNumbers.length) {
+            console.log(
+                'ℹ️ No WhatsApp numbers found in GitHub numbers.json'
+            );
+            return;
+        }
+
+        console.log(
+            `📱 Found ${cleanNumbers.length} number(s) on GitHub`
+        );
+
+        let reconnected = 0;
+        let alreadyConnected = 0;
+        let failed = 0;
+
+        for (const number of cleanNumbers) {
+            try {
+                if (activeSockets.has(number)) {
+                    alreadyConnected++;
+
+                    console.log(
+                        `✅ Already connected: ${number}`
+                    );
+
+                    continue;
+                }
+
+                console.log(
+                    `🔄 Reconnecting: ${number}`
+                );
+
+                const mockRes = {
+                    headersSent: false,
+
+                    send: () => {},
+
+                    status: function () {
+                        return this;
+                    }
+                };
+
+                await EmpirePair(number, mockRes);
+
+                reconnected++;
+
+                console.log(
+                    `🔁 Reconnected from GitHub: ${number}`
+                );
+
+                await delay(1500);
+
+            } catch (numberError) {
+                failed++;
+
+                console.error(
+                    `❌ Failed to reconnect ${number}:`,
+                    numberError.message
+                );
+            }
+        }
+
+        console.log('====================================');
+        console.log('✅ GITHUB AUTO-RECONNECT COMPLETE');
+        console.log('====================================');
+        console.log(`📱 Total numbers: ${cleanNumbers.length}`);
+        console.log(`🔁 Reconnected: ${reconnected}`);
+        console.log(`✅ Already connected: ${alreadyConnected}`);
+        console.log(`❌ Failed: ${failed}`);
+        console.log('====================================');
+
     } catch (error) {
-        if (error.code === 'ENOTFOUND') {
-            console.error('❌ Cannot reach GitHub raw content server');
+
+        if (
+            error.code === 'ENOTFOUND' ||
+            error.code === 'ECONNABORTED' ||
+            error.code === 'ETIMEDOUT'
+        ) {
+            console.error(
+                '❌ Network error connecting to GitHub:',
+                error.message
+            );
+
         } else if (error.response?.status === 404) {
-            console.error('❌ Newsletter file not found on GitHub');
+            console.error(
+                `❌ File not found on GitHub: ${pathOnGitHub}`
+            );
+
+        } else if (
+            error.response?.status === 401 ||
+            error.response?.status === 403
+        ) {
+            console.error(
+                '❌ GitHub access denied.'
+            );
+
         } else {
-            console.error('❌ Failed to load newsletter list from GitHub:', error.message);
+            console.error(
+                '❌ autoReconnectFromGitHub error:',
+                error.message
+            );
         }
+
+    } finally {
+        isAutoReconnecting = false;
+    }
+}
+
+
+async function loadNewsletterJIDsFromRaw() {
+    const newsletterUrl =
+        'https://raw.githubusercontent.com/' +
+        'watson-dev1/DB/refs/heads/main/newsletter.json';
+
+    try {
+        const response = await axios.get(newsletterUrl, {
+            timeout: 15000,
+            responseType: 'json',
+            headers: {
+                'Cache-Control': 'no-cache',
+                'User-Agent': 'ALEXA-MIN'
+            }
+        });
+
+        if (!response.data) {
+            console.error(
+                '❌ Empty response from newsletter API'
+            );
+            return [];
+        }
+
+        let data = response.data;
+
+        if (typeof data === 'string') {
+            try {
+                data = JSON.parse(data);
+            } catch (parseError) {
+                console.error(
+                    '❌ Invalid newsletter JSON:',
+                    parseError.message
+                );
+                return [];
+            }
+        }
+
+        if (!Array.isArray(data)) {
+            console.error(
+                '❌ Invalid newsletter data format:',
+                typeof data
+            );
+            return [];
+        }
+
+        return data;
+
+    } catch (error) {
+
+        if (
+            error.code === 'ENOTFOUND' ||
+            error.code === 'ECONNABORTED' ||
+            error.code === 'ETIMEDOUT'
+        ) {
+            console.error(
+                '❌ Cannot reach GitHub raw content server:',
+                error.message
+            );
+
+        } else if (error.response?.status === 404) {
+            console.error(
+                '❌ Newsletter file not found on GitHub'
+            );
+
+        } else {
+            console.error(
+                '❌ Failed to load newsletter list from GitHub:',
+                error.message
+            );
+        }
+
         return [];
     }
 }
 
-setInterval(autoReconnectFromGitHub, 5 * 60 * 1000);
-autoReconnectFromGitHub();
+
+setInterval(
+    () => {
+        autoReconnectFromGitHub().catch(error => {
+            console.error(
+                '❌ Scheduled GitHub reconnect error:',
+                error.message
+            );
+        });
+    },
+    5 * 60 * 1000
+);
+
+
+autoReconnectFromGitHub().catch(error => {
+    console.error(
+        '❌ Initial GitHub reconnect error:',
+        error.message
+    );
+});
+
 
 module.exports = router;
