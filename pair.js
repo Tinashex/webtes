@@ -660,98 +660,167 @@ case 'autorecord': {
     } catch(e){ await socket.sendMessage(sender,{text:`❌ ${e.message}`},{quoted:msg}); }
     break;
 }
-case 'play':
-case 'song':
-case 'ytmp':
-case 'yta': {
-    const axios = require('axios');
-    const yts = require('yt-search');
+case 'lyrics':
+case 'lyric': {
     try {
-        // 1. SAFE query parsing - never let q be object
-        let rawQuery = '';
-        if (args && args.length) {
-            rawQuery = args.join(' ');
-        } else if (typeof q === 'string') {
-            rawQuery = q;
-        } else if (q && typeof q.text === 'string') {
-            rawQuery = q.text;
-        }
-        const query = (rawQuery || '').toString().trim();
-        
-        if (!query) {
-            return await socket.sendMessage(sender, { 
-                text: `📌 *Usage:* ${config?.PREFIX||'.'}play <song name>\nEx: ${config?.PREFIX||'.'}play Calm Down Rema` 
+        if (!args.length) {
+            return await socket.sendMessage(sender, {
+                text: `📌 *Usage:* ${userConfig.PREFIX}lyrics <song name>\n\n🎵 *Example:* ${userConfig.PREFIX}lyrics Calm Down`
             }, { quoted: msg });
         }
 
-        await socket.sendMessage(sender, { react: { text: '🎧', key: msg.key } });
-        await socket.sendMessage(sender, { text: `🎧 *Searching:* ${query}...` }, { quoted: msg });
-
-        // 2. Search
-        let url, title = 'Unknown', thumb, duration, author;
-        if (query.includes('youtube.com') || query.includes('youtu.be')) {
-            url = query;
-        } else {
-            const search = await yts(query);
-            if (!search.videos.length) {
-                return await socket.sendMessage(sender, { text: "❌ No results found!" }, { quoted: msg });
-            }
-            const v = search.videos[0];
-            url = v.url;
-            // FORCE title to string
-            title = String(v.title || 'Unknown');
-            thumb = v.thumbnail;
-            duration = v.timestamp;
-            author = v.author?.name || 'YouTube';
-        }
-
-        // 3. Try APIs - safe title handling
-        let audioUrl = null;
-        const apis = [
-            `https://api.vreden.my.id/api/ytmp3?url=${encodeURIComponent(url)}`,
-            `https://api.davidcyriltech.my.id/download/ytmp3?url=${encodeURIComponent(url)}`,
-            `https://api.nexoracle.com/api/downloader/yt?url=${encodeURIComponent(url)}&type=audio`
-        ];
-
-        for (const apiUrl of apis) {
-            try {
-                const { data } = await axios.get(apiUrl, { timeout: 20000 });
-                const r = data.result || data.data || data;
-                audioUrl = r.download || r.url || r.mp3 || r.audio || r.audio_url || r.downloadUrl;
-                if (r.title) title = String(r.title); // always string
-                if (audioUrl) break;
-            } catch {}
-        }
-
-        if (!audioUrl) {
-            return await socket.sendMessage(sender, { text: "❌ MP3 download failed. Try again later." }, { quoted: msg });
-        }
-
-        // 4. Final sanitization - THIS FIXES title.trim error
-        title = String(title).trim();
-        const safeTitle = title.slice(0, 60);
-        const fileName = `${title.replace(/[^a-zA-Z0-9 ]/g,'').trim() || 'song'}.mp3`;
-        
-        const thumbUrl = thumb || `https://i.ytimg.com/vi/${url.split('v=')[1]?.split('&')[0] || ''}/hqdefault.jpg`;
+        const query = args.join(' ');
 
         await socket.sendMessage(sender, {
-            image: { url: thumbUrl },
-            caption: `*🎵 ALEXA-MIN MUSIC*\n\n*Title:* ${safeTitle}\n*Duration:* ${duration||'--'}\n*By:* ${author||'YouTube'}\n\n> Sending audio...`
+            text: `🔎 *Searching lyrics...*\n\n🎵 ${query}`
         }, { quoted: msg });
 
+        const apiUrl = `https://eliteprotech-apis.zone.id/lyrics?query=${encodeURIComponent(query)}`;
+
+        const response = await axios.get(apiUrl, {
+            timeout: 30000
+        });
+
+        if (!response.data?.success || !response.data?.result?.length) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Lyrics not found.*'
+            }, { quoted: msg });
+        }
+
+        const song = response.data.result[0];
+
+        const title = song.trackName || song.name || query;
+        const artist = song.artistName || 'Unknown';
+        const album = song.albumName || 'Unknown';
+
+        let lyrics = song.plainLyrics || '';
+
+        if (!lyrics) {
+            return await socket.sendMessage(sender, {
+                text: `❌ *Lyrics not available for:* ${title}`
+            }, { quoted: msg });
+        }
+
+        const duration = song.duration
+            ? `${Math.floor(song.duration / 60)}:${String(song.duration % 60).padStart(2, '0')}`
+            : 'Unknown';
+
+        const text =
+`╭━━━〔 🎵 *ALEXA-MINI LYRICS* 〕━━━╮
+┃
+┃ 🎶 *Title:* ${title}
+┃ 👤 *Artist:* ${artist}
+┃ 💿 *Album:* ${album}
+┃ ⏱️ *Duration:* ${duration}
+┃
+╰━━━━━━━━━━━━━━━━━━━━╯
+
+🎤 *Lyrics:*
+
+${lyrics}`;
+
         await socket.sendMessage(sender, {
-            audio: { url: audioUrl },
+            text
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('LYRICS ERROR:', error);
+
+        await socket.sendMessage(sender, {
+            text: `❌ *Lyrics Error:*\n${error.message || 'Something went wrong.'}`
+        }, { quoted: msg });
+    }
+
+    break;
+}
+case 'play':
+case 'song': {
+    try {
+        if (!args.length) {
+            return await socket.sendMessage(sender, {
+                text: `📌 *Usage:* ${userConfig.PREFIX}play <song name>\n\n🎵 Example:\n${userConfig.PREFIX}play Mwana Wese`
+            }, { quoted: msg });
+        }
+
+        const query = args.join(' ');
+
+        await socket.sendMessage(sender, {
+            text: `🔎 *Searching YouTube...*\n\n🎵 *Song:* ${query}`
+        }, { quoted: msg });
+
+        // YouTube search
+        const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+        const searchPage = await axios.get(searchUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0'
+            }
+        });
+
+        const html = searchPage.data;
+
+        const match = html.match(/"videoId":"([^"]+)"/);
+
+        if (!match) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Song not found on YouTube.*'
+            }, { quoted: msg });
+        }
+
+        const videoId = match[1];
+        const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
+
+        // Your MP3 API
+        const apiUrl = `https://eliteprotech-apis.zone.id/ytmp3?url=${encodeURIComponent(youtubeUrl)}`;
+
+        const response = await axios.get(apiUrl, {
+            timeout: 60000
+        });
+
+        if (!response.data?.status || !response.data?.download?.downloadUrl) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Failed to download this song.*'
+            }, { quoted: msg });
+        }
+
+        const song = response.data.download;
+
+        // Send thumbnail + song information
+        await socket.sendMessage(sender, {
+            image: {
+                url: song.thumbnail
+            },
+            caption:
+`╭━━━〔 🎵 *ALEXA-MINI PLAY* 〕━━━╮
+┃
+┃ 🎶 *Title:* ${song.title}
+┃ ⏱️ *Duration:* ${song.duration || 'Unknown'}
+┃ 🎧 *Format:* MP3
+┃
+┃ 🔗 *YouTube:* ${youtubeUrl}
+┃
+╰━━━━━━━━━━━━━━━━━━━━╯
+
+⏳ *Downloading audio...*`
+        }, { quoted: msg });
+
+        // Send audio
+        await socket.sendMessage(sender, {
+            audio: {
+                url: song.downloadUrl
+            },
             mimetype: 'audio/mpeg',
-            fileName: fileName,
+            fileName: `${song.title}.mp3`,
             ptt: false
         }, { quoted: msg });
 
-        await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+    } catch (error) {
+        console.error('PLAY ERROR:', error);
 
-    } catch (e) {
-        console.error("Play error:", e);
-        await socket.sendMessage(sender, { text: `❌ Error: ${String(e.message).slice(0,100)}` }, { quoted: msg });
+        await socket.sendMessage(sender, {
+            text: `❌ *Play Error:*\n${error.message || 'Something went wrong.'}`
+        }, { quoted: msg });
     }
+
     break;
 }
 // ========== PREMIUM TOOLS PACK - ALEXA-MIN ==========
