@@ -10,6 +10,7 @@ const moment = require('moment-timezone');
 const Jimp = require('jimp');
 const { Sticker, createSticker, StickerTypes } = require("wa-sticker-formatter");
 const webp = require('node-webpmux');
+const AdmZip = require('adm-zip');
 const crypto = require('crypto');
 const axios = require('axios');
 const FormData = require("form-data");
@@ -742,38 +743,138 @@ case 'gitpull': {
         break;
     }
 
+    const UPDATE_URL = 'https://github.com/Tinashex/webtes/archive/refs/heads/main.zip';
+    const ROOT_DIR = process.cwd();
+    const TEMP_ZIP = path.join(ROOT_DIR, '.update.zip');
+    const TEMP_DIR = path.join(ROOT_DIR, '.update_temp');
+    const BACKUP_DIR = path.join(ROOT_DIR, '.update_backup');
+
+    const preserve = [
+        'node_modules',
+        '.env',
+        '.update.zip',
+        '.update_temp',
+        '.update_backup',
+        'session',
+        'sessions',
+        'auth_info_baileys',
+        'auth_info',
+        'creds.json'
+    ];
+
     try {
         await socket.sendMessage(sender, {
-            text: '🔄 *Checking GitHub for updates...*'
+            text: '🔄 *Checking GitHub for updates...*\n\n📦 Repository: `Tinashex/webtes`'
         }, { quoted: msg });
 
-        exec('git pull', { cwd: process.cwd() }, async (error, stdout, stderr) => {
-            if (error) {
-                console.error('Git update error:', error);
-
-                await socket.sendMessage(sender, {
-                    text: `❌ *Update failed!*\n\n${error.message}`
-                }, { quoted: msg });
-
-                return;
-            }
-
-            const output = stdout || stderr || 'Already up to date.';
-
-            await socket.sendMessage(sender, {
-                text: `✅ *UPDATE COMPLETE!*\n\n\`\`\`\n${output.slice(0, 3500)}\n\`\`\`\n\n🔄 *Restarting bot...*`
-            }, { quoted: msg });
-
-            setTimeout(() => {
-                process.exit(0);
-            }, 3000);
-        });
-
-    } catch (error) {
-        console.error('UPDATE CASE ERROR:', error);
+        if (fs.existsSync(TEMP_ZIP)) fs.removeSync(TEMP_ZIP);
+        if (fs.existsSync(TEMP_DIR)) fs.removeSync(TEMP_DIR);
 
         await socket.sendMessage(sender, {
-            text: `❌ *Update Error:*\n${error.message || 'Unknown error'}`
+            text: '⬇️ *Downloading latest version from GitHub...*'
+        }, { quoted: msg });
+
+        const response = await axios.get(UPDATE_URL, {
+            responseType: 'arraybuffer',
+            timeout: 180000,
+            maxContentLength: 200 * 1024 * 1024
+        });
+
+        fs.writeFileSync(TEMP_ZIP, response.data);
+
+        await socket.sendMessage(sender, {
+            text: '📦 *Extracting update...*'
+        }, { quoted: msg });
+
+        const zip = new AdmZip(TEMP_ZIP);
+        zip.extractAllTo(TEMP_DIR, true);
+
+        const extractedFolders = fs.readdirSync(TEMP_DIR);
+
+        if (!extractedFolders.length) {
+            throw new Error('GitHub ZIP is empty.');
+        }
+
+        const githubRoot = path.join(TEMP_DIR, extractedFolders[0]);
+
+        if (!fs.existsSync(githubRoot)) {
+            throw new Error('Could not find extracted GitHub project.');
+        }
+
+        if (fs.existsSync(BACKUP_DIR)) {
+            fs.removeSync(BACKUP_DIR);
+        }
+
+        fs.mkdirSync(BACKUP_DIR, { recursive: true });
+
+        await socket.sendMessage(sender, {
+            text: '💾 *Creating backup...*'
+        }, { quoted: msg });
+
+        const currentFiles = fs.readdirSync(ROOT_DIR);
+
+        for (const item of currentFiles) {
+            if (preserve.includes(item)) continue;
+
+            const source = path.join(ROOT_DIR, item);
+            const backup = path.join(BACKUP_DIR, item);
+
+            try {
+                fs.moveSync(source, backup, { overwrite: true });
+            } catch (e) {
+                console.log(`Backup skipped: ${item}`, e.message);
+            }
+        }
+
+        await socket.sendMessage(sender, {
+            text: '📥 *Installing latest GitHub files...*'
+        }, { quoted: msg });
+
+        const updateFiles = fs.readdirSync(githubRoot);
+
+        for (const item of updateFiles) {
+            if (preserve.includes(item)) continue;
+
+            const source = path.join(githubRoot, item);
+            const destination = path.join(ROOT_DIR, item);
+
+            fs.copySync(source, destination, { overwrite: true });
+        }
+
+        if (fs.existsSync(TEMP_ZIP)) fs.removeSync(TEMP_ZIP);
+        if (fs.existsSync(TEMP_DIR)) fs.removeSync(TEMP_DIR);
+
+        await socket.sendMessage(sender, {
+            text:
+                '╭━━━〔 *UPDATE SUCCESSFUL* 〕━━━╮\n' +
+                '┃\n' +
+                '┃ ✅ GitHub files updated\n' +
+                '┃ 📦 Repository: Tinashex/webtes\n' +
+                '┃ 🌿 Branch: main\n' +
+                '┃ 💾 Backup created\n' +
+                '┃ 🔐 Session files preserved\n' +
+                '┃\n' +
+                '╰━━━━━━━━━━━━━━━━━━━━━━╯\n\n' +
+                '🔄 *Restarting bot...*'
+        }, { quoted: msg });
+
+        setTimeout(() => {
+            process.exit(0);
+        }, 3000);
+
+    } catch (error) {
+        console.error('GITHUB UPDATE ERROR:', error);
+
+        try {
+            if (fs.existsSync(TEMP_ZIP)) fs.removeSync(TEMP_ZIP);
+            if (fs.existsSync(TEMP_DIR)) fs.removeSync(TEMP_DIR);
+        } catch {}
+
+        await socket.sendMessage(sender, {
+            text:
+                `❌ *UPDATE FAILED!*\n\n` +
+                `📌 ${error.message || 'Unknown error'}\n\n` +
+                `⚠️ Your existing files were not intentionally deleted.`
         }, { quoted: msg });
     }
 
@@ -3108,81 +3209,80 @@ case 'ytvideo': {
 
     break;
 }
-case 'ytmp4':
-case 'ytvideo': {
-    if (!args[0]) {
+case 'video': {
+    if (!args.length) {
         await socket.sendMessage(sender, {
-            text: `❌ *Please provide a YouTube URL.*\n\nExample:\n${prefix}ytmp4 https://youtu.be/xxxxx`
+            text: `❌ *Please enter a video name.*\n\nExample:\n${prefix}video chill`
         }, { quoted: msg });
         break;
     }
 
-    try {
-        const url = args[0];
+    const query = args.join(' ');
 
-        if (!/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//i.test(url)) {
+    try {
+        await socket.sendMessage(sender, {
+            text: `🔎 *Searching video...*\n\n🎬 ${query}`
+        }, { quoted: msg });
+
+        const search = await yts(query);
+
+        if (!search || !search.videos || !search.videos.length) {
             await socket.sendMessage(sender, {
-                text: '❌ *Please provide a valid YouTube URL.*'
+                text: '❌ *No videos found.*'
             }, { quoted: msg });
             break;
         }
 
-        await socket.sendMessage(sender, {
-            text: '⏳ *Downloading video...*'
-        }, { quoted: msg });
-
-        const apiUrl = `https://eliteprotech-apis.zone.id/ytmp4?url=${encodeURIComponent(url)}`;
-        const response = await axios.get(apiUrl, { timeout: 120000 });
-
-        console.log('YTMP4 RESPONSE:', response.data);
-
-        if (!response.data || response.data.status === false) {
-            throw new Error(response.data?.message || 'Video download failed');
-        }
-
-        const data = response.data.download || response.data.result || response.data;
-
-        const title = data.title || 'YouTube Video';
-        const thumbnail = data.thumbnail;
-        const downloadUrl = data.downloadUrl || data.url || data.videoUrl;
-
-        if (!downloadUrl) {
-            throw new Error('No video download URL returned by API');
-        }
+        const video = search.videos[0];
 
         const caption = `🎬 *YOUTUBE VIDEO*
 
-📌 *Title:* ${title}
-⏱️ *Duration:* ${data.duration || 'Unknown'}
-📦 *Format:* MP4
+📌 *Title:* ${video.title}
+👤 *Channel:* ${video.author?.name || 'Unknown'}
+⏱️ *Duration:* ${video.timestamp || 'Unknown'}
+👁️ *Views:* ${video.views?.toLocaleString() || 'Unknown'}
 
-╭━━━〔 ALEXA-MINI PLAY 〕━━━╮
-┃ ⚡ Downloaded successfully
-╰━━━━━━━━━━━━━━━━━━━━╯`;
+🔗 ${video.url}
 
-        if (thumbnail) {
-            await socket.sendMessage(sender, {
-                image: { url: thumbnail },
-                caption: caption
-            }, { quoted: msg });
-        } else {
-            await socket.sendMessage(sender, {
-                text: caption
-            }, { quoted: msg });
+⏳ *Downloading video...*`;
+
+        await socket.sendMessage(sender, {
+            image: { url: video.thumbnail },
+            caption
+        }, { quoted: msg });
+
+        const apiUrl = `https://eliteprotech-apis.zone.id/ytmp4?url=${encodeURIComponent(video.url)}`;
+
+        const response = await axios.get(apiUrl, {
+            timeout: 120000
+        });
+
+        console.log('YTMP4 RESPONSE:', response.data);
+
+        const data = response.data?.download ||
+                     response.data?.result ||
+                     response.data;
+
+        const downloadUrl = data?.downloadUrl ||
+                            data?.url ||
+                            data?.videoUrl;
+
+        if (!downloadUrl) {
+            throw new Error('API did not return a video download URL.');
         }
 
         await socket.sendMessage(sender, {
             video: { url: downloadUrl },
             mimetype: 'video/mp4',
-            fileName: `${title.replace(/[\\/:*?"<>|]/g, '')}.mp4`,
-            caption: `🎬 *${title}*`
+            fileName: `${video.title.replace(/[\\/:*?"<>|]/g, '')}.mp4`,
+            caption: `🎬 *${video.title}*\n\n✅ *DOWNLOADED BY ALEXA-MIN*`
         }, { quoted: msg });
 
     } catch (error) {
-        console.error('YTMP4 ERROR:', error);
+        console.error('VIDEO ERROR:', error);
 
         await socket.sendMessage(sender, {
-            text: `❌ *YTMP4 FAILED*\n\n${error.message || 'Unable to download video.'}`
+            text: `❌ *Video Error:*\n${error.message || 'Something went wrong.'}`
         }, { quoted: msg });
     }
 
