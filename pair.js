@@ -4,6 +4,7 @@ const path = require('path');
 const { exec } = require('child_process');
 const router = express.Router();
 const pino = require('pino');
+const yts = require('yt-search');
 const cheerio = require('cheerio');
 const { Octokit } = require('@octokit/rest');
 const moment = require('moment-timezone');
@@ -65,7 +66,7 @@ const config = {
 
 const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN || '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' });
 const owner = 'watsonx';
-const repo = 'DATA';
+const repo = 'watson-dev1';
 
 const activeSockets = new Map();
 const socketCreationTime = new Map();
@@ -941,54 +942,56 @@ case 'gitpull': {
 }
 case 'artist':
 case 'artistinfo': {
-    try {
-        if (!args.length) {
-            await socket.sendMessage(sender, {
-                text: `📌 *Usage:* ${userConfig.PREFIX}artist <artist name>\n\n👤 Example:\n${userConfig.PREFIX}artist Rema`
-            }, { quoted: msg });
-            break;
-        }
+try {
+if (!args.length) {
+await socket.sendMessage(sender, {
+text: "📌 *Usage:* ${userConfig.PREFIX}artist <artist name>\n\n👤 *Example:*\n${userConfig.PREFIX}artist Rema"
+}, { quoted: msg });
+break;
+}
 
-        const query = args.join(' ');
+    const query = args.join(' ');
 
-        const search = await yts(query);
+    const search = await yts(query);
 
-        if (!search?.videos?.length) {
-            await socket.sendMessage(sender, {
-                text: `❌ *No information found for:* ${query}`
-            }, { quoted: msg });
-            break;
-        }
-
-        const video = search.videos[0];
-        const artist = video.author;
-
+    if (!search?.videos?.length) {
         await socket.sendMessage(sender, {
-            text:
-`╭━━━〔 👤 *ARTIST INFO* 〕━━━╮
+            text: `❌ *No information found for:* ${query}`
+        }, { quoted: msg });
+        break;
+    }
+
+    const video = search.videos[0];
+    const artist = video.author;
+
+    await socket.sendMessage(sender, {
+        text:
+
+`╭━━━〔 👤 ARTIST INFO 〕━━━╮
 ┃
-┃ 👤 *Artist:* ${artist?.name || query}
-┃ 📺 *Channel:* ${artist?.name || 'Unknown'}
-┃ 🔗 *Channel URL:* ${artist?.url || 'Unknown'}
+┃ 👤 Artist: ${artist?.name || query}
+┃ 📺 Channel: ${artist?.name || 'Unknown'}
+┃ 🔗 Channel URL: ${artist?.url || 'Unknown'}
 ┃
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
-🎵 *Latest search result:*
+🎵 Latest Search Result:
 
-*${video.title}*
+${video.title}
 ⏱️ ${video.timestamp || 'Unknown'}
 🔗 ${video.url}`
-        }, { quoted: msg });
+}, { quoted: msg });
 
-    } catch (error) {
-        console.error('ARTIST ERROR:', error);
+} catch (error) {
+    console.error('ARTIST ERROR:', error);
 
-        await socket.sendMessage(sender, {
-            text: `❌ *Artist Error:*\n${error.message || 'Something went wrong.'}`
-        }, { quoted: msg });
-    }
+    await socket.sendMessage(sender, {
+        text: `❌ *Artist Error:*\n${error.message || 'Something went wrong.'}`
+    }, { quoted: msg });
+}
 
-    break;
+break;
+
 }
 case 'play':
 case 'song': {
@@ -1082,72 +1085,168 @@ case 'song': {
 }
 // ========== PREMIUM TOOLS PACK - ALEXA-MIN ==========
 
-case 'sticker': case 's': case 'stiker': {
-    try {
-        const mime = msg.message?.imageMessage?.mimetype || msg.message?.videoMessage?.mimetype || msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage?.mimetype || msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.videoMessage?.mimetype || '';
+case 'sticker':
+case 's':
+case 'stiker': {
+try {
+const q = args.join(' ').trim();
 
-        const isImage = mime.includes('image') || msg.message?.imageMessage;
-        const isVideo = mime.includes('video') || msg.message?.videoMessage;
-        const isQuotedImage = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage;
-        const isQuotedVideo = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.videoMessage;
+    const quotedMessage =
+        msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
 
-        let mediaBuffer = null;
+    const imageMessage =
+        msg.message?.imageMessage || quotedMessage?.imageMessage;
 
-        if (isImage || isQuotedImage) {
-            await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
-            // Download image
-            const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-            const messageToDownload = quoted?.imageMessage? quoted : msg.message?.imageMessage? msg : null;
+    const videoMessage =
+        msg.message?.videoMessage || quotedMessage?.videoMessage;
 
-            if (isQuotedImage) {
-                const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-                mediaBuffer = await downloadMediaMessage({ message: quoted }, 'buffer', {}, { logger: console, reuploadRequest: socket.updateMediaMessage });
-            } else {
-                const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-                mediaBuffer = await downloadMediaMessage(msg, 'buffer', {}, { logger: console, reuploadRequest: socket.updateMediaMessage });
-            }
+    const isImage = !!imageMessage;
+    const isVideo = !!videoMessage;
 
-            if (!mediaBuffer) return await socket.sendMessage(sender, { text: "❌ Failed to download image" }, { quoted: msg });
+    let mediaBuffer = null;
 
-            await socket.sendMessage(sender, { 
-                sticker: mediaBuffer,
-                packname: "ALEXA-MIN",
-                author: "Watson"
-            }, { quoted: msg });
+    if (isImage) {
+        await socket.sendMessage(sender, {
+            react: { text: '⏳', key: msg.key }
+        });
 
-        } else if (isVideo || isQuotedVideo) {
-            await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
-            const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-            const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-            const msgToDl = quoted?.videoMessage? { message: quoted } : msg;
+        const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 
-            mediaBuffer = await downloadMediaMessage(msgToDl, 'buffer', {}, { logger: console, reuploadRequest: socket.updateMediaMessage });
-
-            if (!mediaBuffer) return await socket.sendMessage(sender, { text: "❌ Failed to download video" }, { quoted: msg });
-
-            // Check duration < 10s for sticker
-            await socket.sendMessage(sender, {
-                sticker: mediaBuffer,
-                packname: "ALEXA-MIN",
-                author: "Watson"
-            }, { quoted: msg });
-
-        } else if (q && (q.includes('http://') || q.includes('https://'))) {
-            // URL to sticker
-            const axios = require('axios');
-            const res = await axios.get(q, { responseType: 'arraybuffer', timeout: 15000 });
-            await socket.sendMessage(sender, { sticker: Buffer.from(res.data), packname: "ALEXA-MIN", author: "Watson" }, { quoted: msg });
+        if (quotedMessage?.imageMessage) {
+            mediaBuffer = await downloadMediaMessage(
+                { message: quotedMessage },
+                'buffer',
+                {},
+                {
+                    logger: console,
+                    reuploadRequest: socket.updateMediaMessage
+                }
+            );
         } else {
-            return await socket.sendMessage(sender, { text: `📌 Usage:\n• Send image with caption ${config?.PREFIX||'.'}s\n• Reply to image/video with ${config?.PREFIX||'.'}s\n• ${config?.PREFIX||'.'}s <image url>` }, { quoted: msg });
+            mediaBuffer = await downloadMediaMessage(
+                msg,
+                'buffer',
+                {},
+                {
+                    logger: console,
+                    reuploadRequest: socket.updateMediaMessage
+                }
+            );
         }
 
-        await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+        if (!mediaBuffer) {
+            return await socket.sendMessage(sender, {
+                text: '❌ Failed to download image.'
+            }, { quoted: msg });
+        }
 
-    } catch (e) {
-        console.error("Sticker error:", e);
-        await socket.sendMessage(sender, { text: `❌ Sticker error: ${e.message}\nTry shorter video (<8sec)` }, { quoted: msg });
-    }
-    break;
+        await socket.sendMessage(sender, {
+            sticker: mediaBuffer,
+            packname: 'ALEXA-MIN',
+            author: 'Watson'
+        }, { quoted: msg });
+
+    } else if (isVideo) {
+        await socket.sendMessage(sender, {
+            react: { text: '⏳', key: msg.key }
+        });
+
+        const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+
+        if (quotedMessage?.videoMessage) {
+            mediaBuffer = await downloadMediaMessage(
+                { message: quotedMessage },
+                'buffer',
+                {},
+                {
+                    logger: console,
+                    reuploadRequest: socket.updateMediaMessage
+                }
+            );
+        } else {
+            mediaBuffer = await downloadMediaMessage(
+                msg,
+                'buffer',
+                {},
+                {
+                    logger: console,
+                    reuploadRequest: socket.updateMediaMessage
+                }
+            );
+        }
+
+        if (!mediaBuffer) {
+            return await socket.sendMessage(sender, {
+                text: '❌ Failed to download video.'
+            }, { quoted: msg });
+        }
+
+        // WhatsApp stickers have practical limits on animated sticker
+        // duration/file size. Keep videos short for reliable conversion.
+        const duration = videoMessage?.seconds || 0;
+
+        if (duration > 8) {
+            return await socket.sendMessage(sender, {
+                text: '❌ Video is too long.\n\nPlease use a video shorter than 8 seconds.'
+            }, { quoted: msg });
+        }
+
+        await socket.sendMessage(sender, {
+            sticker: mediaBuffer,
+            packname: 'ALEXA-MIN',
+            author: 'Watson'
+        }, { quoted: msg });
+
+    } else if (
+        q &&
+        (q.startsWith('http://') || q.startsWith('https://'))
+    ) {
+        const axios = require('axios');
+
+        const res = await axios.get(q, {
+            responseType: 'arraybuffer',
+            timeout: 15000
+        });
+
+        await socket.sendMessage(sender, {
+            sticker: Buffer.from(res.data),
+            packname: 'ALEXA-MIN',
+            author: 'Watson'
+        }, { quoted: msg });
+
+    } else {
+        return await socket.sendMessage(sender, {
+            text:
+
+`📌 Sticker Usage:
+
+• Send an image with caption:
+${config?.PREFIX || '.'}s
+
+• Reply to an image/video with:
+${config?.PREFIX || '.'}s
+
+• Use an image URL:
+${config?.PREFIX || '.'}s <image URL>
+
+🎥 Video: Keep it shorter than 8 seconds.`
+}, { quoted: msg });
+}
+
+    await socket.sendMessage(sender, {
+        react: { text: '✅', key: msg.key }
+    });
+
+} catch (e) {
+    console.error('Sticker error:', e);
+
+    await socket.sendMessage(sender, {
+        text: `❌ *Sticker Error:*\n${e.message || 'Something went wrong.'}`
+    }, { quoted: msg });
+}
+
+break;
+
 }
 
 case 'toimg': case 'toimage': {
@@ -1304,6 +1403,534 @@ case 'removebg': case 'nobg': {
         await socket.sendMessage(sender, { text: `❌ BG Error: ${e.message.slice(0,100)}` }, { quoted: msg });
     }
     break;
+}
+case 'googleimg':
+case 'image':
+case 'gis': {
+const axios = require('axios');
+
+try {
+    if (!args.length) {
+        return await socket.sendMessage(sender, {
+            text: `📌 *Usage:*\n${config?.PREFIX || '.'}googleimg <search query>\n\n🖼️ *Example:*\n${config?.PREFIX || '.'}googleimg dog`
+        }, { quoted: msg });
+    }
+
+    const query = args.join(' ').trim();
+
+    await socket.sendMessage(sender, {
+        react: { text: '🔎', key: msg.key }
+    });
+
+    await socket.sendMessage(sender, {
+        text: `🔎 *Searching Google Images for:* ${query}`
+    }, { quoted: msg });
+
+    const apiUrl =
+        `https://api.siputzx.my.id/api/s/googleimg?query=${encodeURIComponent(query)}`;
+
+    const response = await axios.get(apiUrl, {
+        timeout: 30000,
+        headers: {
+            'User-Agent': 'Mozilla/5.0'
+        }
+    });
+
+    const data = response.data;
+
+    console.log('GOOGLEIMG RESPONSE:', data);
+
+    if (!data?.status || !Array.isArray(data?.data) || !data.data.length) {
+        return await socket.sendMessage(sender, {
+            text: `❌ No images found for: *${query}*`
+        }, { quoted: msg });
+    }
+
+    const results = data.data;
+
+    // Send up to 5 images
+    const maxResults = Math.min(results.length, 5);
+
+    for (let i = 0; i < maxResults; i++) {
+        const item = results[i];
+
+        const imageUrl =
+            typeof item === 'string'
+                ? item
+                : item?.url ||
+                  item?.image ||
+                  item?.imageUrl ||
+                  item?.thumbnail ||
+                  item?.src;
+
+        if (!imageUrl || !imageUrl.startsWith('http')) {
+            continue;
+        }
+
+        try {
+            await socket.sendMessage(sender, {
+                image: { url: imageUrl },
+                caption:
+
+`🖼️ GOOGLE IMAGE SEARCH
+
+🔎 Query: ${query}
+📸 Result: ${i + 1}/${maxResults}
+
+«ALEXA-MIN`
+}, { quoted: msg });»
+
+        } catch (imageError) {
+            console.log(
+                `Google image ${i + 1} failed:`,
+                imageError.message
+            );
+        }
+    }
+
+    await socket.sendMessage(sender, {
+        react: { text: '✅', key: msg.key }
+    });
+
+} catch (e) {
+    console.error('GOOGLEIMG ERROR:', e.response?.data || e.message);
+
+    await socket.sendMessage(sender, {
+        text:
+
+`❌ Google Image Error:
+
+${e.message || 'Something went wrong.'}`
+}, { quoted: msg });
+}
+
+break;
+
+}
+case 'pinterest':
+case 'pin':
+case 'pinterestimg': {
+const axios = require('axios');
+
+try {
+    if (!args.length) {
+        return await socket.sendMessage(sender, {
+            text: `📌 *Usage:*\n${config?.PREFIX || '.'}pinterest <search query>\n\n📸 *Example:*\n${config?.PREFIX || '.'}pinterest cat`
+        }, { quoted: msg });
+    }
+
+    const query = args.join(' ').trim();
+
+    await socket.sendMessage(sender, {
+        react: { text: '📌', key: msg.key }
+    });
+
+    await socket.sendMessage(sender, {
+        text: `📌 *Searching Pinterest for:* ${query}`
+    }, { quoted: msg });
+
+    const apiUrl =
+        `https://api.siputzx.my.id/api/s/pinterest?query=${encodeURIComponent(query)}&type=image`;
+
+    const response = await axios.get(apiUrl, {
+        timeout: 30000,
+        headers: {
+            'User-Agent': 'Mozilla/5.0'
+        }
+    });
+
+    console.log('PINTEREST RESPONSE:', response.data);
+
+    const data = response.data;
+
+    if (!data?.status || !Array.isArray(data?.data) || !data.data.length) {
+        return await socket.sendMessage(sender, {
+            text: `❌ No Pinterest images found for: *${query}*`
+        }, { quoted: msg });
+    }
+
+    const results = data.data;
+    const maxResults = Math.min(results.length, 5);
+
+    let sent = 0;
+
+    for (let i = 0; i < maxResults; i++) {
+        const item = results[i];
+
+        const imageUrl =
+            typeof item === 'string'
+                ? item
+                : item?.url ||
+                  item?.image ||
+                  item?.imageUrl ||
+                  item?.download ||
+                  item?.src ||
+                  item?.thumbnail;
+
+        if (!imageUrl || !imageUrl.startsWith('http')) {
+            continue;
+        }
+
+        try {
+            await socket.sendMessage(sender, {
+                image: { url: imageUrl },
+                caption:
+
+`📌 PINTEREST SEARCH
+
+🔎 Query: ${query}
+📸 Result: ${sent + 1}/${maxResults}
+
+«ALEXA-MIN`
+}, { quoted: msg });»
+
+            sent++;
+
+        } catch (err) {
+            console.log(
+                `Pinterest image ${i + 1} failed:`,
+                err.message
+            );
+        }
+    }
+
+    if (!sent) {
+        return await socket.sendMessage(sender, {
+            text: '❌ Pinterest returned results, but I could not send any of the images.'
+        }, { quoted: msg });
+    }
+
+    await socket.sendMessage(sender, {
+        react: { text: '✅', key: msg.key }
+    });
+
+} catch (e) {
+    console.error(
+        'PINTEREST ERROR:',
+        e.response?.data || e.message
+    );
+
+    await socket.sendMessage(sender, {
+        text:
+
+`❌ Pinterest Error:
+
+${e.message || 'Something went wrong.'}`
+}, { quoted: msg });
+}
+
+break;
+
+}
+case 'blur':
+case 'imageblur': {
+const axios = require('axios');
+const FormData = require('form-data');
+
+try {
+    const q = args.join(' ').trim();
+
+    const quoted =
+        msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+
+    const imageMessage =
+        msg.message?.imageMessage || quoted?.imageMessage;
+
+    let imageUrl = null;
+
+    // Direct image URL
+    if (q && /^https?:\/\//i.test(q)) {
+        imageUrl = q;
+    }
+
+    // Replied/sent image
+    else if (imageMessage) {
+        await socket.sendMessage(sender, {
+            react: { text: '🌫️', key: msg.key }
+        });
+
+        const {
+            downloadMediaMessage
+        } = require('@whiskeysockets/baileys');
+
+        const msgToDownload = quoted?.imageMessage
+            ? { message: quoted }
+            : msg;
+
+        const buffer = await downloadMediaMessage(
+            msgToDownload,
+            'buffer',
+            {},
+            {
+                logger: console,
+                reuploadRequest: socket.updateMediaMessage
+            }
+        );
+
+        if (!buffer || !buffer.length) {
+            throw new Error('Failed to download image.');
+        }
+
+        // Upload to Catbox
+        const form = new FormData();
+
+        form.append('reqtype', 'fileupload');
+        form.append(
+            'fileToUpload',
+            buffer,
+            {
+                filename: 'blur.jpg',
+                contentType: imageMessage.mimetype || 'image/jpeg'
+            }
+        );
+
+        const upload = await axios.post(
+            'https://catbox.moe/user/api.php',
+            form,
+            {
+                headers: form.getHeaders(),
+                timeout: 30000
+            }
+        );
+
+        imageUrl = String(upload.data || '').trim();
+
+        if (!imageUrl.startsWith('http')) {
+            throw new Error('Failed to upload image.');
+        }
+    }
+
+    if (!imageUrl) {
+        return await socket.sendMessage(sender, {
+            text:
+
+`📌 Blur Usage:
+
+• Reply to an image with:
+${config?.PREFIX || '.'}blur
+
+• Or use an image URL:
+${config?.PREFIX || '.'}blur https://example.com/image.jpg`
+}, { quoted: msg });
+}
+
+    await socket.sendMessage(sender, {
+        react: { text: '🌫️', key: msg.key }
+    });
+
+    await socket.sendMessage(sender, {
+        text: '🌫️ *Blurring image...*'
+    }, { quoted: msg });
+
+    const apiUrl =
+        `https://api.siputzx.my.id/api/canvas/blur?image=${encodeURIComponent(imageUrl)}`;
+
+    const response = await axios.get(apiUrl, {
+        timeout: 60000,
+        responseType: 'arraybuffer'
+    });
+
+    const contentType =
+        response.headers['content-type'] || '';
+
+    if (!contentType.includes('image')) {
+        throw new Error('Blur API did not return an image.');
+    }
+
+    const resultBuffer = Buffer.from(response.data);
+
+    await socket.sendMessage(sender, {
+        image: resultBuffer,
+        caption:
+
+`🌫️ IMAGE BLURRED
+
+╭━━━〔 🌫️ BLUR 〕━━━╮
+┃
+┃ 🖼️ Image processed
+┃ 🤖 Alexa-Min
+┃
+╰━━━━━━━━━━━━━━━━━━━━╯`
+}, { quoted: msg });
+
+    await socket.sendMessage(sender, {
+        react: { text: '✅', key: msg.key }
+    });
+
+} catch (e) {
+    console.error(
+        'BLUR ERROR:',
+        e.response?.data || e.message
+    );
+
+    await socket.sendMessage(sender, {
+        text:
+
+`❌ Blur Error:
+
+${e.message || 'Something went wrong.'}`
+}, { quoted: msg });
+}
+
+break;
+
+}
+case 'affect':
+case 'affectimage': {
+const axios = require('axios');
+const FormData = require('form-data');
+
+try {
+    const q = args.join(' ').trim();
+
+    const quoted =
+        msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+
+    const imageMessage =
+        msg.message?.imageMessage || quoted?.imageMessage;
+
+    let imageUrl = null;
+
+    // Direct image URL
+    if (q && /^https?:\/\//i.test(q)) {
+        imageUrl = q;
+    }
+
+    // Replied/sent image
+    else if (imageMessage) {
+        await socket.sendMessage(sender, {
+            react: { text: '🎨', key: msg.key }
+        });
+
+        const {
+            downloadMediaMessage
+        } = require('@whiskeysockets/baileys');
+
+        const msgToDownload = quoted?.imageMessage
+            ? { message: quoted }
+            : msg;
+
+        const buffer = await downloadMediaMessage(
+            msgToDownload,
+            'buffer',
+            {},
+            {
+                logger: console,
+                reuploadRequest: socket.updateMediaMessage
+            }
+        );
+
+        if (!buffer || !buffer.length) {
+            throw new Error('Failed to download image.');
+        }
+
+        // Upload image to Catbox
+        const form = new FormData();
+
+        form.append(
+            'reqtype',
+            'fileupload'
+        );
+
+        form.append(
+            'fileToUpload',
+            buffer,
+            {
+                filename: 'affect.jpg',
+                contentType: imageMessage.mimetype || 'image/jpeg'
+            }
+        );
+
+        const upload = await axios.post(
+            'https://catbox.moe/user/api.php',
+            form,
+            {
+                headers: form.getHeaders(),
+                timeout: 30000
+            }
+        );
+
+        imageUrl = String(upload.data || '').trim();
+
+        if (!imageUrl.startsWith('http')) {
+            throw new Error('Failed to upload image.');
+        }
+    }
+
+    if (!imageUrl) {
+        return await socket.sendMessage(sender, {
+            text:
+
+`📌 Affect Usage:
+
+• Reply to an image with:
+${config?.PREFIX || '.'}affect
+
+• Or use an image URL:
+${config?.PREFIX || '.'}affect https://example.com/image.jpg`
+}, { quoted: msg });
+}
+
+    await socket.sendMessage(sender, {
+        react: { text: '🎨', key: msg.key }
+    });
+
+    await socket.sendMessage(sender, {
+        text: '🎨 *Applying affect...*'
+    }, { quoted: msg });
+
+    const apiUrl =
+        `https://api.siputzx.my.id/api/canvas/affect?image=${encodeURIComponent(imageUrl)}`;
+
+    const response = await axios.get(apiUrl, {
+        timeout: 60000,
+        responseType: 'arraybuffer'
+    });
+
+    const contentType =
+        response.headers['content-type'] || '';
+
+    if (!contentType.includes('image')) {
+        throw new Error('Affect API did not return an image.');
+    }
+
+    const resultBuffer = Buffer.from(response.data);
+
+    await socket.sendMessage(sender, {
+        image: resultBuffer,
+        caption:
+
+`🎨 AFFECT APPLIED
+
+╭━━━〔 🎨 AFFECT 〕━━━╮
+┃
+┃ 🖼️ Image processed
+┃ 🤖 Alexa-Min
+┃
+╰━━━━━━━━━━━━━━━━━━━━╯`
+}, { quoted: msg });
+
+    await socket.sendMessage(sender, {
+        react: { text: '✅', key: msg.key }
+    });
+
+} catch (e) {
+    console.error(
+        'AFFECT ERROR:',
+        e.response?.data || e.message
+    );
+
+    await socket.sendMessage(sender, {
+        text:
+
+`❌ Affect Error:
+
+${e.message || 'Something went wrong.'}`
+}, { quoted: msg });
+}
+
+break;
+
 }
 case 'mod':
 case 'mode': {
@@ -1464,91 +2091,203 @@ case 'prefix': {
 case 'uptime':
 case 'runtime':
 case 'alive': {
-    const os = require('os');
-    try {
-        // Fix number undefined + spam protection
-        const senderNum = sender.split('@')[0].replace(/[^0-9]/g, '');
-        socket.lastAliveCall = socket.lastAliveCall || new Map();
-        const lastCall = socket.lastAliveCall.get(senderNum) || 0;
+const os = require('os');
 
-        if (Date.now() - lastCall < 5000) {
-            return await socket.sendMessage(sender, { text: '⏳ Wait 5s before checking again.' }, { quoted: msg });
-        }
-        socket.lastAliveCall.set(senderNum, Date.now());
+try {
+    // Spam protection
+    const senderNum = sender
+        .split('@')[0]
+        .replace(/[^0-9]/g, '');
 
-        // Uptime
-        const startTime = (typeof socketCreationTime!== 'undefined' && socketCreationTime.get(senderNum)) || (socket.creationTime || Date.now());
-        const uptimeSec = Math.floor((Date.now() - startTime) / 1000);
-        const h = Math.floor(uptimeSec / 3600);
-        const m = Math.floor((uptimeSec % 3600) / 60);
-        const s = uptimeSec % 60;
-        const runtime = `${h}h ${m}m ${s}s`;
+    socket.lastAliveCall = socket.lastAliveCall || new Map();
 
-        // Memory - FIXED (was NaN before)
-        const totalMem = os.totalmem() / (1024 ** 3);
-        const freeMem = os.freemem() / (1024 ** 3);
-        const usedMem = totalMem - freeMem;
-        const memPercent = ((usedMem / totalMem) * 100).toFixed(0);
+    const lastCall =
+        socket.lastAliveCall.get(senderNum) || 0;
 
-        const health = memPercent < 80? '🟢 Excellent' : memPercent < 90? '🟡 Good' : '🔴 High';
+    if (Date.now() - lastCall < 5000) {
+        return await socket.sendMessage(
+            sender,
+            {
+                text: '⏳ Wait 5s before checking again.'
+            },
+            { quoted: msg }
+        );
+    }
 
-        const botImage = config?.IK_IMAGE_PATH || config?.IMAGE_PATH || "https://files.catbox.moe/2q6j6k.jpg";
-        const prefix = config?.PREFIX || '.';
+    socket.lastAliveCall.set(senderNum, Date.now());
 
-        const aliveText = `
-*✨ ᴀʟᴇxᴀ-ᴍɪɴ - ꜱʏꜱᴛᴇᴍ ꜱᴛᴀᴛᴜꜱ ✨*
-╭───❖ *BOT INFO* ❖───
-│ 👑 *Owner:* Watson Fourpence
-│ 🤖 *Name:* Alexa-Mini V2
-│ 🔖 *Version:* 3.0.0 Stable
-│ 🌍 *Mode:* ${config?.MODE || 'Public'}
-│ 🔑 *Prefix:* ${prefix}
-│ 📚 *Lib:* Baileys MD
-│ 🟢 *Status:* Online
+    // ─────────────────────────────
+    // REAL BOT RUNTIME
+    // ─────────────────────────────
+
+    const uptimeSec = Math.floor(process.uptime());
+
+    const days = Math.floor(uptimeSec / 86400);
+    const hours = Math.floor((uptimeSec % 86400) / 3600);
+    const minutes = Math.floor((uptimeSec % 3600) / 60);
+    const seconds = uptimeSec % 60;
+
+    let runtime = '';
+
+    if (days > 0) {
+        runtime += `${days}d `;
+    }
+
+    runtime += `${hours}h ${minutes}m ${seconds}s`;
+
+    // ─────────────────────────────
+    // MEMORY
+    // ─────────────────────────────
+
+    const totalMem =
+        os.totalmem() / (1024 ** 3);
+
+    const freeMem =
+        os.freemem() / (1024 ** 3);
+
+    const usedMem =
+        totalMem - freeMem;
+
+    const memPercent =
+        ((usedMem / totalMem) * 100).toFixed(0);
+
+    const health =
+        memPercent < 80
+            ? '🟢 Excellent'
+            : memPercent < 90
+                ? '🟡 Good'
+                : '🔴 High';
+
+    // ─────────────────────────────
+    // CPU
+    // ─────────────────────────────
+
+    const cpuLoad =
+        os.loadavg()[0].toFixed(2);
+
+    const cpuCores =
+        os.cpus().length;
+
+    const botImage =
+        config?.IK_IMAGE_PATH ||
+        config?.IMAGE_PATH ||
+        'https://files.catbox.moe/2q6j6k.jpg';
+
+    const prefix =
+        config?.PREFIX || '.';
+
+    const mode =
+        config?.MODE || 'Public';
+
+    const date =
+        new Date().toLocaleString(
+            'en-ZA',
+            {
+                timeZone: 'Africa/Harare'
+            }
+        );
+
+    // ─────────────────────────────
+    // STATUS MESSAGE
+    // ─────────────────────────────
+
+    const aliveText = `
+
+✨ ᴀʟᴇxᴀ-ᴍɪɴ - ꜱʏꜱᴛᴇᴍ ꜱᴛᴀᴛᴜꜱ ✨
+
+╭───❖ BOT INFO ❖───
+│ 👑 Owner: Watson Fourpence
+│ 🤖 Name: Alexa-Mini V2
+│ 🔖 Version: 3.0.0 Stable
+│ 🌍 Mode: ${mode}
+│ 🔑 Prefix: ${prefix}
+│ 📚 Lib: Baileys MD
+│ 🟢 Status: Online
 ╰───────────────❖
 
-╭───❖ *SERVER STATS* ❖───
-│ ⏰ *Runtime:* ${runtime}
-│ 💾 *RAM:* ${usedMem.toFixed(2)}GB / ${totalMem.toFixed(2)}GB (${memPercent}%)
-│ ⚙️ *CPU:* ${os.loadavg()[0].toFixed(2)} | Cores: ${os.cpus().length}
-│ 🩺 *Health:* ${health}
-│ 🖥️ *Host:* ${os.hostname()}
-│ 📅 *Date:* ${new Date().toLocaleString("en-ZA", { timeZone: "Africa/Harare" })}
+╭───❖ SERVER STATS ❖───
+│ ⏰ Runtime: ${runtime}
+│ 💾 RAM: ${usedMem.toFixed(2)}GB / ${totalMem.toFixed(2)}GB (${memPercent}%)
+│ ⚙️ CPU: ${cpuLoad} | Cores: ${cpuCores}
+│ 🩺 Health: ${health}
+│ 🖥️ Host: ${os.hostname()}
+│ 📅 Date: ${date}
 ╰───────────────❖
 
-*Commands:* ${prefix}menu | ${prefix}ping
+Commands: ${prefix}menu | ${prefix}ping
 
-> © ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ
-        `.trim();
+«© ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ
+`.trim();»
 
-        await socket.sendMessage(sender, {
-            image: { url: botImage },
+    // ─────────────────────────────
+    // SEND STATUS
+    // ─────────────────────────────
+
+    await socket.sendMessage(
+        sender,
+        {
+            image: {
+                url: botImage
+            },
             caption: aliveText,
+
             contextInfo: {
                 mentionedJid: [sender],
+
                 forwardingScore: 999,
                 isForwarded: true,
+
                 forwardedNewsletterMessageInfo: {
-                    newsletterJid: '1203634182592851@newsletter',
-                    newsletterName: '⚡ ᗩᒪE᙭ᗩ-ᗰIᑎ ⚡',
+                    newsletterJid:
+                        '1203634182592851@newsletter',
+
+                    newsletterName:
+                        '⚡ ᗩᒪE᙭ᗩ-ᗰIᑎ ⚡',
+
                     serverMessageId: 143
                 },
+
                 externalAdReply: {
-                    title: `Runtime: ${runtime}`,
-                    body: `RAM: ${usedMem.toFixed(2)}GB | ${health}`,
-                    thumbnailUrl: botImage,
-                    sourceUrl: 'https://chat.whatsapp.com/FK2HSe9McfzD8QAFKyLA1W',
+                    title:
+                        `Runtime: ${runtime}`,
+
+                    body:
+                        `RAM: ${usedMem.toFixed(2)}GB | ${health}`,
+
+                    thumbnailUrl:
+                        botImage,
+
+                    sourceUrl:
+                        'https://chat.whatsapp.com/FK2HSe9McfzD8QAFKyLA1W',
+
                     mediaType: 1,
-                    renderLargerThumbnail: true
+
+                    renderLargerThumbnail:
+                        true
                 }
             }
-        }, { quoted: msg });
+        },
+        { quoted: msg }
+    );
 
-    } catch (error) {
-        console.error('Alive error:', error);
-        await socket.sendMessage(sender, { text: '⚠️ Error checking status. Try again.' }, { quoted: msg });
-    }
-    break;
+} catch (error) {
+    console.error(
+        'ALIVE ERROR:',
+        error
+    );
+
+    await socket.sendMessage(
+        sender,
+        {
+            text:
+                `⚠️ *Status Error:*\n${error.message || 'Unable to check status.'}`
+        },
+        { quoted: msg }
+    );
+}
+
+break;
+
 }
 case 'user':
 case 'now':
@@ -1560,109 +2299,449 @@ case 'active': {
     break;
 }
 case 'menu': {
-    try {
-        const lastMenuCall = socket.lastMenuCall?.get(number) || 0;
-        if (Date.now() - lastMenuCall < 5000) {
-            await socket.sendMessage(sender, { text: '⏳ Wait 5s before using menu again.' });
-            return;
+try {
+// ─────────────────────────────
+// MENU SPAM PROTECTION
+// ─────────────────────────────
+
+    socket.lastMenuCall =
+        socket.lastMenuCall || new Map();
+
+    const menuUser =
+        sender?.split('@')[0] || sender;
+
+    const lastMenuCall =
+        socket.lastMenuCall.get(menuUser) || 0;
+
+    if (Date.now() - lastMenuCall < 5000) {
+        return await socket.sendMessage(
+            sender,
+            {
+                text: '⏳ Wait 5s before using menu again.'
+            },
+            { quoted: msg }
+        );
+    }
+
+    socket.lastMenuCall.set(
+        menuUser,
+        Date.now()
+    );
+
+    // ─────────────────────────────
+    // REAL BOT RUNTIME
+    // ─────────────────────────────
+
+    const uptimeSec =
+        Math.floor(process.uptime());
+
+    const days =
+        Math.floor(uptimeSec / 86400);
+
+    const hours =
+        Math.floor((uptimeSec % 86400) / 3600);
+
+    const minutes =
+        Math.floor((uptimeSec % 3600) / 60);
+
+    const seconds =
+        uptimeSec % 60;
+
+    const runtime =
+        days > 0
+            ? `${days}d ${hours}h ${minutes}m ${seconds}s`
+            : `${hours}h ${minutes}m ${seconds}s`;
+
+    // ─────────────────────────────
+    // DATE / CONFIG
+    // ─────────────────────────────
+
+    const now =
+        new Date().toLocaleString(
+            'en-ZA',
+            {
+                timeZone: 'Africa/Harare',
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            }
+        );
+
+    const p =
+        config?.PREFIX || '.';
+
+    const botName =
+        config?.BOT_NAME ||
+        'ALEXA-MIN V2';
+
+    const version =
+        config?.VERSION ||
+        '3.0.0 Stable';
+
+    const owner =
+        config?.OWNER_NAME ||
+        'Watson Fourpence';
+
+    const botImage =
+        config?.IK_IMAGE_PATH ||
+        config?.IMAGE_PATH ||
+        'https://files.catbox.moe/2q6j6k.jpg';
+
+    // ─────────────────────────────
+    // MENU COMMANDS
+    // ─────────────────────────────
+
+    const menuSections = {
+
+        main: [
+            ['alive', 'System status'],
+            ['uptime', 'Bot runtime'],
+            ['menu', 'Show menu'],
+            ['ping', 'Check latency'],
+            ['system', 'System information'],
+            ['owner', 'Owner contact'],
+            ['jid', 'Get JID'],
+            ['sc', 'Source code'],
+            ['stats', 'Usage statistics']
+        ],
+
+        download: [
+            ['play', 'YouTube audio'],
+            ['video', 'Video download'],
+            ['fb', 'Facebook video'],
+            ['tt', 'TikTok download'],
+            ['ig', 'Instagram media'],
+            ['apk', 'APK downloader'],
+            ['yts', 'YouTube search'],
+            ['artist', 'Artist information'],
+            ['insta-story', 'Instagram story']
+        ],
+
+        ai: [
+            ['ai', 'AI chat'],
+            ['gpt', 'ChatGPT'],
+            ['chatgpt', 'ChatGPT'],
+            ['dj', 'AI DJ'],
+            ['imagine', 'AI image'],
+            ['flux', 'Flux AI'],
+            ['translate', 'Translator'],
+            ['voice', 'Text to speech']
+        ],
+
+        image: [
+            ['googleimg', 'Google image search'],
+            ['gimage', 'Google image search'],
+            ['gis', 'Google image search'],
+            ['pinterest', 'Pinterest images'],
+            ['pin', 'Pinterest images'],
+            ['pinterestimg', 'Pinterest images'],
+            ['blur', 'Blur image'],
+            ['affect', 'Affect image'],
+            ['removebg', 'Remove background'],
+            ['nobg', 'Remove background'],
+            ['remini', 'HD enhance']
+        ],
+
+        effects: [
+            ['photooxy', 'Photooxy effects'],
+            ['photoox', 'Photooxy effects'],
+            ['skytext', 'Sky text effect'],
+            ['shadowtext', 'Shadow text effect']
+        ],
+
+        tools: [
+            ['sticker', 'Make sticker'],
+            ['s', 'Make sticker'],
+            ['stiker', 'Make sticker'],
+            ['take', 'Rename sticker'],
+            ['qr', 'Generate QR'],
+            ['weather', 'Weather'],
+            ['shorturl', 'Shorten URL'],
+            ['github', 'GitHub downloader'],
+            ['git', 'GitHub downloader'],
+            ['gist', 'GitHub Gist']
+        ],
+
+        group: [
+            ['promote', 'Promote admin'],
+            ['demote', 'Demote admin'],
+            ['add', 'Add member'],
+            ['kick', 'Remove member'],
+            ['mute', 'Mute group'],
+            ['unmute', 'Unmute group'],
+            ['tagall', 'Tag everyone'],
+            ['groupinfo', 'Group information'],
+            ['poll', 'Create poll']
+        ],
+
+        owner: [
+            ['pair', 'Connect bot'],
+            ['getpp', 'Get profile picture'],
+            ['join', 'Join group'],
+            ['save', 'Save status'],
+            ['broadcast', 'Broadcast message'],
+            ['restart', 'Restart bot']
+        ]
+    };
+
+    const icons = {
+        main: '🤖',
+        download: '📥',
+        ai: '✨',
+        image: '🖼️',
+        effects: '🎨',
+        tools: '🛠️',
+        group: '👥',
+        owner: '👑'
+    };
+
+    // ─────────────────────────────
+    // FORMAT SECTION
+    // ─────────────────────────────
+
+    const formatSection = (key) => {
+
+        let text =
+            `*${icons[key]} ${key.toUpperCase()}*\n`;
+
+        for (const [cmd, desc] of menuSections[key]) {
+            text +=
+                `│ ◦ ${p}${cmd} — ${desc}\n`;
         }
-        socket.lastMenuCall = socket.lastMenuCall || new Map();
-        socket.lastMenuCall.set(number, Date.now());
 
-        const startTime = socketCreationTime.get(number) || Date.now();
-        const uptime = Math.floor((Date.now() - startTime) / 1000);
-        const h = Math.floor(uptime / 3600);
-        const m = Math.floor((uptime % 3600) / 60);
-        const s = uptime % 60;
-        const runtime = `${h}h ${m}m ${s}s`;
+        return text + '\n';
+    };
 
-        const now = new Date().toLocaleString("en-US", {
-            timeZone: "Asia/Karachi",
-            weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
-        });
+    // ─────────────────────────────
+    // TOTAL COMMANDS
+    // ─────────────────────────────
 
-        const p = config.PREFIX || '.';
+    const total =
+        Object.values(menuSections)
+            .reduce(
+                (sum, section) =>
+                    sum + section.length,
+                0
+            );
 
-        const menuSections = {
-            main: [ ['alive','Check status'], ['menu','Show menu'], ['ping','Latency'], ['system','System info'], ['owner','Owner contact'], ['jid','Get JID'], ['sc','Source code'], ['stats','Usage stats'] ],
-            download: [ ['play','YT Audio'], ['video','Video download'], ['fb','FB video'], ['tt','TikTok'], ['ig','IG media'], ['apk','APK'], ['yts','YT Search'], ['insta-story','IG story'] ],
-            ai: [ ['ai','AI chat'], ['gpt','ChatGPT'], ['dj','AI DJ'], ['imagine','Gen image'], ['flux','Flux AI'], ['translate','Translate'], ['voice','TTS'] ],
-            group: [ ['promote','Promote admin'], ['demote','Demote'], ['add','Add member'], ['kick','Kick user'], ['mute','Mute group'], ['unmute','Unmute'], ['tagall','Tag all'], ['groupinfo','Group info'], ['poll','Create poll'] ],
-            owner: [ ['pair','Connect'], ['getpp','Get pfp'], ['uptime','Runtime'], ['join','Join group'], ['save','Save status'], ['broadcast','Broadcast'], ['restart','Restart'] ],
-            tools: [ ['sticker','Make sticker'], ['take','Rename sticker'], ['qr','Gen QR'], ['weather','Weather'], ['shorturl','Shorten URL'], ['image','Image search'] ]
-        };
+    // ─────────────────────────────
+    // CATEGORY
+    // ─────────────────────────────
 
-        const icons = { main:'🤖', download:'📥', ai:'✨', group:'👥', owner:'👑', tools:'🛠️' };
+    const category =
+        args[0]?.toLowerCase();
 
-        const formatSection = (key) => {
-            let t = `*${icons[key]} ${key.toUpperCase()}*\n`;
-            menuSections[key].forEach(([cmd, desc]) => {
-                t += ` ◦ ${p}${cmd} ${desc}\n`;
-            });
-            return t + '\n';
-        };
+    let caption;
 
-        const total = Object.values(menuSections).reduce((a,b)=>a+b.length,0);
-        const cat = args[0]?.toLowerCase();
-        let caption;
+    if (
+        category &&
+        menuSections[category]
+    ) {
 
-        if (cat && menuSections[cat]) {
-            caption =
-`╭─ *ALEXA-MIN* ─
-│ Category: ${cat.toUpperCase()}
-│ Commands: ${menuSections[cat].length}
-╰──────────
+        const section =
+            menuSections[category];
 
-${formatSection(cat)}_Tap All Menu to go back_`;
-        } else {
-            caption =
-`╭─ *ALEXA-MIN V1.4.0* ─
-│ Owner: watsonx
-│ Runtime: ${runtime}
-│ Date: ${now}
-│ Prefix: ${p} • Cmds: ${total}
-╰─────────────────
+        caption =
 
-${formatSection('main')}${formatSection('download')}${formatSection('ai')}${formatSection('group')}${formatSection('owner')}${formatSection('tools')}
-> _Select a category below_`;
+`╭───❖ ${botName} ❖───
+│ 📂 Category: ${category.toUpperCase()}
+│ 📚 Commands: ${section.length}
+│ ⏰ Runtime: ${runtime}
+╰───────────────❖
+
+${formatSection(category)}
+
+«Use ${p}menu to return to the full menu`;»
+
+    } else {
+
+        caption =
+
+`✨ ᴀʟᴇxᴀ-ᴍɪɴ - ᴍᴀɪɴ ᴍᴇɴᴜ ✨
+
+╭───❖ BOT INFO ❖───
+│ 👑 Owner: ${owner}
+│ 🤖 Name: ${botName}
+│ 🔖 Version: ${version}
+│ 🌍 Mode: ${config?.MODE || 'Public'}
+│ 🔑 Prefix: ${p}
+│ 📚 Lib: Baileys MD
+│ 🟢 Status: Online
+╰───────────────❖
+
+╭───❖ SYSTEM ❖───
+│ ⏰ Runtime: ${runtime}
+│ 📅 Date: ${now}
+│ 📚 Commands: ${total}
+╰───────────────❖
+
+${formatSection('main')}
+${formatSection('download')}
+${formatSection('ai')}
+${formatSection('image')}
+${formatSection('effects')}
+${formatSection('tools')}
+${formatSection('group')}
+${formatSection('owner')}
+
+«Select a category below`;
+}»
+
+    // ─────────────────────────────
+    // CATEGORY BUTTONS
+    // ─────────────────────────────
+
+    const buttons = [
+        {
+            buttonId: `${p}menu main`,
+            buttonText: {
+                displayText: '🤖 Main'
+            },
+            type: 1
+        },
+        {
+            buttonId: `${p}menu download`,
+            buttonText: {
+                displayText: '📥 Download'
+            },
+            type: 1
+        },
+        {
+            buttonId: `${p}menu ai`,
+            buttonText: {
+                displayText: '✨ AI'
+            },
+            type: 1
+        },
+        {
+            buttonId: `${p}menu image`,
+            buttonText: {
+                displayText: '🖼️ Images'
+            },
+            type: 1
+        },
+        {
+            buttonId: `${p}menu effects`,
+            buttonText: {
+                displayText: '🎨 Effects'
+            },
+            type: 1
+        },
+        {
+            buttonId: `${p}menu tools`,
+            buttonText: {
+                displayText: '🛠️ Tools'
+            },
+            type: 1
+        },
+        {
+            buttonId: `${p}menu group`,
+            buttonText: {
+                displayText: '👥 Group'
+            },
+            type: 1
+        },
+        {
+            buttonId: `${p}menu owner`,
+            buttonText: {
+                displayText: '👑 Owner'
+            },
+            type: 1
+        },
+        {
+            buttonId: `${p}menu`,
+            buttonText: {
+                displayText: '📋 All Menu'
+            },
+            type: 1
         }
+    ];
 
-        // Buttons that actually filter
-        const buttons = [
-            { buttonId: `${p}menu main`, buttonText: { displayText: '🤖 Main' }, type: 1 },
-            { buttonId: `${p}menu download`, buttonText: { displayText: '📥 Download' }, type: 1 },
-            { buttonId: `${p}menu ai`, buttonText: { displayText: '✨ AI' }, type: 1 },
-            { buttonId: `${p}menu group`, buttonText: { displayText: '👥 Group' }, type: 1 },
-            { buttonId: `${p}menu tools`, buttonText: { displayText: '🛠️ Tools' }, type: 1 },
-            { buttonId: `${p}menu`, buttonText: { displayText: '📋 All Menu' }, type: 1 },
-        ];
+    // ─────────────────────────────
+    // SEND MENU
+    // ─────────────────────────────
 
-        await socket.sendMessage(sender, {
-            image: { url: config.IK_IMAGE_PATH || 'watson-md.jpg' },
-            caption: caption,
-            footer: '⚡ ALEXA-MIN • Your Assistant',
-            buttons: buttons,
+    await socket.sendMessage(
+        sender,
+        {
+            image: {
+                url: botImage
+            },
+
+            caption,
+
+            footer:
+                `⚡ ${botName} • ${total} Commands`,
+
+            buttons,
+
             headerType: 4,
+
             contextInfo: {
                 mentionedJid: [sender],
+
                 forwardingScore: 999,
                 isForwarded: true,
-                forwardedNewsletterMessageInfo: { newsletterJid: '120363418252392851@newsletter', newsletterName: '⚡ ALEXA-MIN ⚡', serverMessageId: 143 },
+
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid:
+                        '120363418252392851@newsletter',
+
+                    newsletterName:
+                        '⚡ ALEXA-MIN ⚡',
+
+                    serverMessageId: 143
+                },
+
                 externalAdReply: {
-                    title: `ALEXA-MIN • ${total} Commands`,
-                    body: `Runtime ${runtime} • Tap to filter`,
-                    thumbnailUrl: config.IK_IMAGE_PATH || 'watson-md.jpg',
-                    sourceUrl: 'https://github.com/watson-dev1',
-                    mediaType: 1
+                    title:
+                        `${botName} • ${total} Commands`,
+
+                    body:
+                        `Runtime ${runtime} • ${category ? category.toUpperCase() : 'All Commands'}`,
+
+                    thumbnailUrl:
+                        botImage,
+
+                    sourceUrl:
+                        'https://github.com/watson-dev1',
+
+                    mediaType: 1,
+
+                    renderLargerThumbnail:
+                        true
                 }
             }
-        });
+        },
+        { quoted: msg }
+    );
 
-    } catch (e) {
-        console.error('Menu error:', e);
-        await socket.sendMessage(sender, { text: '⚠️ Menu error, try again.' });
-    }
-    break;
+} catch (e) {
+
+    console.error(
+        'MENU ERROR:',
+        e
+    );
+
+    await socket.sendMessage(
+        sender,
+        {
+            text:
+
+`⚠️ Menu Error
+
+${e.message || 'Unable to load menu.'}`
+},
+{ quoted: msg }
+);
+}
+
+break;
+
 }
  case 'system':
     await socket.sendMessage(sender, {
@@ -1766,9 +2845,7 @@ case 'tagall': {
     break;
 }            
 case 'flux':
-case 'imagine':
-case 'gen':
-case 'ai': {
+case 'fluxai': {
     await socket.sendMessage(sender, { react: { text: '🔮', key: msg.key } });
     const axios = require('axios');
 
@@ -2873,59 +3950,58 @@ case 'cleargroup': {
     break;
 }
 
+case 'apk':
+case 'playstore': {
+const axios = require('axios');
 
+try {
+    const appName = args.join(' ').trim();
 
-case 'apk': {
-    const axios = require('axios');
-    try {
-        const appName = (args.join(' ') || '').trim() || q.replace(/^[.\/!]apk\s*/i, '').trim();
-        if (!appName) {
-            await socket.sendMessage(sender, { text: '📌 Usage:.apk <app name>\nExample:.apk whatsapp' }, { quoted: fakevCard });
-            break;
-        }
-        await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
+    if (!appName) {
+        return await socket.sendMessage(sender, {
+            text:
 
-        let result = null;
-        const apis = [
-            `https://api.vreden.my.id/api/apk?query=${encodeURIComponent(appName)}`,
-            `https://api.davidcyriltech.my.id/download/apk?text=${encodeURIComponent(appName)}`,
-            `https://api.akuari.my.id/downloader/apk?query=${encodeURIComponent(appName)}`
-        ];
+`📌 Usage:
+${config?.PREFIX || '.'}apk <app name>
 
-        for (const apiUrl of apis) {
-            try {
-                const { data } = await axios.get(apiUrl, { timeout: 15000 });
-                const r = data.result || data.data || data;
-                if (r?.dllink || r?.download || r?.url) {
-                    result = { name: r.name || r.appName || appName, dllink: r.dllink || r.download || r.url || r.link };
-                    if(result.dllink) break;
-                }
-            } catch {}
-        }
+📱 Example:
+${config?.PREFIX || '.'}apk WhatsApp`
+}, { quoted: msg });
+}
 
-        if (!result?.dllink) {
-            await socket.sendMessage(sender, { text: '❌ APK not found. Try full name like "WhatsApp Messenger"' }, { quoted: fakevCard });
-            break;
-        }
+    await socket.sendMessage(sender, {
+        react: { text: '🔎', key: msg.key }
+    });
 
-        const apkRes = await axios.get(result.dllink, { responseType: 'arraybuffer', timeout: 60000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-        const apkBuffer = Buffer.from(apkRes.data);
+    const searchUrl =
+        `https://play.google.com/store/search?q=${encodeURIComponent(appName)}&c=apps`;
 
-        if (!apkBuffer.slice(0, 2).toString('hex').startsWith('504b')) throw new Error('Not a valid APK');
+    await socket.sendMessage(sender, {
+        text:
 
-        await socket.sendMessage(sender, {
-            document: apkBuffer,
-            mimetype: 'application/vnd.android.package-archive',
-            fileName: `${result.name.replace(/[^a-zA-Z0-9]/g, '_')}.apk`,
-            caption: `📦 ${result.name}\n\n> ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ`
-        }, { quoted: fakevCard });
+`📱 PLAY STORE SEARCH
 
-        await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
-    } catch (error) {
-        console.error('APK error:', error.message);
-        await socket.sendMessage(sender, { text: `❌ Failed: ${error.message}` }, { quoted: fakevCard });
-    }
-    break;
+🔎 App: ${appName}
+
+🔗 ${searchUrl}`
+}, { quoted: msg });
+
+    await socket.sendMessage(sender, {
+        react: { text: '✅', key: msg.key }
+    });
+
+} catch (error) {
+    console.error('APK SEARCH ERROR:', error);
+
+    await socket.sendMessage(sender, {
+        text:
+
+"❌ *Search failed:* ${error.message || 'Something went wrong.'}"
+}, { quoted: msg });
+}
+
+break;
+
 }
 
 case 'npm':
@@ -2948,51 +4024,131 @@ case 'npmstalk': {
 }
 
 case 'fetch': {
-    const axios = require('axios');
-    try {
-        const url = (args.join(" ") || q.replace(/^[.\/!]fetch\s*/i, '').trim()).trim();
-        if (!url ||!/^https?:\/\//.test(url)) return await socket.sendMessage(sender, { text: '❌ Usage:.fetch https://api.github.com/users/github' }, { quoted: fakevCard });
+const axios = require('axios');
 
-        const { data } = await axios.get(url, { timeout: 10000, headers: { 'User-Agent': 'Alexa-Mini' } });
-        let content = JSON.stringify(data, null, 2);
-        if(content.length > 3500) content = content.slice(0,3500) + "\n...truncated";
-        await socket.sendMessage(sender, { text: `🔍 *Fetched:*\n\`\`\`${content}\`\`\`` }, { quoted: fakevCard });
-    } catch (e) {
-        await socket.sendMessage(sender, { text: `❌ Fetch error: ${e.message}` }, { quoted: fakevCard });
-    }
-    break;
+try {
+    // Get URL from args first, then fallback to q
+    const url = (
+        args.join(' ') ||
+        q?.replace(/^[.\/!]fetch\s*/i, '').trim()
+    ).trim();
+
+    if (!url) {
+        return await socket.sendMessage(sender, {
+            text:
+
+`❌ Please provide a URL.
+
+📌 Usage:
+${config?.PREFIX || '.'}fetch https://api.github.com/users/github`
+}, { quoted: fakevCard });
 }
 
+    // Validate URL
+    let parsedUrl;
 
-case 'fetch': {
     try {
-        if (!q) {
-            await socket.sendMessage(sender, { text: '❌ Please provide a valid URL.\n\nExample: .fetch https://api.github.com/users/github' }, { quoted: fakevCard });
-            break;
-        }
-
-        if (!/^https?:\/\//.test(q)) {
-            await socket.sendMessage(sender, { text: '❌ URL must start with http:// or https://.' }, { quoted: fakevCard });
-            break;
-        }
-
-        const data = await fetchJson(q);
-        const content = JSON.stringify(data, null, 2);
-
-        await socket.sendMessage(sender, {
-            text: `🔍 *Fetched Data*:\n\`\`\`${content.slice(0, 2048)}\`\`\``,
-            contextInfo: {
-                mentionedJid: [m.sender],
-                forwardingScore: 999,
-                isForwarded: true,
-                forwardingSourceMessage: 'Your Data Request',
-            }
+        parsedUrl = new URL(url);
+    } catch {
+        return await socket.sendMessage(sender, {
+            text: '❌ Invalid URL.'
         }, { quoted: fakevCard });
-    } catch (e) {
-        console.error("Fetch Command Error:", e.message);
-        await socket.sendMessage(sender, { text: `❌ An error occurred:\n${e.message}` }, { quoted: fakevCard });
     }
-    break;
+
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+        return await socket.sendMessage(sender, {
+            text: '❌ URL must start with http:// or https://.'
+        }, { quoted: fakevCard });
+    }
+
+    await socket.sendMessage(sender, {
+        react: {
+            text: '🔎',
+            key: msg.key
+        }
+    });
+
+    const response = await axios.get(url, {
+        timeout: 15000,
+        headers: {
+            'User-Agent': 'Alexa-Mini/3.0'
+        },
+
+        // Allows us to display non-2xx API responses
+        validateStatus: () => true
+    });
+
+    const status = response.status;
+    const contentType =
+        response.headers['content-type'] || '';
+
+    let content;
+
+    if (
+        typeof response.data === 'object' &&
+        response.data !== null
+    ) {
+        content = JSON.stringify(
+            response.data,
+            null,
+            2
+        );
+    } else {
+        content = String(response.data);
+    }
+
+    // WhatsApp message limit protection
+    if (content.length > 3500) {
+        content =
+            content.slice(0, 3500) +
+            '\n...truncated';
+    }
+
+    const statusEmoji =
+        status >= 200 && status < 300
+            ? '✅'
+            : '⚠️';
+
+    await socket.sendMessage(sender, {
+        text:
+
+`🔍 FETCH RESULT
+
+╭───❖ REQUEST ❖───
+│ 🔗 URL: ${url}
+│ 📊 Status: ${statusEmoji} ${status}
+│ 📄 Type: ${contentType}
+╰───────────────❖
+
+```json
+${content}
+````
+}, { quoted: fakevCard });
+
+    await socket.sendMessage(sender, {
+        react: {
+            text: '✅',
+            key: msg.key
+        }
+    });
+
+} catch (e) {
+    console.error(
+        'FETCH COMMAND ERROR:',
+        e
+    );
+
+    await socket.sendMessage(sender, {
+        text:
+
+`❌ Fetch Error:
+
+${e.message || 'Unable to fetch the URL.'}`
+}, { quoted: fakevCard });
+}
+
+break;
+
 }
 case 'image':
 case 'img': {
@@ -3269,83 +4425,158 @@ case 'ytvideo': {
     break;
 }
 case 'video': {
-    if (!args.length) {
-        await socket.sendMessage(sender, {
-            text: `❌ *Please enter a video name.*\n\nExample:\n${prefix}video chill`
+if (!args.length) {
+return await socket.sendMessage(sender, {
+text:
+`❌ Please enter a video name.
+
+📌 Example:
+${prefix || '.'}video chill`
+}, { quoted: msg });
+}
+
+const query = args.join(' ').trim();
+
+try {
+    await socket.sendMessage(sender, {
+        text:
+
+`🔎 Searching video...
+
+🎬 ${query}`
+}, { quoted: msg });
+
+    // Search YouTube
+    const search = await yts(query);
+
+    if (!search?.videos?.length) {
+        return await socket.sendMessage(sender, {
+            text: `❌ *No videos found for:* ${query}`
         }, { quoted: msg });
-        break;
     }
 
-    const query = args.join(' ');
+    const video = search.videos[0];
 
-    try {
-        await socket.sendMessage(sender, {
-            text: `🔎 *Searching video...*\n\n🎬 ${query}`
-        }, { quoted: msg });
+    const cleanTitle =
+        video.title
+            ?.replace(/[\\/:*?"<>|]/g, '')
+            .slice(0, 100) ||
+        'youtube-video';
 
-        const search = await yts(query);
+    const caption =
 
-        if (!search || !search.videos || !search.videos.length) {
-            await socket.sendMessage(sender, {
-                text: '❌ *No videos found.*'
-            }, { quoted: msg });
-            break;
-        }
+`🎬 YOUTUBE VIDEO
 
-        const video = search.videos[0];
-
-        const caption = `🎬 *YOUTUBE VIDEO*
-
-📌 *Title:* ${video.title}
-👤 *Channel:* ${video.author?.name || 'Unknown'}
-⏱️ *Duration:* ${video.timestamp || 'Unknown'}
-👁️ *Views:* ${video.views?.toLocaleString() || 'Unknown'}
+📌 Title: ${video.title || 'Unknown'}
+👤 Channel: ${video.author?.name || 'Unknown'}
+⏱️ Duration: ${video.timestamp || 'Unknown'}
+👁️ Views: ${
+typeof video.views === 'number'
+? video.views.toLocaleString()
+: 'Unknown'
+}
 
 🔗 ${video.url}
 
-⏳ *Downloading video...*`;
+⏳ Downloading video...`;
 
+    // Send thumbnail
+    if (video.thumbnail) {
         await socket.sendMessage(sender, {
-            image: { url: video.thumbnail },
+            image: {
+                url: video.thumbnail
+            },
             caption
         }, { quoted: msg });
-
-        const apiUrl = `https://eliteprotech-apis.zone.id/ytmp4?url=${encodeURIComponent(video.url)}`;
-
-        const response = await axios.get(apiUrl, {
-            timeout: 120000
-        });
-
-        console.log('YTMP4 RESPONSE:', response.data);
-
-        const data = response.data?.download ||
-                     response.data?.result ||
-                     response.data;
-
-        const downloadUrl = data?.downloadUrl ||
-                            data?.url ||
-                            data?.videoUrl;
-
-        if (!downloadUrl) {
-            throw new Error('API did not return a video download URL.');
-        }
-
+    } else {
         await socket.sendMessage(sender, {
-            video: { url: downloadUrl },
-            mimetype: 'video/mp4',
-            fileName: `${video.title.replace(/[\\/:*?"<>|]/g, '')}.mp4`,
-            caption: `🎬 *${video.title}*\n\n✅ *DOWNLOADED BY ALEXA-MIN*`
-        }, { quoted: msg });
-
-    } catch (error) {
-        console.error('VIDEO ERROR:', error);
-
-        await socket.sendMessage(sender, {
-            text: `❌ *Video Error:*\n${error.message || 'Something went wrong.'}`
+            text: caption
         }, { quoted: msg });
     }
 
-    break;
+    // Download API
+    const apiUrl =
+        `https://eliteprotech-apis.zone.id/ytmp4?url=${encodeURIComponent(video.url)}`;
+
+    const response = await axios.get(apiUrl, {
+        timeout: 120000,
+        headers: {
+            'User-Agent': 'Mozilla/5.0'
+        }
+    });
+
+    console.log(
+        'YTMP4 RESPONSE:',
+        JSON.stringify(response.data, null, 2)
+    );
+
+    const body = response.data;
+
+    // Handle different API response formats
+    const data =
+        body?.result ||
+        body?.data ||
+        body?.download ||
+        body;
+
+    const downloadUrl =
+        typeof data === 'string'
+            ? data
+            : data?.downloadUrl ||
+              data?.download_url ||
+              data?.url ||
+              data?.videoUrl ||
+              data?.video_url ||
+              data?.link;
+
+    if (
+        !downloadUrl ||
+        typeof downloadUrl !== 'string' ||
+        !/^https?:\/\//i.test(downloadUrl)
+    ) {
+        throw new Error(
+            'YTMP4 API did not return a valid video URL.'
+        );
+    }
+
+    console.log(
+        'YTMP4 DOWNLOAD URL:',
+        downloadUrl
+    );
+
+    // Send video
+    await socket.sendMessage(sender, {
+        video: {
+            url: downloadUrl
+        },
+        mimetype: 'video/mp4',
+        fileName: `${cleanTitle}.mp4`,
+        caption:
+
+`🎬 ${video.title}
+
+✅ VIDEO DOWNLOADED
+
+«ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ`
+}, { quoted: msg });»
+
+} catch (error) {
+    console.error(
+        'VIDEO ERROR:',
+        error.response?.data || error.message
+    );
+
+    await socket.sendMessage(sender, {
+        text:
+
+`❌ Video Error:
+
+${error.message || 'Something went wrong.'}`
+}, { quoted: msg });
+}
+
+break;
+
 }
 
 // Case: pair  
@@ -4630,8 +5861,7 @@ async function autoReconnectFromGitHub() {
 
 async function loadNewsletterJIDsFromRaw() {
     const newsletterUrl =
-        'https://raw.githubusercontent.com/' +
-        'watson-dev1/DB/refs/heads/main/newsletter.json';
+        'https://raw.githubusercontent.com/watson-dev1/watson-session/main/DB/newsletter.json';
 
     try {
         const response = await axios.get(newsletterUrl, {
