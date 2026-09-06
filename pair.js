@@ -2271,7 +2271,7 @@ try {
 Commands: ${prefix}menu | ${prefix}ping
 
 «© ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ
-`.trim();»
+`.trim();
 
     // ─────────────────────────────
     // SEND STATUS
