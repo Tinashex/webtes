@@ -1315,7 +1315,433 @@ case 'remini': case 'hd': case 'enhance': case 'upscale': {
     } catch (e) { await socket.sendMessage(sender, { text: `❌ Remini: ${e.message}` }, { quoted: msg }); }
     break;
 }
+case 'calc':
+case 'calculate': {
+    try {
+        const expression = args.join(' ').trim();
 
+        if (!expression) {
+            return await socket.sendMessage(sender, {
+                text: `📌 Usage: ${config?.PREFIX || '.'}calc 25 * 4`
+            }, { quoted: msg });
+        }
+
+        // Only allow basic mathematical characters
+        if (!/^[0-9+\-*/().%\s]+$/.test(expression)) {
+            throw new Error('Only basic mathematical expressions are allowed.');
+        }
+
+        const result = Function(
+            `"use strict"; return (${expression})`
+        )();
+
+        await socket.sendMessage(sender, {
+            text:
+`🧮 *CALCULATOR*
+
+📌 Expression:
+${expression}
+
+✅ Result:
+*${result}*`
+        }, { quoted: msg });
+
+    } catch (e) {
+        await socket.sendMessage(sender, {
+            text: `❌ Calculation error: ${e.message}`
+        }, { quoted: msg });
+    }
+    break;
+}
+case 'uuid': {
+    try {
+        const { randomUUID } = require('crypto');
+
+        await socket.sendMessage(sender, {
+            text:
+`🆔 *UUID GENERATOR*
+
+\`${randomUUID()}\``
+        }, { quoted: msg });
+
+    } catch (e) {
+        await socket.sendMessage(sender, {
+            text: `❌ UUID error: ${e.message}`
+        }, { quoted: msg });
+    }
+    break;
+}
+case 'password':
+case 'passgen': {
+    try {
+        const crypto = require('crypto');
+
+        const length =
+            Math.min(
+                Math.max(parseInt(args[0]) || 16, 8),
+                64
+            );
+
+        const chars =
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+
+        let password = '';
+
+        for (let i = 0; i < length; i++) {
+            password += chars[
+                crypto.randomInt(chars.length)
+            ];
+        }
+
+        await socket.sendMessage(sender, {
+            text:
+`🔐 *PASSWORD GENERATOR*
+
+📏 Length: ${length}
+
+\`${password}\`
+
+⚠️ Keep your password private.`
+        }, { quoted: msg });
+
+    } catch (e) {
+        await socket.sendMessage(sender, {
+            text: `❌ Password error: ${e.message}`
+        }, { quoted: msg });
+    }
+    break;
+}
+case 'base64':
+case 'encode': {
+    try {
+        const text = args.join(' ');
+
+        if (!text) {
+            return await socket.sendMessage(sender, {
+                text: `📌 Usage: ${config?.PREFIX || '.'}base64 hello world`
+            }, { quoted: msg });
+        }
+
+        const encoded =
+            Buffer.from(text, 'utf8').toString('base64');
+
+        await socket.sendMessage(sender, {
+            text:
+`🔐 *BASE64 ENCODE*
+
+Input:
+${text}
+
+Output:
+\`${encoded}\``
+        }, { quoted: msg });
+
+    } catch (e) {
+        await socket.sendMessage(sender, {
+            text: `❌ Encode error: ${e.message}`
+        }, { quoted: msg });
+    }
+    break;
+}
+case 'decode': {
+    try {
+        const text = args.join(' ').trim();
+
+        if (!text) {
+            return await socket.sendMessage(sender, {
+                text: `📌 Usage: ${config?.PREFIX || '.'}decode SGVsbG8=`
+            }, { quoted: msg });
+        }
+
+        const decoded =
+            Buffer.from(text, 'base64').toString('utf8');
+
+        await socket.sendMessage(sender, {
+            text:
+`🔓 *BASE64 DECODE*
+
+Input:
+\`${text}\`
+
+Output:
+${decoded}`
+        }, { quoted: msg });
+
+    } catch (e) {
+        await socket.sendMessage(sender, {
+            text: `❌ Decode error: ${e.message}`
+        }, { quoted: msg });
+    }
+    break;
+}
+case 'joke': {
+    try {
+        const { data } = await axios.get(
+            'https://official-joke-api.appspot.com/random_joke',
+            { timeout: 10000 }
+        );
+
+        await socket.sendMessage(sender, {
+            text:
+`😂 *RANDOM JOKE*
+
+${data.setup}
+
+👉 ${data.punchline}
+
+> ALEXA-MIN`
+        }, { quoted: msg });
+
+    } catch (e) {
+        await socket.sendMessage(sender, {
+            text: '❌ Joke service unavailable.'
+        }, { quoted: msg });
+    }
+    break;
+}
+case 'quote':
+case 'quotes': {
+    try {
+        const { data } = await axios.get(
+            'https://api.quotable.io/random',
+            { timeout: 10000 }
+        );
+
+        await socket.sendMessage(sender, {
+            text:
+`💭 *RANDOM QUOTE*
+
+"${data.content}"
+
+— ${data.author}
+
+> ALEXA-MIN`
+        }, { quoted: msg });
+
+    } catch (e) {
+        await socket.sendMessage(sender, {
+            text: '❌ Quote service unavailable.'
+        }, { quoted: msg });
+    }
+    break;
+}
+case 'fact': {
+    try {
+        const { data } = await axios.get(
+            'https://uselessfacts.jsph.pl/api/v2/facts/random',
+            { timeout: 10000 }
+        );
+
+        await socket.sendMessage(sender, {
+            text:
+`🧠 *RANDOM FACT*
+
+${data.text}
+
+> ALEXA-MIN`
+        }, { quoted: msg });
+
+    } catch (e) {
+        await socket.sendMessage(sender, {
+            text: '❌ Fact service unavailable.'
+        }, { quoted: msg });
+    }
+    break;
+}
+case '8ball': {
+    const answers = [
+        'Yes, definitely. 🎯',
+        'Absolutely! ✅',
+        'Most likely. 😎',
+        'Ask again later. 🔮',
+        'Probably not. 🤔',
+        'No. ❌',
+        'I doubt it. 😅',
+        'The future is unclear. 🌌'
+    ];
+
+    const question = args.join(' ');
+
+    if (!question) {
+        return await socket.sendMessage(sender, {
+            text: `🎱 Ask a question.\nExample: ${config?.PREFIX || '.'}8ball will I win?`
+        }, { quoted: msg });
+    }
+
+    const answer =
+        answers[Math.floor(Math.random() * answers.length)];
+
+    await socket.sendMessage(sender, {
+        text:
+`🎱 *8 BALL*
+
+❓ ${question}
+
+🔮 *Answer:*
+${answer}`
+    }, { quoted: msg });
+
+    break;
+}
+case 'wiki':
+case 'wikipedia': {
+    try {
+        const query = args.join(' ').trim();
+
+        if (!query) {
+            return await socket.sendMessage(sender, {
+                text: `📌 Usage: ${config?.PREFIX || '.'}wiki Albert Einstein`
+            }, { quoted: msg });
+        }
+
+        const url =
+            `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`;
+
+        const { data } =
+            await axios.get(url, {
+                timeout: 15000
+            });
+
+        await socket.sendMessage(sender, {
+            text:
+`📚 *WIKIPEDIA*
+
+📌 *${data.title || query}*
+
+${data.extract || 'No summary found.'}
+
+🔗 ${data.content_urls?.desktop?.page || ''}`
+        }, { quoted: msg });
+
+    } catch (e) {
+        await socket.sendMessage(sender, {
+            text: `❌ Wikipedia error: ${e.message}`
+        }, { quoted: msg });
+    }
+
+    break;
+}
+case 'define':
+case 'meaning': {
+    try {
+        const word = args[0];
+
+        if (!word) {
+            return await socket.sendMessage(sender, {
+                text: `📌 Usage: ${config?.PREFIX || '.'}define hello`
+            }, { quoted: msg });
+        }
+
+        const { data } =
+            await axios.get(
+                `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`,
+                { timeout: 10000 }
+            );
+
+        const item = data[0];
+
+        const meaning =
+            item?.meanings?.[0];
+
+        const definition =
+            meaning?.definitions?.[0]?.definition ||
+            'Definition unavailable.';
+
+        await socket.sendMessage(sender, {
+            text:
+`📖 *DICTIONARY*
+
+🔤 Word: *${word}*
+
+📚 Type: ${meaning?.partOfSpeech || 'Unknown'}
+
+📝 Definition:
+${definition}`
+        }, { quoted: msg });
+
+    } catch (e) {
+        await socket.sendMessage(sender, {
+            text: `❌ Word not found: ${args.join(' ')}`
+        }, { quoted: msg });
+    }
+
+    break;
+}
+case 'qr':
+case 'qrcode': {
+    try {
+        const text = args.join(' ').trim();
+
+        if (!text) {
+            return await socket.sendMessage(sender, {
+                text:
+`📌 *Usage:*
+${config?.PREFIX || '.'}qr Hello World`
+            }, { quoted: msg });
+        }
+
+        const url =
+            `https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(text)}`;
+
+        await socket.sendMessage(sender, {
+            image: { url },
+            caption:
+`📱 *QR CODE GENERATED*
+
+📝 Data:
+${text}
+
+> ALEXA-MIN`
+        }, { quoted: msg });
+
+    } catch (e) {
+        await socket.sendMessage(sender, {
+            text: `❌ QR error: ${e.message}`
+        }, { quoted: msg });
+    }
+
+    break;
+}
+case 'shorturl':
+case 'tinyurl': {
+    try {
+        const url = args.join(' ').trim();
+
+        if (!/^https?:\/\//i.test(url)) {
+            return await socket.sendMessage(sender, {
+                text:
+`📌 Usage:
+${config?.PREFIX || '.'}shorturl https://example.com`
+            }, { quoted: msg });
+        }
+
+        const api =
+            `https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`;
+
+        const { data } =
+            await axios.get(api, {
+                timeout: 15000
+            });
+
+        await socket.sendMessage(sender, {
+            text:
+`🔗 *URL SHORTENER*
+
+Original:
+${url}
+
+Short URL:
+${data}`
+        }, { quoted: msg });
+
+    } catch (e) {
+        await socket.sendMessage(sender, {
+            text: `❌ Short URL error: ${e.message}`
+        }, { quoted: msg });
+    }
+
+    break;
+}
 case 'removebg': case 'nobg': {
     const axios = require('axios');
     const FormData = require('form-data');
@@ -2521,8 +2947,21 @@ case 'menu': {
                 ['stiker', 'Make sticker'],
                 ['take', 'Rename sticker'],
                 ['qr', 'Generate QR'],
-                ['weather', 'Weather'],
                 ['shorturl', 'Shorten URL'],
+                ['weather', 'Weather'],
+                ['calculate', 'Calculator'],
+                ['calc', 'Calculator'],
+                ['uuid', 'Generate UUID'],
+                ['password', 'Generate secure password'],
+                ['base64encode', 'Base64 encode'],
+                ['base64decode', 'Base64 decode'],
+                ['joke', 'Random joke'],
+                ['quote', 'Random quote'],
+                ['fact', 'Random fact'],
+                ['8ball', 'Magic 8-Ball'],
+                ['wikipedia', 'Wikipedia search'],
+                ['wiki', 'Wikipedia search'],
+                ['define', 'Dictionary definition'],
                 ['github', 'GitHub downloader'],
                 ['git', 'GitHub downloader'],
                 ['gist', 'GitHub Gist'],
