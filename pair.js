@@ -745,136 +745,195 @@ case 'gitpull': {
 
     const UPDATE_URL = 'https://github.com/Tinashex/webtes/archive/refs/heads/main.zip';
     const ROOT_DIR = process.cwd();
-    const TEMP_ZIP = path.join(ROOT_DIR, '.update.zip');
-    const TEMP_DIR = path.join(ROOT_DIR, '.update_temp');
-    const BACKUP_DIR = path.join(ROOT_DIR, '.update_backup');
+    const TEMP_ZIP = path.join(ROOT_DIR, '.watson-update.zip');
+    const TEMP_DIR = path.join(ROOT_DIR, '.watson-update');
+    const BACKUP_DIR = path.join(ROOT_DIR, '.watson-backup');
 
     const preserve = [
         'node_modules',
         '.env',
-        '.update.zip',
-        '.update_temp',
-        '.update_backup',
+        '.git',
+        '.watson-update.zip',
+        '.watson-update',
+        '.watson-backup',
         'session',
         'sessions',
         'auth_info_baileys',
         'auth_info',
-        'creds.json'
+        'auth',
+        'creds.json',
+        'admin.json',
+        'config.json'
     ];
 
     try {
         await socket.sendMessage(sender, {
-            text: '🔄 *Checking GitHub for updates...*\n\n📦 Repository: `Tinashex/webtes`'
+            text: '🔄 *WATSON-XD UPDATE*\n\n📦 Checking GitHub for the latest version...'
         }, { quoted: msg });
 
-        if (fs.existsSync(TEMP_ZIP)) fs.removeSync(TEMP_ZIP);
-        if (fs.existsSync(TEMP_DIR)) fs.removeSync(TEMP_DIR);
+        if (fs.existsSync(TEMP_ZIP)) {
+            fs.removeSync(TEMP_ZIP);
+        }
+
+        if (fs.existsSync(TEMP_DIR)) {
+            fs.removeSync(TEMP_DIR);
+        }
 
         await socket.sendMessage(sender, {
-            text: '⬇️ *Downloading latest version from GitHub...*'
+            text: '⬇️ *Downloading latest files from GitHub...*'
         }, { quoted: msg });
 
         const response = await axios.get(UPDATE_URL, {
             responseType: 'arraybuffer',
             timeout: 180000,
-            maxContentLength: 200 * 1024 * 1024
+            maxContentLength: 250 * 1024 * 1024,
+            maxBodyLength: 250 * 1024 * 1024
         });
+
+        if (!response.data || response.data.length < 100) {
+            throw new Error('GitHub returned an invalid update file.');
+        }
 
         fs.writeFileSync(TEMP_ZIP, response.data);
 
         await socket.sendMessage(sender, {
-            text: '📦 *Extracting update...*'
+            text: '📦 *Extracting update files...*'
         }, { quoted: msg });
 
         const zip = new AdmZip(TEMP_ZIP);
         zip.extractAllTo(TEMP_DIR, true);
 
-        const extractedFolders = fs.readdirSync(TEMP_DIR);
+        const extracted = fs.readdirSync(TEMP_DIR);
 
-        if (!extractedFolders.length) {
-            throw new Error('GitHub ZIP is empty.');
+        if (!extracted.length) {
+            throw new Error('The GitHub update archive is empty.');
         }
 
-        const githubRoot = path.join(TEMP_DIR, extractedFolders[0]);
+        let githubRoot = path.join(TEMP_DIR, extracted[0]);
 
-        if (!fs.existsSync(githubRoot)) {
-            throw new Error('Could not find extracted GitHub project.');
+        if (!fs.existsSync(githubRoot) || !fs.statSync(githubRoot).isDirectory()) {
+            githubRoot = TEMP_DIR;
         }
+
+        const githubFiles = fs.readdirSync(githubRoot);
+
+        if (!githubFiles.length) {
+            throw new Error('No project files were found in the GitHub update.');
+        }
+
+        await socket.sendMessage(sender, {
+            text: '💾 *Creating backup of current bot files...*'
+        }, { quoted: msg });
 
         if (fs.existsSync(BACKUP_DIR)) {
             fs.removeSync(BACKUP_DIR);
         }
 
-        fs.mkdirSync(BACKUP_DIR, { recursive: true });
-
-        await socket.sendMessage(sender, {
-            text: '💾 *Creating backup...*'
-        }, { quoted: msg });
+        fs.mkdirSync(BACKUP_DIR, {
+            recursive: true
+        });
 
         const currentFiles = fs.readdirSync(ROOT_DIR);
 
         for (const item of currentFiles) {
-            if (preserve.includes(item)) continue;
+            if (preserve.includes(item)) {
+                continue;
+            }
 
             const source = path.join(ROOT_DIR, item);
             const backup = path.join(BACKUP_DIR, item);
 
             try {
-                fs.moveSync(source, backup, { overwrite: true });
-            } catch (e) {
-                console.log(`Backup skipped: ${item}`, e.message);
+                fs.moveSync(source, backup, {
+                    overwrite: true
+                });
+            } catch (backupError) {
+                console.error(`Backup error for ${item}:`, backupError.message);
             }
         }
 
         await socket.sendMessage(sender, {
-            text: '📥 *Installing latest GitHub files...*'
+            text: '📥 *Installing latest GitHub version...*'
         }, { quoted: msg });
 
-        const updateFiles = fs.readdirSync(githubRoot);
-
-        for (const item of updateFiles) {
-            if (preserve.includes(item)) continue;
+        for (const item of githubFiles) {
+            if (preserve.includes(item)) {
+                continue;
+            }
 
             const source = path.join(githubRoot, item);
             const destination = path.join(ROOT_DIR, item);
 
-            fs.copySync(source, destination, { overwrite: true });
+            try {
+                fs.copySync(source, destination, {
+                    overwrite: true
+                });
+            } catch (copyError) {
+                console.error(`Update error for ${item}:`, copyError.message);
+                throw copyError;
+            }
         }
 
-        if (fs.existsSync(TEMP_ZIP)) fs.removeSync(TEMP_ZIP);
-        if (fs.existsSync(TEMP_DIR)) fs.removeSync(TEMP_DIR);
+        if (fs.existsSync(TEMP_ZIP)) {
+            fs.removeSync(TEMP_ZIP);
+        }
+
+        if (fs.existsSync(TEMP_DIR)) {
+            fs.removeSync(TEMP_DIR);
+        }
 
         await socket.sendMessage(sender, {
             text:
-                '╭━━━〔 *UPDATE SUCCESSFUL* 〕━━━╮\n' +
+                '╭━━━〔 *WATSON-XD UPDATE* 〕━━━╮\n' +
                 '┃\n' +
-                '┃ ✅ GitHub files updated\n' +
+                '┃ ✅ Update completed successfully\n' +
                 '┃ 📦 Repository: Tinashex/webtes\n' +
                 '┃ 🌿 Branch: main\n' +
-                '┃ 💾 Backup created\n' +
-                '┃ 🔐 Session files preserved\n' +
+                '┃ 💾 Backup: Created\n' +
+                '┃ 🔐 Sessions: Preserved\n' +
+                '┃ ⚙️ Config: Preserved\n' +
                 '┃\n' +
                 '╰━━━━━━━━━━━━━━━━━━━━━━╯\n\n' +
-                '🔄 *Restarting bot...*'
+                '🔄 *Restarting bot...*\n' +
+                '⏳ Please wait...'
         }, { quoted: msg });
 
         setTimeout(() => {
-            process.exit(0);
+            console.log('====================================');
+            console.log('🔄 WATSON-XD-BOT RESTARTING...');
+            console.log('====================================');
+
+            process.kill(process.pid, 'SIGTERM');
         }, 3000);
 
     } catch (error) {
-        console.error('GITHUB UPDATE ERROR:', error);
+        console.error('====================================');
+        console.error('❌ GITHUB UPDATE ERROR');
+        console.error(error);
+        console.error('====================================');
 
         try {
-            if (fs.existsSync(TEMP_ZIP)) fs.removeSync(TEMP_ZIP);
-            if (fs.existsSync(TEMP_DIR)) fs.removeSync(TEMP_DIR);
-        } catch {}
+            if (fs.existsSync(TEMP_ZIP)) {
+                fs.removeSync(TEMP_ZIP);
+            }
+
+            if (fs.existsSync(TEMP_DIR)) {
+                fs.removeSync(TEMP_DIR);
+            }
+        } catch (cleanupError) {
+            console.error('Cleanup error:', cleanupError.message);
+        }
 
         await socket.sendMessage(sender, {
             text:
-                `❌ *UPDATE FAILED!*\n\n` +
-                `📌 ${error.message || 'Unknown error'}\n\n` +
-                `⚠️ Your existing files were not intentionally deleted.`
+                '╭━━━〔 *UPDATE FAILED* 〕━━━╮\n' +
+                '┃\n' +
+                `┃ ❌ ${error.message || 'Unknown error'}\n` +
+                '┃\n' +
+                '┃ 🛡️ Existing bot files were\n' +
+                '┃ not intentionally removed.\n' +
+                '┃\n' +
+                '╰━━━━━━━━━━━━━━━━━━━━━━╯'
         }, { quoted: msg });
     }
 
