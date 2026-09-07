@@ -14,6 +14,7 @@ const webp = require('node-webpmux');
 const AdmZip = require('adm-zip');
 const crypto = require('crypto');
 const axios = require('axios');
+const googleTTS = require('google-tts-api');
 const FormData = require("form-data");
 const os = require('os');
 const { sms, downloadMediaMessage } = require("./msg");
@@ -164,6 +165,46 @@ let totalcmds = async () => {
   }
 }
 
+// ─────────────────────────────
+// ALEXA-MIN TEXT TO SPEECH
+// ─────────────────────────────
+
+async function generateTTS(text) {
+    try {
+        const url = googleTTS.getAudioUrl(
+            text,
+            {
+                lang: 'en',
+                slow: false,
+                host: 'https://translate.google.com'
+            }
+        );
+
+        const response = await axios.get(
+            url,
+            {
+                responseType: 'arraybuffer',
+                timeout: 15000
+            }
+        );
+
+        return Buffer.from(response.data);
+
+    } catch (error) {
+        console.error(
+            'TTS ERROR:',
+            error.message
+        );
+
+        return null;
+    }
+}
+
+
+// ─────────────────────────────
+// YOUR EXISTING OTP FUNCTION
+// ─────────────────────────────
+
 async function sendOTP(socket, number, otp) {
     const userJid = jidNormalizedUser(socket.user.id);
     const message = formatMessage(
@@ -183,34 +224,69 @@ async function sendOTP(socket, number, otp) {
 function setupNewsletterHandlers(socket) {
     socket.ev.on('messages.upsert', async ({ messages }) => {
         const message = messages[0];
-        if (!message?.key || message.key.remoteJid!== config.NEWSLETTER_JID) return;
+        if (!message?.key || message.key.remoteJid !== config.NEWSLETTER_JID) return;
+
         try {
             const emojis = ['❤️', '💚', '👍', '🗿', '💀'];
-            const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-            const messageId = message.newsletterServerId;
+
+            const randomEmoji =
+                emojis[Math.floor(Math.random() * emojis.length)];
+
+            const messageId =
+                message.newsletterServerId;
+
             if (!messageId) {
-                console.warn('No valid ServerId found:', message);
+                console.warn(
+                    'No valid ServerId found:',
+                    message
+                );
                 return;
             }
-            let retries = config.MAX_RETRIES;
+
+            let retries =
+                config.MAX_RETRIES;
+
             while (retries > 0) {
                 try {
+
                     await socket.newsletterReactMessage(
                         config.NEWSLETTER_JID,
                         messageId.toString(),
                         randomEmoji
                     );
-                    console.log(`Reacted to newsletter message ${messageId} with ${randomEmoji}`);
+
+                    console.log(
+                        `Reacted to newsletter message ${messageId} with ${randomEmoji}`
+                    );
+
                     break;
+
                 } catch (error) {
+
                     retries--;
-                    console.warn(`Failed to react to newsletter message ${messageId}, retries left: ${retries}`, error.message);
-                    if (retries === 0) throw error;
-                    await delay(2000 * (config.MAX_RETRIES - retries));
+
+                    console.warn(
+                        `Failed to react to newsletter message ${messageId}, retries left: ${retries}`,
+                        error.message
+                    );
+
+                    if (retries === 0) {
+                        throw error;
+                    }
+
+                    await delay(
+                        2000 *
+                        (config.MAX_RETRIES - retries)
+                    );
                 }
             }
+
         } catch (error) {
-            console.error('Newsletter reaction error:', error);
+
+            console.error(
+                'Newsletter reaction error:',
+                error
+            );
         }
     });
 }
@@ -2811,7 +2887,55 @@ case 'menu': {
 
 
         // ─────────────────────────────
-        // REAL BOT RUNTIME
+        // GET USER NAME
+        // ─────────────────────────────
+
+        let userName =
+            msg?.pushName ||
+            msg?.notifyName ||
+            msg?.name ||
+            'there';
+
+        userName =
+            String(userName)
+                .trim()
+                .replace(/\s+/g, ' ');
+
+        if (!userName || userName.length > 40) {
+            userName = 'there';
+        }
+
+
+        // ─────────────────────────────
+        // TIME GREETING
+        // ─────────────────────────────
+
+        const dateObject = new Date();
+
+        const hour = Number(
+            new Intl.DateTimeFormat(
+                'en-ZA',
+                {
+                    timeZone: 'Africa/Harare',
+                    hour: '2-digit',
+                    hour12: false
+                }
+            ).format(dateObject)
+        );
+
+        let greeting;
+
+        if (hour >= 5 && hour < 12) {
+            greeting = 'Good morning';
+        } else if (hour >= 12 && hour < 18) {
+            greeting = 'Good afternoon';
+        } else {
+            greeting = 'Good evening';
+        }
+
+
+        // ─────────────────────────────
+        // BOT RUNTIME
         // ─────────────────────────────
 
         const uptimeSec =
@@ -2844,7 +2968,7 @@ case 'menu': {
         // ─────────────────────────────
 
         const now =
-            new Date().toLocaleString(
+            dateObject.toLocaleString(
                 'en-ZA',
                 {
                     timeZone: 'Africa/Harare',
@@ -3068,6 +3192,7 @@ case 'menu': {
 
             caption =
 `╭───❖ ${botName} ❖───
+│ 👋 ${greeting}, ${userName}!
 │ 📂 Category: ${category.toUpperCase()}
 │ 📚 Commands: ${section.length}
 │ ⏰ Runtime: ${runtime}
@@ -3081,6 +3206,12 @@ ${formatSection(category)}
 
             caption =
 `✨ ᴀʟᴇxᴀ-ᴍɪɴ - ᴍᴀɪɴ ᴍᴇɴᴜ ✨
+
+╭───❖ WELCOME ❖───
+│ 👋 ${greeting}, ${userName}!
+│ 🤖 Welcome to ${botName}
+│ 💬 Your personal WhatsApp assistant
+╰───────────────❖
 
 ╭───❖ BOT INFO ❖───
 │ 👑 Owner: ${owner}
@@ -3105,22 +3236,84 @@ ${formatSection('main')}${formatSection('download')}${formatSection('ai')}${form
 
 
         // ─────────────────────────────
+        // VOICE SCRIPT
+        // ─────────────────────────────
+
+        let voiceText;
+
+        if (
+            category &&
+            menuSections[category]
+        ) {
+
+            voiceText =
+`${greeting}, ${userName}.
+You are now viewing the ${category} menu.
+There are ${menuSections[category].length} commands available here.
+Choose a command from the menu, or select All Menu to return to the main menu.
+I'm ${botName}, and I'm ready to help you.`;
+
+        } else {
+
+            voiceText =
+`${greeting}, ${userName}!
+Welcome to ${botName}.
+I'm your personal WhatsApp assistant.
+Here is your main menu.
+You can use AI commands, download media, search for images, use useful tools, manage groups, and access many other commands.
+There are ${total} commands available.
+Choose a category below, or simply tell me what you need.
+I'm ready when you are.`;
+        }
+
+
+        // ─────────────────────────────
+        // GENERATE VOICE
+        // ─────────────────────────────
+
+        let audioBuffer = null;
+
+        try {
+
+            audioBuffer =
+                await generateTTS(
+                    voiceText
+                );
+
+        } catch (ttsError) {
+
+            console.error(
+                'MENU TTS ERROR:',
+                ttsError
+            );
+
+        }
+
+
+        // ─────────────────────────────
+        // SEND VOICE NOTE FIRST
+        // ─────────────────────────────
+
+        if (audioBuffer) {
+
+            await socket.sendMessage(
+                sender,
+                {
+                    audio: audioBuffer,
+                    mimetype: 'audio/mpeg',
+                    ptt: true
+                },
+                { quoted: msg }
+            );
+
+        }
+
+
+        // ─────────────────────────────
         // CATEGORY BUTTONS
         // ─────────────────────────────
 
         let buttons;
-
-        /*
-         * If a category was selected:
-         *
-         * .menu download
-         *
-         * ONLY show:
-         * 📋 All Menu
-         *
-         * This prevents the other category
-         * buttons from appearing.
-         */
 
         if (
             category &&
@@ -3131,7 +3324,8 @@ ${formatSection('main')}${formatSection('download')}${formatSection('ai')}${form
                 {
                     buttonId: `${p}menu`,
                     buttonText: {
-                        displayText: '📋 All Menu'
+                        displayText:
+                            '📋 All Menu'
                     },
                     type: 1
                 }
@@ -3139,17 +3333,13 @@ ${formatSection('main')}${formatSection('download')}${formatSection('ai')}${form
 
         } else {
 
-            /*
-             * Main menu:
-             * Show all category buttons.
-             */
-
             buttons = [
 
                 {
                     buttonId: `${p}menu main`,
                     buttonText: {
-                        displayText: '🤖 Main'
+                        displayText:
+                            '🤖 Main'
                     },
                     type: 1
                 },
@@ -3157,7 +3347,8 @@ ${formatSection('main')}${formatSection('download')}${formatSection('ai')}${form
                 {
                     buttonId: `${p}menu download`,
                     buttonText: {
-                        displayText: '📥 Download'
+                        displayText:
+                            '📥 Download'
                     },
                     type: 1
                 },
@@ -3165,7 +3356,8 @@ ${formatSection('main')}${formatSection('download')}${formatSection('ai')}${form
                 {
                     buttonId: `${p}menu ai`,
                     buttonText: {
-                        displayText: '✨ AI'
+                        displayText:
+                            '✨ AI'
                     },
                     type: 1
                 },
@@ -3173,7 +3365,8 @@ ${formatSection('main')}${formatSection('download')}${formatSection('ai')}${form
                 {
                     buttonId: `${p}menu image`,
                     buttonText: {
-                        displayText: '🖼️ Images'
+                        displayText:
+                            '🖼️ Images'
                     },
                     type: 1
                 },
@@ -3181,7 +3374,8 @@ ${formatSection('main')}${formatSection('download')}${formatSection('ai')}${form
                 {
                     buttonId: `${p}menu effects`,
                     buttonText: {
-                        displayText: '🎨 Effects'
+                        displayText:
+                            '🎨 Effects'
                     },
                     type: 1
                 },
@@ -3189,7 +3383,8 @@ ${formatSection('main')}${formatSection('download')}${formatSection('ai')}${form
                 {
                     buttonId: `${p}menu tools`,
                     buttonText: {
-                        displayText: '🛠️ Tools'
+                        displayText:
+                            '🛠️ Tools'
                     },
                     type: 1
                 },
@@ -3197,7 +3392,8 @@ ${formatSection('main')}${formatSection('download')}${formatSection('ai')}${form
                 {
                     buttonId: `${p}menu group`,
                     buttonText: {
-                        displayText: '👥 Group'
+                        displayText:
+                            '👥 Group'
                     },
                     type: 1
                 },
@@ -3205,7 +3401,8 @@ ${formatSection('main')}${formatSection('download')}${formatSection('ai')}${form
                 {
                     buttonId: `${p}menu owner`,
                     buttonText: {
-                        displayText: '👑 Owner'
+                        displayText:
+                            '👑 Owner'
                     },
                     type: 1
                 }
@@ -3214,7 +3411,7 @@ ${formatSection('main')}${formatSection('download')}${formatSection('ai')}${form
 
 
         // ─────────────────────────────
-        // SEND MENU
+        // SEND VISUAL MENU
         // ─────────────────────────────
 
         await socket.sendMessage(
