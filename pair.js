@@ -107,6 +107,7 @@ const octokit = new Octokit({
     auth: process.env.GITHUB_TOKEN
 });
 
+const footer = 'ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ';
 const githubOwner = 'watsonx';
 const repo = 'watson-dev1';
 
@@ -184,11 +185,10 @@ function setupGroupParticipantHandlers(socket) {
                 // ─────────────────────────
 
                 const settings =
-                    groupSettings.get(id);
-
-                if (!settings) {
-                    return;
-                }
+                    groupSettings.get(id) || {
+                        welcome: true,
+                        goodbye: true
+                    };
 
 
                 // ─────────────────────────
@@ -6792,20 +6792,37 @@ async function EmpirePair(number, res) {
     }
 
     const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
-    const logger = pino({ level: process.env.NODE_ENV === 'production' ? 'fatal' : 'debug' });
+const logger = pino({
+    level: process.env.NODE_ENV === 'production'
+        ? 'fatal'
+        : 'debug'
+});
 
-    try {
-        const socket = makeWASocket({
-            auth: {
-                creds: state.creds,
-                keys: makeCacheableSignalKeyStore(state.keys, logger),
-            },
-            printQRInTerminal: false,
-            logger,
-            browser: Browsers.macOS('Safari')
-        });
+try {
 
-        socketCreationTime.set(sanitizedNumber, Date.now());
+    const socket = makeWASocket({
+        auth: {
+            creds: state.creds,
+            keys: makeCacheableSignalKeyStore(
+                state.keys,
+                logger
+            ),
+        },
+        printQRInTerminal: false,
+        logger,
+        browser: Browsers.macOS('Safari')
+    });
+
+    // ─────────────────────────────
+    // 👥 GROUP WELCOME / GOODBYE
+    // ─────────────────────────────
+
+    setupGroupParticipantHandlers(socket);
+
+    socketCreationTime.set(
+        sanitizedNumber,
+        Date.now()
+    );
 
         // Load user config with proper default handling
         let userConfig;
