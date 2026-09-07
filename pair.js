@@ -3337,7 +3337,7 @@ case 'menu': {
 
         const botName =
             config?.BOT_NAME ||
-            'ALEXA MINI';
+            'ALEXA-MINI';
 
         const version =
             config?.VERSION ||
@@ -6906,1400 +6906,335 @@ try {
     await updateUserConfig(sanitizedNumber, userConfig);
 } catch (error) {
     console.error('Failed to update user config:', error);
-
     await socket.sendMessage(userJid, {
         text: '⚠️ Failed to update configuration. Please try again.'
     });
-
     return;
 }
 
-// ─────────────────────────────
-// STORE ACTIVE SOCKET
-// ─────────────────────────────
+activeSockets.set(sanitizedNumber, socket);
 
-activeSockets.set(
-    sanitizedNumber,
-    socket
-);
-
-// ─────────────────────────────
-// BOT CONFIG
-// ─────────────────────────────
-
+// Bot config for consistent branding
 const botStatus = {
-    name: config?.BOT_NAME || 'ALEXA-MIN',
-    version: config?.VERSION || '3.0.0 Stable',
-    prefix: config?.PREFIX || '.',
-    owner: config?.OWNER_NAME || 'Watson Fourpence'
+    version: '1.4.0', // Match other commands
+    prefix: config.PREFIX || '!',
+    owner: 'watsonx'
 };
 
-// ─────────────────────────────
-// SUCCESS MESSAGE
-// ─────────────────────────────
+// Format success message
+const successMessage = `*✨ ALEXA-MIN CONNECTION ✨*  
+╭══════❖ Connection Status ❖══════╮  
+│ ✅ *Status:* Successfully Connected!  
+│ 🔢 *Number:* ${sanitizedNumber}  
+│ 👑 *Owner:* ${botStatus.owner}  
+│ 🛠 *Version:* ${botStatus.version}  
+│ 🔑 *Prefix:* ${botStatus.prefix}  
+│ 📜 *Welcome:* Your bot is now online! Use ${botStatus.prefix}menu to explore commands.  
+╰═════════════════════❖  
 
-const successMessage = `*✨ ${botStatus.name} CONNECTION ✨*
-
-╭══════❖ Connection Status ❖══════╮
-│
-│ ✅ *Status:* Successfully Connected!
-│ 🔢 *Number:* ${sanitizedNumber}
-│ 👑 *Owner:* ${botStatus.owner}
-│ 🛠 *Version:* ${botStatus.version}
-│ 🔑 *Prefix:* ${botStatus.prefix}
-│
-│ 📜 *Welcome:* Your bot is now online!
-│
-│ Use *${botStatus.prefix}menu* to explore commands.
-│
-╰═════════════════════❖
-
-💡 *ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ*
+💡 *ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ*  
 📌 *Type ${botStatus.prefix}help for command details*`;
 
-// ─────────────────────────────
-// INTERACTIVE BUTTONS
-// ─────────────────────────────
-
+// Define interactive buttons
 const buttons = [
     {
         buttonId: `${botStatus.prefix}menu`,
-        buttonText: {
-            displayText: '📋 Menu'
-        },
+        buttonText: { displayText: '📋 Menu' },
         type: 1
     },
     {
         buttonId: `${botStatus.prefix}help`,
-        buttonText: {
-            displayText: 'ℹ️ Help'
-        },
+        buttonText: { displayText: 'ℹ️ Help' },
         type: 1
     },
     {
         buttonId: `${botStatus.prefix}support`,
-        buttonText: {
-            displayText: '🤝 Support'
-        },
+        buttonText: { displayText: '🤝 Support' },
         type: 1
     }
 ];
 
-// ─────────────────────────────
-// SEND CONNECTION MESSAGE
-// ─────────────────────────────
+// Send success message with image and buttons
+await socket.sendMessage(userJid, {
+    image: { url: config.IK_IMAGE_PATH || 'watson-md.jpg' },
+    caption: successMessage,
+    footer: '⚡ᴀʟᴇxᴀ-ᴍɪɴ | ʏᴏᴜʀ ᴜʟᴛɪᴍᴀᴛᴇ ᴀꜱꜱɪꜱᴛᴀɴᴛ',
+    buttons: buttons,
+    headerType: 4,
+    contextInfo: {
+        mentionedJid: [userJid],
+        forwardingScore: 999,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+            newsletterJid: '12036341825232851@newsletter',
+            newsletterName: '⚡ ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ ⚡',
+            serverMessageId: 143
+        },
+        externalAdReply: {
+            title: 'ᗩᒪE᙭ᗩ-ᗰIᑎ',
+            body: 'Your Ultimate WhatsApp Assistant',
+            thumbnailUrl: config.IK_IMAGE_PATH || 'watson-md.jpg',
+            sourceUrl: 'https://github.com/watson-dev1'
+        }
+    }
+});
 
-try {
-
-    await socket.sendMessage(
-        userJid,
-        {
-            image: {
-                url: config?.IK_IMAGE_PATH || 'watson-md.jpg'
-            },
-
-            caption: successMessage,
-
-            footer:
-                `⚡${botStatus.name} | YOUR ULTIMATE ASSISTANT`,
-
-            buttons,
-
-            headerType: 4,
-
-            contextInfo: {
-                mentionedJid: [
-                    userJid
-                ],
-
-                forwardingScore: 999,
-
-                isForwarded: true,
-
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid:
-                        config?.NEWSLETTER_JID ||
-                        '1203634182392851@newsletter',
-
-                    newsletterName:
-                        `⚡ POWERED BY ${botStatus.name} ⚡`,
-
-                    serverMessageId: 143
-                },
-
-                externalAdReply: {
-                    title:
-                        botStatus.name,
-
-                    body:
-                        'Your Ultimate WhatsApp Assistant',
-
-                    thumbnailUrl:
-                        config?.IK_IMAGE_PATH ||
-                        'watson-md.jpg',
-
-                    sourceUrl:
-                        'https://github.com/watson-dev1'
+                    let numbers = [];
+                    if (fs.existsSync(NUMBER_LIST_PATH)) {
+                        numbers = JSON.parse(fs.readFileSync(NUMBER_LIST_PATH, 'utf8'));
+                    }
+                    if (!numbers.includes(sanitizedNumber)) {
+                        numbers.push(sanitizedNumber);
+                        fs.writeFileSync(NUMBER_LIST_PATH, JSON.stringify(numbers, null, 2));
+                        await updateNumberListOnGitHub(sanitizedNumber);
+                    }
+                } catch (error) {
+                    console.error('Connection error:', error);
+                    exec(`pm2 restart ${process.env.PM2_NAME || 'session'}`);
                 }
             }
+        });
+    } catch (error) {
+        console.error('Pairing error:', error);
+        socketCreationTime.delete(sanitizedNumber);
+        if (!res.headersSent) {
+            res.status(503).send({ error: 'Service Unavailable' });
         }
-    );
-
-} catch (error) {
-
-    console.error(
-        'Failed to send connection message:',
-        error
-    );
+    }
 }
 
-// ─────────────────────────────
-        // SAVE NUMBER
-        // ─────────────────────────────
+router.get('/', async (req, res) => {
+    const { number } = req.query;
+    if (!number) {
+        return res.status(400).send({ error: 'Number parameter is required' });
+    }
+    if (activeSockets.has(number.replace(/[^0-9]/g, ''))) {
+        return res.status(200).send({ status: 'already_connected', message: 'This number is already connected' });
+    }
+    await EmpirePair(number, res);
+});
 
-        try {
+router.get('/active', (req, res) => {
+    res.status(200).send({ count: activeSockets.size, numbers: Array.from(activeSockets.keys()) });
+});
 
-            let numbers = [];
+router.get('/ping', (req, res) => {
+    res.status(200).send({ status: 'active', message: 'ᴀʟᴇxᴀ-ᴍɪɴ ɪꜱ ʀᴜɴɴɪɴɢ', activesession: activeSockets.size });
+});
 
-            if (
-                fs.existsSync(
-                    NUMBER_LIST_PATH
-                )
-            ) {
-                try {
-
-                    numbers =
-                        JSON.parse(
-                            fs.readFileSync(
-                                NUMBER_LIST_PATH,
-                                'utf8'
-                            )
-                        );
-
-                    if (
-                        !Array.isArray(
-                            numbers
-                        )
-                    ) {
-                        numbers = [];
-                    }
-
-                } catch (error) {
-
-                    console.error(
-                        'Failed to read numbers.json:',
-                        error
-                    );
-
-                    numbers = [];
-                }
+router.get('/connect-all', async (req, res) => {
+    try {
+        if (!fs.existsSync(NUMBER_LIST_PATH)) {
+            return res.status(404).send({ error: 'No numbers found to connect' });
+        }
+        const numbers = JSON.parse(fs.readFileSync(NUMBER_LIST_PATH));
+        if (numbers.length === 0) {
+            return res.status(404).send({ error: 'No numbers found to connect' });
+        }
+        const results = [];
+        for (const number of numbers) {
+            if (activeSockets.has(number)) {
+                results.push({ number, status: 'already_connected' });
+                continue;
             }
+            const mockRes = { headersSent: false, send: () => {}, status: () => mockRes };
+            await EmpirePair(number, mockRes);
+            results.push({ number, status: 'connection_initiated' });
+        }
+        res.status(200).send({ status: 'success', connections: results });
+    } catch (error) {
+        console.error('Connect all error:', error);
+        res.status(500).send({ error: 'Failed to connect all bots' });
+    }
+});
 
-            if (
-                !numbers.includes(
-                    sanitizedNumber
-                )
-            ) {
-
-                numbers.push(
-                    sanitizedNumber
-                );
-
-                try {
-
-                    fs.writeFileSync(
-                        NUMBER_LIST_PATH,
-                        JSON.stringify(
-                            numbers,
-                            null,
-                            2
-                        )
-                    );
-
-                } catch (error) {
-
-                    console.error(
-                        'Failed to save numbers.json:',
-                        error
-                    );
-                }
-
-                try {
-
-                    await updateNumberListOnGitHub(
-                        sanitizedNumber
-                    );
-
-                } catch (error) {
-
-                    console.error(
-                        'Failed to update number list on GitHub:',
-                        error
-                    );
-                }
+router.get('/reconnect', async (req, res) => {
+    try {
+        const { data } = await octokit.repos.getContent({ owner, repo, path: 'session' });
+        const sessionFiles = data.filter(file => file.name.startsWith('creds_') && file.name.endsWith('.json'));
+        if (sessionFiles.length === 0) {
+            return res.status(404).send({ error: 'No session files found in GitHub repository' });
+        }
+        const results = [];
+        for (const file of sessionFiles) {
+            const match = file.name.match(/creds_(\d+)\.json/);
+            if (!match) {
+                console.warn(`Skipping invalid session file: ${file.name}`);
+                results.push({ file: file.name, status: 'skipped', reason: 'invalid_file_name' });
+                continue;
             }
-
-        // ─────────────────────────────
-        // CONNECTION ERROR (inner catch for connection.update)
-        // ─────────────────────────────
-
-        } catch (error) {
-
-            console.error(
-                'Connection error:',
-                error
-            );
-
-            socketCreationTime.delete(
-                sanitizedNumber
-            );
-
-            activeSockets.delete(
-                sanitizedNumber
-            );
-
+            const number = match[1];
+            if (activeSockets.has(number)) {
+                results.push({ number, status: 'already_connected' });
+                continue;
+            }
+            const mockRes = { headersSent: false, send: () => {}, status: () => mockRes };
             try {
-
-                exec(
-                    `pm2 restart ${process.env.PM2_NAME || 'session'}`
-                );
-
-            } catch (restartError) {
-
-                console.error(
-                    'Failed to restart PM2:',
-                    restartError
-                );
+                await EmpirePair(number, mockRes);
+                results.push({ number, status: 'connection_initiated' });
+            } catch (error) {
+                console.error(`Failed to reconnect bot for ${number}:`, error);
+                results.push({ number, status: 'failed', error: error.message });
             }
+            await delay(1000);
         }
+        res.status(200).send({ status: 'success', connections: results });
+    } catch (error) {
+        console.error('Reconnect error:', error);
+        res.status(500).send({ error: 'Failed to reconnect bots' });
+    }
+});
 
-    // ─────────────────────────────
-    // END CONNECTION.UPDATE HANDLER
-    // ─────────────────────────────
+router.get('/update-config', async (req, res) => {
+    const { number, config: configString } = req.query;
+    if (!number ||!configString) {
+        return res.status(400).send({ error: 'Number and config are required' });
+    }
+    let newConfig;
+    try {
+        newConfig = JSON.parse(configString);
+    } catch (error) {
+        return res.status(400).send({ error: 'Invalid config format' });
+    }
+    const sanitizedNumber = number.replace(/[^0-9]/g, '');
+    const socket = activeSockets.get(sanitizedNumber);
+    if (!socket) {
+        return res.status(404).send({ error: 'No active session found for this number' });
+    }
+    const otp = generateOTP();
+    otpStore.set(sanitizedNumber, { otp, expiry: Date.now() + config.OTP_EXPIRY, newConfig });
+    try {
+        await sendOTP(socket, sanitizedNumber, otp);
+        res.status(200).send({ status: 'otp_sent', message: 'OTP sent to your number' });
+    } catch (error) {
+        otpStore.delete(sanitizedNumber);
+        res.status(500).send({ error: 'Failed to send OTP' });
+    }
+});
 
+router.get('/verify-otp', async (req, res) => {
+    const { number, otp } = req.query;
+    if (!number ||!otp) {
+        return res.status(400).send({ error: 'Number and OTP are required' });
+    }
+    const sanitizedNumber = number.replace(/[^0-9]/g, '');
+    const storedData = otpStore.get(sanitizedNumber);
+    if (!storedData) {
+        return res.status(400).send({ error: 'No OTP request found for this number' });
+    }
+    if (Date.now() >= storedData.expiry) {
+        otpStore.delete(sanitizedNumber);
+        return res.status(400).send({ error: 'OTP has expired' });
+    }
+    if (storedData.otp!== otp) {
+        return res.status(400).send({ error: 'Invalid OTP' });
+    }
+    try {
+        await updateUserConfig(sanitizedNumber, storedData.newConfig);
+        otpStore.delete(sanitizedNumber);
+        const socket = activeSockets.get(sanitizedNumber);
+        if (socket) {
+            await socket.sendMessage(jidNormalizedUser(socket.user.id), {
+                image: { url: config.IK_IMAGE_PATH },
+                caption: formatMessage('📌 CONFIG UPDATED', 'Your configuration has been successfully updated!', '> Powered By: WATSON-XD ❗')
+            });
+        }
+        res.status(200).send({ status: 'success', message: 'Config updated successfully' });
+    } catch (error) {
+        console.error('Failed to update config:', error);
+        res.status(500).send({ error: 'Failed to update config' });
+    }
+});
+
+router.get('/getabout', async (req, res) => {
+    const { number, target } = req.query;
+    if (!number ||!target) {
+        return res.status(400).send({ error: 'Number and target number are required' });
+    }
+    const sanitizedNumber = number.replace(/[^0-9]/g, '');
+    const socket = activeSockets.get(sanitizedNumber);
+    if (!socket) {
+        return res.status(404).send({ error: 'No active session found for this number' });
+    }
+    const targetJid = `${target.replace(/[^0-9]/g, '')}@s.whatsapp.net`;
+    try {
+        const statusData = await socket.fetchStatus(targetJid);
+        const aboutStatus = statusData.status || 'No status available';
+        const setAt = statusData.setAt? moment(statusData.setAt).tz('Asia/Karachi').format('YYYY-MM-DD HH:mm:ss') : 'Unknown';
+        res.status(200).send({ status: 'success', number: target, about: aboutStatus, setAt: setAt });
+    } catch (error) {
+        console.error(`Failed to fetch status for ${target}:`, error);
+        res.status(500).send({ status: 'error', message: `Failed to fetch About status for ${target}. The number may not exist or the status is not accessible.` });
+    }
+});
+
+process.on('exit', () => {
+    activeSockets.forEach((socket, number) => {
+        socket.ws.close();
+        activeSockets.delete(number);
+        socketCreationTime.delete(number);
     });
-
-    // ─────────────────────────────
-    // END EmpirePair TRY
-    // ─────────────────────────────
-
-} catch (error) {
-
-    // ─────────────────────────────
-    // PAIRING ERROR (outer catch)
-    // ─────────────────────────────
-
-    console.error(
-        'Pairing error:',
-        error
-    );
-
-    socketCreationTime.delete(
-        sanitizedNumber
-    );
-
-    activeSockets.delete(
-        sanitizedNumber
-    );
-
-    if (
-        !res.headersSent
-    ) {
-
-        res.status(
-            503
-        ).send(
-            {
-                error:
-                    'Service Unavailable'
-            }
-        );
-    }
-}
-
-}
-
-
-// ─────────────────────────────
-// GET /
-// ─────────────────────────────
-
-router.get(
-    '/',
-    async (
-        req,
-        res
-    ) => {
-
-        const {
-            number
-        } = req.query;
-
-        if (
-            !number
-        ) {
-
-            return res.status(
-                400
-            ).send(
-                {
-                    error:
-                        'Number parameter is required'
-                }
-            );
-        }
-
-        const sanitizedNumber =
-            number.replace(
-                /[^0-9]/g,
-                ''
-            );
-
-        if (
-            activeSockets.has(
-                sanitizedNumber
-            )
-        ) {
-
-            return res.status(
-                200
-            ).send(
-                {
-                    status:
-                        'already_connected',
-                    message:
-                        'This number is already connected'
-                }
-            );
-        }
-
-        await EmpirePair(
-            sanitizedNumber,
-            res
-        );
-    }
-);
-
-
-// ─────────────────────────────
-// GET /active
-// ─────────────────────────────
-
-router.get(
-    '/active',
-    (
-        req,
-        res
-    ) => {
-
-        res.status(
-            200
-        ).send(
-            {
-                count:
-                    activeSockets.size,
-                numbers:
-                    Array.from(
-                        activeSockets.keys()
-                    )
-            }
-        );
-    }
-);
-
-
-// ─────────────────────────────
-// GET /ping
-// ─────────────────────────────
-
-router.get(
-    '/ping',
-    (
-        req,
-        res
-    ) => {
-
-        res.status(
-            200
-        ).send(
-            {
-                status:
-                    'active',
-                message:
-                    'ᴀʟᴇxᴀ-ᴍɪɴ ɪꜱ ʀᴜɴɴɪɴɢ',
-                activesession:
-                    activeSockets.size
-            }
-        );
-    }
-);
-
-
-// ─────────────────────────────
-// GET /connect-all
-// ─────────────────────────────
-
-router.get(
-    '/connect-all',
-    async (
-        req,
-        res
-    ) => {
-
-        try {
-
-            if (
-                !fs.existsSync(
-                    NUMBER_LIST_PATH
-                )
-            ) {
-
-                return res.status(
-                    404
-                ).send(
-                    {
-                        error:
-                            'No numbers found to connect'
-                    }
-                );
-            }
-
-            const numbers =
-                JSON.parse(
-                    fs.readFileSync(
-                        NUMBER_LIST_PATH,
-                        'utf8'
-                    )
-                );
-
-            if (
-                !Array.isArray(
-                    numbers
-                ) ||
-                numbers.length === 0
-            ) {
-
-                return res.status(
-                    404
-                ).send(
-                    {
-                        error:
-                            'No numbers found to connect'
-                    }
-                );
-            }
-
-            const results = [];
-
-            for (
-                const number
-                of numbers
-            ) {
-
-                const sanitizedNumber =
-                    String(
-                        number
-                    )
-                        .replace(
-                            /[^0-9]/g,
-                            ''
-                        );
-
-                if (
-                    !sanitizedNumber
-                ) {
-                    continue;
-                }
-
-                if (
-                    activeSockets.has(
-                        sanitizedNumber
-                    )
-                ) {
-
-                    results.push(
-                        {
-                            number:
-                                sanitizedNumber,
-                            status:
-                                'already_connected'
-                        }
-                    );
-
-                    continue;
-                }
-
-                const mockRes = {
-                    headersSent:
-                        false,
-                    send:
-                        () => {},
-                    status:
-                        function () {
-                            return this;
-                        }
-                };
-
-                try {
-
-                    await EmpirePair(
-                        sanitizedNumber,
-                        mockRes
-                    );
-
-                    results.push(
-                        {
-                            number:
-                                sanitizedNumber,
-                            status:
-                                'connection_initiated'
-                        }
-                    );
-
-                } catch (error) {
-
-                    console.error(
-                        `Failed to connect ${sanitizedNumber}:`,
-                        error
-                    );
-
-                    results.push(
-                        {
-                            number:
-                                sanitizedNumber,
-                            status:
-                                'failed',
-                            error:
-                                error.message
-                        }
-                    );
-                }
-            }
-
-            res.status(
-                200
-            ).send(
-                {
-                    status:
-                        'success',
-                    connections:
-                        results
-                }
-            );
-
-        } catch (error) {
-
-            console.error(
-                'Connect all error:',
-                error
-            );
-
-            res.status(
-                500
-            ).send(
-                {
-                    error:
-                        'Failed to connect all bots'
-                }
-            );
-        }
-    }
-);
-
-
-// ─────────────────────────────
-// GET /reconnect
-// ─────────────────────────────
-
-router.get(
-    '/reconnect',
-    async (
-        req,
-        res
-    ) => {
-
-        try {
-
-            const {
-                data
-            } = await octokit.repos.getContent(
-                {
-                    owner,
-                    repo,
-                    path:
-                        'session'
-                }
-            );
-
-            const sessionFiles =
-                data.filter(
-                    file =>
-                        file.name.startsWith(
-                            'creds_'
-                        ) &&
-                        file.name.endsWith(
-                            '.json'
-                        )
-                );
-
-            if (
-                sessionFiles.length === 0
-            ) {
-
-                return res.status(
-                    404
-                ).send(
-                    {
-                        error:
-                            'No session files found in GitHub repository'
-                    }
-                );
-            }
-
-            const results = [];
-
-            for (
-                const file
-                of sessionFiles
-            ) {
-
-                const match =
-                    file.name.match(
-                        /creds_(\d+)\.json/
-                    );
-
-                if (
-                    !match
-                ) {
-
-                    console.warn(
-                        `Skipping invalid session file: ${file.name}`
-                    );
-
-                    results.push(
-                        {
-                            file:
-                                file.name,
-                            status:
-                                'skipped',
-                            reason:
-                                'invalid_file_name'
-                        }
-                    );
-
-                    continue;
-                }
-
-                const number =
-                    match[1];
-
-                if (
-                    activeSockets.has(
-                        number
-                    )
-                ) {
-
-                    results.push(
-                        {
-                            number,
-                            status:
-                                'already_connected'
-                        }
-                    );
-
-                    continue;
-                }
-
-                const mockRes = {
-                    headersSent:
-                        false,
-                    send:
-                        () => {},
-                    status:
-                        function () {
-                            return this;
-                        }
-                };
-
-                try {
-
-                    await EmpirePair(
-                        number,
-                        mockRes
-                    );
-
-                    results.push(
-                        {
-                            number,
-                            status:
-                                'connection_initiated'
-                        }
-                    );
-
-                } catch (error) {
-
-                    console.error(
-                        `Failed to reconnect bot for ${number}:`,
-                        error
-                    );
-
-                    results.push(
-                        {
-                            number,
-                            status:
-                                'failed',
-                            error:
-                                error.message
-                        }
-                    );
-                }
-
-                await delay(
-                    1000
-                );
-            }
-
-            res.status(
-                200
-            ).send(
-                {
-                    status:
-                        'success',
-                    connections:
-                        results
-                }
-            );
-
-        } catch (error) {
-
-            console.error(
-                'Reconnect error:',
-                error
-            );
-
-            res.status(
-                500
-            ).send(
-                {
-                    error:
-                        'Failed to reconnect bots'
-                }
-            );
-        }
-    }
-);
-
-
-// ─────────────────────────────
-// GET /update-config
-// ─────────────────────────────
-
-router.get(
-    '/update-config',
-    async (
-        req,
-        res
-    ) => {
-
-        const {
-            number,
-            config: configString
-        } = req.query;
-
-        if (
-            !number ||
-            !configString
-        ) {
-
-            return res.status(
-                400
-            ).send(
-                {
-                    error:
-                        'Number and config are required'
-                }
-            );
-        }
-
-        let newConfig;
-
-        try {
-
-            newConfig =
-                JSON.parse(
-                    configString
-                );
-
-        } catch (error) {
-
-            return res.status(
-                400
-            ).send(
-                {
-                    error:
-                        'Invalid config format'
-                }
-            );
-        }
-
-        const sanitizedNumber =
-            number.replace(
-                /[^0-9]/g,
-                ''
-            );
-
-        const socket =
-            activeSockets.get(
-                sanitizedNumber
-            );
-
-        if (
-            !socket
-        ) {
-
-            return res.status(
-                404
-            ).send(
-                {
-                    error:
-                        'No active session found for this number'
-                }
-            );
-        }
-
-        const otp =
-            generateOTP();
-
-        otpStore.set(
-            sanitizedNumber,
-            {
-                otp,
-                expiry:
-                    Date.now() +
-                    config.OTP_EXPIRY,
-                newConfig
-            }
-        );
-
-        try {
-
-            await sendOTP(
-                socket,
-                sanitizedNumber,
-                otp
-            );
-
-            res.status(
-                200
-            ).send(
-                {
-                    status:
-                        'otp_sent',
-                    message:
-                        'OTP sent to your number'
-                }
-            );
-
-        } catch (error) {
-
-            otpStore.delete(
-                sanitizedNumber
-            );
-
-            res.status(
-                500
-            ).send(
-                {
-                    error:
-                        'Failed to send OTP'
-                }
-            );
-        }
-    }
-);
-
-
-// ─────────────────────────────
-// GET /verify-otp
-// ─────────────────────────────
-
-router.get(
-    '/verify-otp',
-    async (
-        req,
-        res
-    ) => {
-
-        const {
-            number,
-            otp
-        } = req.query;
-
-        if (
-            !number ||
-            !otp
-        ) {
-
-            return res.status(
-                400
-            ).send(
-                {
-                    error:
-                        'Number and OTP are required'
-                }
-            );
-        }
-
-        const sanitizedNumber =
-            number.replace(
-                /[^0-9]/g,
-                ''
-            );
-
-        const storedData =
-            otpStore.get(
-                sanitizedNumber
-            );
-
-        if (
-            !storedData
-        ) {
-
-            return res.status(
-                400
-            ).send(
-                {
-                    error:
-                        'No OTP request found for this number'
-                }
-            );
-        }
-
-        if (
-            Date.now() >=
-            storedData.expiry
-        ) {
-
-            otpStore.delete(
-                sanitizedNumber
-            );
-
-            return res.status(
-                400
-            ).send(
-                {
-                    error:
-                        'OTP has expired'
-                }
-            );
-        }
-
-        if (
-            storedData.otp !== otp
-        ) {
-
-            return res.status(
-                400
-            ).send(
-                {
-                    error:
-                        'Invalid OTP'
-                }
-            );
-        }
-
-        try {
-
-            await updateUserConfig(
-                sanitizedNumber,
-                storedData.newConfig
-            );
-
-            otpStore.delete(
-                sanitizedNumber
-            );
-
-            const socket =
-                activeSockets.get(
-                    sanitizedNumber
-                );
-
-            if (
-                socket
-            ) {
-
-                await socket.sendMessage(
-                    jidNormalizedUser(
-                        socket.user.id
-                    ),
-                    {
-                        image: {
-                            url:
-                                config.IK_IMAGE_PATH
-                        },
-                        caption:
-                            formatMessage(
-                                '📌 CONFIG UPDATED',
-                                'Your configuration has been successfully updated!',
-                                'Powered By: ALEXA-MIN ❗'
-                            )
-                    }
-                );
-            }
-
-            res.status(
-                200
-            ).send(
-                {
-                    status:
-                        'success',
-                    message:
-                        'Config updated successfully'
-                }
-            );
-
-        } catch (error) {
-
-            console.error(
-                'Failed to update config:',
-                error
-            );
-
-            res.status(
-                500
-            ).send(
-                {
-                    error:
-                        'Failed to update config'
-                }
-            );
-        }
-    }
-);
-
-
-// ─────────────────────────────
-// GET /getabout
-// ─────────────────────────────
-
-router.get(
-    '/getabout',
-    async (
-        req,
-        res
-    ) => {
-
-        const {
-            number,
-            target
-        } = req.query;
-
-        if (
-            !number ||
-            !target
-        ) {
-
-            return res.status(
-                400
-            ).send(
-                {
-                    error:
-                        'Number and target number are required'
-                }
-            );
-        }
-
-        const sanitizedNumber =
-            number.replace(
-                /[^0-9]/g,
-                ''
-            );
-
-        const socket =
-            activeSockets.get(
-                sanitizedNumber
-            );
-
-        if (
-            !socket
-        ) {
-
-            return res.status(
-                404
-            ).send(
-                {
-                    error:
-                        'No active session found for this number'
-                }
-            );
-        }
-
-        const targetNumber =
-            target.replace(
-                /[^0-9]/g,
-                ''
-            );
-
-        const targetJid =
-            `${targetNumber}@s.whatsapp.net`;
-
-        try {
-
-            const statusData =
-                await socket.fetchStatus(
-                    targetJid
-                );
-
-            const aboutStatus =
-                statusData.status ||
-                'No status available';
-
-            const setAt =
-                statusData.setAt
-                    ? moment(
-                        statusData.setAt
-                    )
-                        .tz(
-                            'Asia/Karachi'
-                        )
-                        .format(
-                            'YYYY-MM-DD HH:mm:ss'
-                        )
-                    : 'Unknown';
-
-            res.status(
-                200
-            ).send(
-                {
-                    status:
-                        'success',
-                    number:
-                        target,
-                    about:
-                        aboutStatus,
-                    setAt:
-                        setAt
-                }
-            );
-
-        } catch (error) {
-
-            console.error(
-                `Failed to fetch status for ${target}:`,
-                error
-            );
-
-            res.status(
-                500
-            ).send(
-                {
-                    status:
-                        'error',
-                    message:
-                        `Failed to fetch About status for ${target}. The number may not exist or the status is not accessible.`
-                }
-            );
-        }
-    }
-);
-
-
-// ─────────────────────────────
-// PROCESS EXIT
-// ─────────────────────────────
-
-process.on(
-    'exit',
-    () => {
-
-        activeSockets.forEach(
-            (
-                socket,
-                number
-            ) => {
-
-                try {
-
-                    if (
-                        socket &&
-                        socket.ws
-                    ) {
-                        socket.ws.close();
-                    }
-
-                } catch (error) {
-
-                    console.error(
-                        `Failed to close socket ${number}:`,
-                        error
-                    );
-                }
-
-                activeSockets.delete(
-                    number
-                );
-
-                socketCreationTime.delete(
-                    number
-                );
-            }
-        );
-
-        try {
-
-            fs.emptyDirSync(
-                SESSION_BASE_PATH
-            );
-
-        } catch (error) {
-
-            console.error(
-                'Failed to empty session directory:',
-                error
-            );
-        }
-    }
-);
-
-
-// ─────────────────────────────
-// UNCAUGHT EXCEPTION
-// ─────────────────────────────
-
-process.on(
-    'uncaughtException',
-    (
-        err
-    ) => {
-
-        console.error(
-            'Uncaught exception:',
-            err
-        );
-
-        exec(
-            `pm2 restart ${process.env.PM2_NAME || 'session'}`
-        );
-    }
-);
-
-
-// ─────────────────────────────
-// UPDATE NUMBER LIST ON GITHUB
-// ─────────────────────────────
-
-async function updateNumberListOnGitHub(
-    newNumber
-) {
-
-    const pathOnGitHub =
-        'session/numbers.json';
-
-    const sanitizedNumber =
-        String(
-            newNumber || ''
-        )
-            .replace(
-                /[^0-9]/g,
-                ''
-            );
-
-    if (
-        !sanitizedNumber
-    ) {
-
-        console.error(
-            '❌ Cannot update GitHub numbers.json: invalid number'
-        );
-
+    fs.emptyDirSync(SESSION_BASE_PATH);
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught exception:', err);
+    exec(`pm2 restart ${process.env.PM2_NAME || 'session'}`);
+});
+
+async function updateNumberListOnGitHub(newNumber) {
+    const pathOnGitHub = 'session/numbers.json';
+    const sanitizedNumber = String(newNumber || '').replace(/[^0-9]/g, '');
+
+    if (!sanitizedNumber) {
+        console.error('❌ Cannot update GitHub numbers.json: invalid number');
         return false;
     }
 
     try {
-
         let numbers = [];
         let sha;
 
         try {
+            const { data } = await octokit.repos.getContent({
+                owner,
+                repo,
+                path: pathOnGitHub,
+                ref: 'main'
+            });
 
-            const {
-                data
-            } = await octokit.repos.getContent(
-                {
-                    owner,
-                    repo,
-                    path:
-                        pathOnGitHub,
-                    ref:
-                        'main'
-                }
-            );
-
-            if (
-                !data ||
-                !data.content
-            ) {
-
-                throw new Error(
-                    'GitHub returned empty numbers.json'
-                );
+            if (!data || !data.content) {
+                throw new Error('GitHub returned empty numbers.json');
             }
 
-            const content =
-                Buffer
-                    .from(
-                        data.content,
-                        'base64'
-                    )
-                    .toString(
-                        'utf8'
-                    )
-                    .trim();
+            const content = Buffer
+                .from(data.content, 'base64')
+                .toString('utf8')
+                .trim();
 
-            if (
-                content
-            ) {
-
+            if (content) {
                 try {
-
-                    numbers =
-                        JSON.parse(
-                            content
-                        );
-
+                    numbers = JSON.parse(content);
                 } catch (parseError) {
-
                     console.error(
                         '❌ Invalid JSON in GitHub numbers.json:',
                         parseError.message
                     );
-
                     return false;
                 }
             }
 
-            sha =
-                data.sha;
+            sha = data.sha;
 
-            if (
-                !Array.isArray(
-                    numbers
-                )
-            ) {
-
+            if (!Array.isArray(numbers)) {
                 console.error(
                     '❌ Invalid numbers.json format. Expected an array.'
                 );
-
                 return false;
             }
 
         } catch (error) {
-
-            if (
-                error.status === 404
-            ) {
-
+            if (error.status === 404) {
                 console.log(
                     '📁 numbers.json does not exist. Creating it...'
                 );
@@ -8308,76 +7243,39 @@ async function updateNumberListOnGitHub(
                 sha = undefined;
 
             } else {
-
                 throw error;
             }
         }
 
-        numbers =
-            numbers
-                .map(
-                    number =>
-                        String(
-                            number
-                        )
-                            .replace(
-                                /[^0-9]/g,
-                                ''
-                            )
-                )
-                .filter(
-                    Boolean
-                );
+        numbers = numbers
+            .map(number => String(number).replace(/[^0-9]/g, ''))
+            .filter(Boolean);
 
-        if (
-            numbers.includes(
-                sanitizedNumber
-            )
-        ) {
-
+        if (numbers.includes(sanitizedNumber)) {
             console.log(
                 `ℹ️ ${sanitizedNumber} already exists in GitHub numbers.json`
             );
-
             return true;
         }
 
-        numbers.push(
-            sanitizedNumber
-        );
+        numbers.push(sanitizedNumber);
 
         const fileData = {
             owner,
             repo,
-            path:
-                pathOnGitHub,
-            message:
-                `Add ${sanitizedNumber} to numbers list`,
-            content:
-                Buffer
-                    .from(
-                        JSON.stringify(
-                            numbers,
-                            null,
-                            2
-                        ) + '\n'
-                    )
-                    .toString(
-                        'base64'
-                    ),
-            branch:
-                'main'
+            path: pathOnGitHub,
+            message: `Add ${sanitizedNumber} to numbers list`,
+            content: Buffer
+                .from(JSON.stringify(numbers, null, 2) + '\n')
+                .toString('base64'),
+            branch: 'main'
         };
 
-        if (
-            sha
-        ) {
+        if (sha) {
             fileData.sha = sha;
         }
 
-        await octokit.repos.createOrUpdateFileContents(
-            fileData
-        );
+        await octokit.repos.createOrUpdateFileContents(fileData);
 
         console.log(
             `✅ Added ${sanitizedNumber} to GitHub numbers.json`
@@ -8386,19 +7284,13 @@ async function updateNumberListOnGitHub(
         return true;
 
     } catch (error) {
-
         console.error(
             '❌ Failed to update numbers.json on GitHub:',
             error.message
         );
 
-        if (
-            error.status
-        ) {
-
-            console.error(
-                `📌 GitHub status: ${error.status}`
-            );
+        if (error.status) {
+            console.error(`📌 GitHub status: ${error.status}`);
         }
 
         return false;
@@ -8406,129 +7298,78 @@ async function updateNumberListOnGitHub(
 }
 
 
-// ─────────────────────────────
-// AUTO RECONNECT
-// ─────────────────────────────
-
 let isAutoReconnecting = false;
 
 async function autoReconnectFromGitHub() {
+    const pathOnGitHub = 'session/numbers.json';
 
-    const pathOnGitHub =
-        'session/numbers.json';
-
-    if (
-        isAutoReconnecting
-    ) {
-
+    if (isAutoReconnecting) {
         console.log(
             '⏳ GitHub auto-reconnect is already running...'
         );
-
         return;
     }
 
     isAutoReconnecting = true;
 
     try {
-
         const url =
             `https://raw.githubusercontent.com/` +
             `${owner}/${repo}/main/${pathOnGitHub}`;
 
         console.log(
-            '🔄 Loading WhatsApp numbers from GitHub...'
+            `🔄 Loading WhatsApp numbers from GitHub...`
         );
 
-        const response =
-            await axios.get(
-                url,
-                {
-                    timeout:
-                        15000,
-                    responseType:
-                        'json',
-                    headers: {
-                        'Cache-Control':
-                            'no-cache',
-                        'User-Agent':
-                            'WATSON-XD-BOT'
-                    }
-                }
-            );
+        const response = await axios.get(url, {
+            timeout: 15000,
+            responseType: 'json',
+            headers: {
+                'Cache-Control': 'no-cache',
+                'User-Agent': 'WATSON-XD-BOT'
+            }
+        });
 
-        let numbers =
-            response.data;
+        let numbers = response.data;
 
-        if (
-            typeof numbers ===
-            'string'
-        ) {
-
+        if (typeof numbers === 'string') {
             try {
-
-                numbers =
-                    JSON.parse(
-                        numbers
-                    );
-
+                numbers = JSON.parse(numbers);
             } catch (parseError) {
-
                 console.error(
                     '❌ Failed to parse GitHub numbers.json:',
                     parseError.message
                 );
-
                 return;
             }
         }
 
-        if (
-            !Array.isArray(
-                numbers
-            )
-        ) {
-
+        if (!Array.isArray(numbers)) {
             console.error(
                 '❌ Invalid numbers format from GitHub.'
             );
-
             console.error(
                 'Expected an array but received:',
                 typeof numbers
             );
-
             return;
         }
 
-        const cleanNumbers =
-            [
-                ...new Set(
-                    numbers
-                        .map(
-                            number =>
-                                String(
-                                    number || ''
-                                )
-                                    .replace(
-                                        /[^0-9]/g,
-                                        ''
-                                    )
-                        )
-                        .filter(
-                            Boolean
-                        )
-                )
-            ];
+        const cleanNumbers = [
+            ...new Set(
+                numbers
+                    .map(number =>
+                        String(number || '')
+                            .replace(/[^0-9]/g, '')
+                    )
+                    .filter(Boolean)
+            )
+        ];
 
-        if (
-            !cleanNumbers.length
-        ) {
-
+        if (!cleanNumbers.length) {
             console.log(
                 'ℹ️ No WhatsApp numbers found in GitHub numbers.json'
             );
-
             return;
         }
 
@@ -8540,19 +7381,9 @@ async function autoReconnectFromGitHub() {
         let alreadyConnected = 0;
         let failed = 0;
 
-        for (
-            const number
-            of cleanNumbers
-        ) {
-
+        for (const number of cleanNumbers) {
             try {
-
-                if (
-                    activeSockets.has(
-                        number
-                    )
-                ) {
-
+                if (activeSockets.has(number)) {
                     alreadyConnected++;
 
                     console.log(
@@ -8567,20 +7398,16 @@ async function autoReconnectFromGitHub() {
                 );
 
                 const mockRes = {
-                    headersSent:
-                        false,
-                    send:
-                        () => {},
-                    status:
-                        function () {
-                            return this;
-                        }
+                    headersSent: false,
+
+                    send: () => {},
+
+                    status: function () {
+                        return this;
+                    }
                 };
 
-                await EmpirePair(
-                    number,
-                    mockRes
-                );
+                await EmpirePair(number, mockRes);
 
                 reconnected++;
 
@@ -8588,12 +7415,9 @@ async function autoReconnectFromGitHub() {
                     `🔁 Reconnected from GitHub: ${number}`
                 );
 
-                await delay(
-                    1500
-                );
+                await delay(1500);
 
             } catch (numberError) {
-
                 failed++;
 
                 console.error(
@@ -8603,37 +7427,14 @@ async function autoReconnectFromGitHub() {
             }
         }
 
-        console.log(
-            '===================================='
-        );
-
-        console.log(
-            '✅ GITHUB AUTO-RECONNECT COMPLETE'
-        );
-
-        console.log(
-            '===================================='
-        );
-
-        console.log(
-            `📱 Total numbers: ${cleanNumbers.length}`
-        );
-
-        console.log(
-            `🔁 Reconnected: ${reconnected}`
-        );
-
-        console.log(
-            `✅ Already connected: ${alreadyConnected}`
-        );
-
-        console.log(
-            `❌ Failed: ${failed}`
-        );
-
-        console.log(
-            '===================================='
-        );
+        console.log('====================================');
+        console.log('✅ GITHUB AUTO-RECONNECT COMPLETE');
+        console.log('====================================');
+        console.log(`📱 Total numbers: ${cleanNumbers.length}`);
+        console.log(`🔁 Reconnected: ${reconnected}`);
+        console.log(`✅ Already connected: ${alreadyConnected}`);
+        console.log(`❌ Failed: ${failed}`);
+        console.log('====================================');
 
     } catch (error) {
 
@@ -8642,16 +7443,12 @@ async function autoReconnectFromGitHub() {
             error.code === 'ECONNABORTED' ||
             error.code === 'ETIMEDOUT'
         ) {
-
             console.error(
                 '❌ Network error connecting to GitHub:',
                 error.message
             );
 
-        } else if (
-            error.response?.status === 404
-        ) {
-
+        } else if (error.response?.status === 404) {
             console.error(
                 `❌ File not found on GitHub: ${pathOnGitHub}`
             );
@@ -8660,13 +7457,11 @@ async function autoReconnectFromGitHub() {
             error.response?.status === 401 ||
             error.response?.status === 403
         ) {
-
             console.error(
                 '❌ GitHub access denied.'
             );
 
         } else {
-
             console.error(
                 '❌ autoReconnectFromGitHub error:',
                 error.message
@@ -8674,89 +7469,51 @@ async function autoReconnectFromGitHub() {
         }
 
     } finally {
-
-        isAutoReconnecting =
-            false;
+        isAutoReconnecting = false;
     }
 }
 
 
-// ─────────────────────────────
-// LOAD NEWSLETTER JIDS
-// ─────────────────────────────
-
 async function loadNewsletterJIDsFromRaw() {
-
     const newsletterUrl =
         'https://raw.githubusercontent.com/watson-dev1/watson-session/main/DB/newsletter.json';
 
     try {
+        const response = await axios.get(newsletterUrl, {
+            timeout: 15000,
+            responseType: 'json',
+            headers: {
+                'Cache-Control': 'no-cache',
+                'User-Agent': 'ALEXA-MIN'
+            }
+        });
 
-        const response =
-            await axios.get(
-                newsletterUrl,
-                {
-                    timeout:
-                        15000,
-                    responseType:
-                        'json',
-                    headers: {
-                        'Cache-Control':
-                            'no-cache',
-                        'User-Agent':
-                            'ALEXA-MIN'
-                    }
-                }
-            );
-
-        if (
-            !response.data
-        ) {
-
+        if (!response.data) {
             console.error(
                 '❌ Empty response from newsletter API'
             );
-
             return [];
         }
 
-        let data =
-            response.data;
+        let data = response.data;
 
-        if (
-            typeof data ===
-            'string'
-        ) {
-
+        if (typeof data === 'string') {
             try {
-
-                data =
-                    JSON.parse(
-                        data
-                    );
-
+                data = JSON.parse(data);
             } catch (parseError) {
-
                 console.error(
                     '❌ Invalid newsletter JSON:',
                     parseError.message
                 );
-
                 return [];
             }
         }
 
-        if (
-            !Array.isArray(
-                data
-            )
-        ) {
-
+        if (!Array.isArray(data)) {
             console.error(
                 '❌ Invalid newsletter data format:',
                 typeof data
             );
-
             return [];
         }
 
@@ -8769,22 +7526,17 @@ async function loadNewsletterJIDsFromRaw() {
             error.code === 'ECONNABORTED' ||
             error.code === 'ETIMEDOUT'
         ) {
-
             console.error(
                 '❌ Cannot reach GitHub raw content server:',
                 error.message
             );
 
-        } else if (
-            error.response?.status === 404
-        ) {
-
+        } else if (error.response?.status === 404) {
             console.error(
                 '❌ Newsletter file not found on GitHub'
             );
 
         } else {
-
             console.error(
                 '❌ Failed to load newsletter list from GitHub:',
                 error.message
@@ -8796,47 +7548,25 @@ async function loadNewsletterJIDsFromRaw() {
 }
 
 
-// ─────────────────────────────
-// SCHEDULED AUTO RECONNECT
-// ─────────────────────────────
-
 setInterval(
     () => {
-
-        autoReconnectFromGitHub()
-            .catch(
-                error => {
-
-                    console.error(
-                        '❌ Scheduled GitHub reconnect error:',
-                        error.message
-                    );
-                }
+        autoReconnectFromGitHub().catch(error => {
+            console.error(
+                '❌ Scheduled GitHub reconnect error:',
+                error.message
             );
-
+        });
     },
     5 * 60 * 1000
 );
 
 
-// ─────────────────────────────
-// INITIAL AUTO RECONNECT
-// ─────────────────────────────
-
-autoReconnectFromGitHub()
-    .catch(
-        error => {
-
-            console.error(
-                '❌ Initial GitHub reconnect error:',
-                error.message
-            );
-        }
+autoReconnectFromGitHub().catch(error => {
+    console.error(
+        '❌ Initial GitHub reconnect error:',
+        error.message
     );
+});
 
-
-// ─────────────────────────────
-// EXPORT ROUTER
-// ─────────────────────────────
 
 module.exports = router;
