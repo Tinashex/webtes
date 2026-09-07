@@ -21,6 +21,7 @@
     "axios": "^1.7.7",
     "moment-timezone": "^0.5.45",
     "cheerio": "^1.0.2",
+    "google-tts-api": "2.0.2",
     "wa-sticker-formatter": "^4.4.4",
     "form-data": "^4.0.2",
     "jimp": "1.6.1",
