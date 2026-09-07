@@ -2858,7 +2858,25 @@ case 'menu': {
     try {
 
         // ─────────────────────────────
+        // GET CATEGORY FIRST
+        // ─────────────────────────────
+
+        const category =
+            String(args?.[0] || '')
+                .toLowerCase()
+                .trim();
+
+
+        // ─────────────────────────────
         // MENU SPAM PROTECTION
+        // ONLY PROTECT FULL MENU
+        //
+        // Category buttons such as:
+        // .menu download
+        // .menu ai
+        // .menu tools
+        //
+        // are NOT blocked.
         // ─────────────────────────────
 
         socket.lastMenuCall =
@@ -2870,20 +2888,28 @@ case 'menu': {
         const lastMenuCall =
             socket.lastMenuCall.get(menuUser) || 0;
 
-        if (Date.now() - lastMenuCall < 5000) {
+        if (
+            !category &&
+            Date.now() - lastMenuCall < 5000
+        ) {
+
             return await socket.sendMessage(
                 sender,
                 {
-                    text: '⏳ Wait 5s before using menu again.'
+                    text:
+                        '⏳ Please wait 5 seconds before opening the main menu again.'
                 },
                 { quoted: msg }
             );
         }
 
-        socket.lastMenuCall.set(
-            menuUser,
-            Date.now()
-        );
+        // Only save timestamp for main menu
+        if (!category) {
+            socket.lastMenuCall.set(
+                menuUser,
+                Date.now()
+            );
+        }
 
 
         // ─────────────────────────────
@@ -2901,7 +2927,10 @@ case 'menu': {
                 .trim()
                 .replace(/\s+/g, ' ');
 
-        if (!userName || userName.length > 40) {
+        if (
+            !userName ||
+            userName.length > 40
+        ) {
             userName = 'there';
         }
 
@@ -2910,27 +2939,46 @@ case 'menu': {
         // TIME GREETING
         // ─────────────────────────────
 
-        const dateObject = new Date();
+        const dateObject =
+            new Date();
 
-        const hour = Number(
-            new Intl.DateTimeFormat(
-                'en-ZA',
-                {
-                    timeZone: 'Africa/Harare',
-                    hour: '2-digit',
-                    hour12: false
-                }
-            ).format(dateObject)
-        );
+        const hour =
+            Number(
+                new Intl.DateTimeFormat(
+                    'en-ZA',
+                    {
+                        timeZone:
+                            'Africa/Harare',
+                        hour:
+                            '2-digit',
+                        hour12:
+                            false
+                    }
+                ).format(dateObject)
+            );
 
         let greeting;
 
-        if (hour >= 5 && hour < 12) {
-            greeting = 'Good morning';
-        } else if (hour >= 12 && hour < 18) {
-            greeting = 'Good afternoon';
+        if (
+            hour >= 5 &&
+            hour < 12
+        ) {
+
+            greeting =
+                'Good morning';
+
+        } else if (
+            hour >= 12 &&
+            hour < 18
+        ) {
+
+            greeting =
+                'Good afternoon';
+
         } else {
-            greeting = 'Good evening';
+
+            greeting =
+                'Good evening';
         }
 
 
@@ -2939,19 +2987,25 @@ case 'menu': {
         // ─────────────────────────────
 
         const uptimeSec =
-            Math.floor(process.uptime());
+            Math.floor(
+                process.uptime()
+            );
 
         const days =
-            Math.floor(uptimeSec / 86400);
+            Math.floor(
+                uptimeSec / 86400
+            );
 
         const hours =
             Math.floor(
-                (uptimeSec % 86400) / 3600
+                (uptimeSec % 86400) /
+                3600
             );
 
         const minutes =
             Math.floor(
-                (uptimeSec % 3600) / 60
+                (uptimeSec % 3600) /
+                60
             );
 
         const seconds =
@@ -2964,26 +3018,47 @@ case 'menu': {
 
 
         // ─────────────────────────────
-        // DATE / CONFIG
+        // DATE
         // ─────────────────────────────
 
         const now =
             dateObject.toLocaleString(
                 'en-ZA',
                 {
-                    timeZone: 'Africa/Harare',
-                    weekday: 'short',
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
+                    timeZone:
+                        'Africa/Harare',
+
+                    weekday:
+                        'short',
+
+                    day:
+                        'numeric',
+
+                    month:
+                        'short',
+
+                    year:
+                        'numeric',
+
+                    hour:
+                        '2-digit',
+
+                    minute:
+                        '2-digit',
+
+                    second:
+                        '2-digit'
                 }
             );
 
+
+        // ─────────────────────────────
+        // CONFIG
+        // ─────────────────────────────
+
         const p =
-            config?.PREFIX || '.';
+            config?.PREFIX ||
+            '.';
 
         const botName =
             config?.BOT_NAME ||
@@ -3120,37 +3195,66 @@ case 'menu': {
         // ─────────────────────────────
 
         const icons = {
-            main: '🤖',
-            download: '📥',
-            ai: '✨',
-            image: '🖼️',
-            effects: '🎨',
-            tools: '🛠️',
-            group: '👥',
-            owner: '👑'
+
+            main:
+                '🤖',
+
+            download:
+                '📥',
+
+            ai:
+                '✨',
+
+            image:
+                '🖼️',
+
+            effects:
+                '🎨',
+
+            tools:
+                '🛠️',
+
+            group:
+                '👥',
+
+            owner:
+                '👑'
         };
+
+
+        // ─────────────────────────────
+        // VALID CATEGORY
+        // ─────────────────────────────
+
+        const validCategory =
+            category &&
+            Object.prototype.hasOwnProperty.call(
+                menuSections,
+                category
+            );
 
 
         // ─────────────────────────────
         // FORMAT CATEGORY
         // ─────────────────────────────
 
-        const formatSection = (key) => {
+        const formatSection =
+            (key) => {
 
-            let text =
-                `*${icons[key]} ${key.toUpperCase()}*\n`;
+                let text =
+                    `*${icons[key]} ${key.toUpperCase()}*\n`;
 
-            for (
-                const [cmd, desc]
-                of menuSections[key]
-            ) {
+                for (
+                    const [cmd, desc]
+                    of menuSections[key]
+                ) {
 
-                text +=
-                    `│ ◦ ${p}${cmd} — ${desc}\n`;
-            }
+                    text +=
+                        `│ ◦ ${p}${cmd} — ${desc}\n`;
+                }
 
-            return text + '\n';
-        };
+                return text;
+            };
 
 
         // ─────────────────────────────
@@ -3158,22 +3262,13 @@ case 'menu': {
         // ─────────────────────────────
 
         const total =
-            Object.values(menuSections)
-                .reduce(
-                    (sum, section) =>
-                        sum + section.length,
-                    0
-                );
-
-
-        // ─────────────────────────────
-        // GET CATEGORY
-        // ─────────────────────────────
-
-        const category =
-            String(args?.[0] || '')
-                .toLowerCase()
-                .trim();
+            Object.values(
+                menuSections
+            ).reduce(
+                (sum, section) =>
+                    sum + section.length,
+                0
+            );
 
 
         // ─────────────────────────────
@@ -3182,10 +3277,12 @@ case 'menu': {
 
         let caption;
 
-        if (
-            category &&
-            menuSections[category]
-        ) {
+
+        // ─────────────────────────────
+        // CATEGORY MENU
+        // ─────────────────────────────
+
+        if (validCategory) {
 
             const section =
                 menuSections[category];
@@ -3200,9 +3297,21 @@ case 'menu': {
 
 ${formatSection(category)}
 
-« Tap 📋 All Menu to return to the full menu »`;
+╭───────────────❖
+│ 📋 Tap *All Menu* to return
+╰───────────────❖`;
 
-        } else {
+        }
+
+
+        // ─────────────────────────────
+        // MAIN MENU
+        //
+        // IMPORTANT:
+        // NO COMMANDS ARE DISPLAYED HERE.
+        // ─────────────────────────────
+
+        else {
 
             caption =
 `✨ ᴀʟᴇxᴀ-ᴍɪɴ - ᴍᴀɪɴ ᴍᴇɴᴜ ✨
@@ -3229,9 +3338,12 @@ ${formatSection(category)}
 │ 📚 Commands: ${total}
 ╰───────────────❖
 
-${formatSection('main')}${formatSection('download')}${formatSection('ai')}${formatSection('image')}${formatSection('effects')}${formatSection('tools')}${formatSection('group')}${formatSection('owner')}
-
-« Select a category below »`;
+╭───❖ MENU ❖───
+│ 📋 Choose a category
+│ 👇 Tap a button below
+│ 💬 Commands will appear
+│    after you choose a category
+╰───────────────❖`;
         }
 
 
@@ -3241,44 +3353,55 @@ ${formatSection('main')}${formatSection('download')}${formatSection('ai')}${form
 
         let voiceText;
 
-        if (
-            category &&
-            menuSections[category]
-        ) {
+
+        if (validCategory) {
 
             voiceText =
 `${greeting}, ${userName}.
 You are now viewing the ${category} menu.
-There are ${menuSections[category].length} commands available here.
-Choose a command from the menu, or select All Menu to return to the main menu.
+There are ${menuSections[category].length} commands available.
+Choose a command from the menu.
 I'm ${botName}, and I'm ready to help you.`;
 
         } else {
 
+            // SHORT VOICE MESSAGE
+            // This is more reliable with Google TTS.
+
             voiceText =
-`${greeting}, ${userName}!
+`${greeting}, ${userName}.
 Welcome to ${botName}.
-I'm your personal WhatsApp assistant.
-Here is your main menu.
-You can use AI commands, download media, search for images, use useful tools, manage groups, and access many other commands.
-There are ${total} commands available.
-Choose a category below, or simply tell me what you need.
-I'm ready when you are.`;
+Your menu is ready.
+Please choose a category below to see my commands.
+I'm ready to help you.`;
         }
 
 
         // ─────────────────────────────
-        // GENERATE VOICE
+        // GENERATE TTS
         // ─────────────────────────────
 
-        let audioBuffer = null;
+        let audioBuffer =
+            null;
 
         try {
 
-            audioBuffer =
-                await generateTTS(
-                    voiceText
+            if (
+                typeof generateTTS ===
+                'function'
+            ) {
+
+                audioBuffer =
+                    await generateTTS(
+                        voiceText
+                    );
+
+            } else {
+
+                console.error(
+                    'generateTTS function is not available.'
                 );
+            }
 
         } catch (ttsError) {
 
@@ -3287,25 +3410,48 @@ I'm ready when you are.`;
                 ttsError
             );
 
+            audioBuffer =
+                null;
         }
 
 
         // ─────────────────────────────
-        // SEND VOICE NOTE FIRST
+        // SEND VOICE
         // ─────────────────────────────
 
         if (audioBuffer) {
 
-            await socket.sendMessage(
-                sender,
-                {
-                    audio: audioBuffer,
-                    mimetype: 'audio/mpeg',
-                    ptt: true
-                },
-                { quoted: msg }
-            );
+            try {
 
+                await socket.sendMessage(
+                    sender,
+                    {
+                        audio:
+                            audioBuffer,
+
+                        mimetype:
+                            'audio/mpeg',
+
+                        ptt:
+                            false
+                    },
+                    {
+                        quoted:
+                            msg
+                    }
+                );
+
+                console.log(
+                    `Menu TTS sent to ${userName}`
+                );
+
+            } catch (voiceSendError) {
+
+                console.error(
+                    'VOICE SEND ERROR:',
+                    voiceSendError
+                );
+            }
         }
 
 
@@ -3315,97 +3461,143 @@ I'm ready when you are.`;
 
         let buttons;
 
-        if (
-            category &&
-            menuSections[category]
-        ) {
+
+        // CATEGORY PAGE
+        // ONLY SHOW ALL MENU
+
+        if (validCategory) {
 
             buttons = [
+
                 {
-                    buttonId: `${p}menu`,
+                    buttonId:
+                        `${p}menu`,
+
                     buttonText: {
                         displayText:
                             '📋 All Menu'
                     },
-                    type: 1
+
+                    type:
+                        1
                 }
+
             ];
 
-        } else {
+        }
+
+
+        // MAIN PAGE
+        // SHOW CATEGORIES ONLY
+
+        else {
 
             buttons = [
 
                 {
-                    buttonId: `${p}menu main`,
+                    buttonId:
+                        `${p}menu main`,
+
                     buttonText: {
                         displayText:
                             '🤖 Main'
                     },
-                    type: 1
+
+                    type:
+                        1
                 },
 
                 {
-                    buttonId: `${p}menu download`,
+                    buttonId:
+                        `${p}menu download`,
+
                     buttonText: {
                         displayText:
                             '📥 Download'
                     },
-                    type: 1
+
+                    type:
+                        1
                 },
 
                 {
-                    buttonId: `${p}menu ai`,
+                    buttonId:
+                        `${p}menu ai`,
+
                     buttonText: {
                         displayText:
                             '✨ AI'
                     },
-                    type: 1
+
+                    type:
+                        1
                 },
 
                 {
-                    buttonId: `${p}menu image`,
+                    buttonId:
+                        `${p}menu image`,
+
                     buttonText: {
                         displayText:
                             '🖼️ Images'
                     },
-                    type: 1
+
+                    type:
+                        1
                 },
 
                 {
-                    buttonId: `${p}menu effects`,
+                    buttonId:
+                        `${p}menu effects`,
+
                     buttonText: {
                         displayText:
                             '🎨 Effects'
                     },
-                    type: 1
+
+                    type:
+                        1
                 },
 
                 {
-                    buttonId: `${p}menu tools`,
+                    buttonId:
+                        `${p}menu tools`,
+
                     buttonText: {
                         displayText:
                             '🛠️ Tools'
                     },
-                    type: 1
+
+                    type:
+                        1
                 },
 
                 {
-                    buttonId: `${p}menu group`,
+                    buttonId:
+                        `${p}menu group`,
+
                     buttonText: {
                         displayText:
                             '👥 Group'
                     },
-                    type: 1
+
+                    type:
+                        1
                 },
 
                 {
-                    buttonId: `${p}menu owner`,
+                    buttonId:
+                        `${p}menu owner`,
+
                     buttonText: {
                         displayText:
                             '👑 Owner'
                     },
-                    type: 1
+
+                    type:
+                        1
                 }
+
             ];
         }
 
@@ -3419,17 +3611,23 @@ I'm ready when you are.`;
             {
 
                 image: {
-                    url: botImage
+                    url:
+                        botImage
                 },
 
-                caption: caption,
+                caption:
+                    caption,
 
                 footer:
-                    `⚡ ${botName} • ${total} Commands`,
+                    validCategory
+                        ? `⚡ ${botName} • ${menuSections[category].length} Commands`
+                        : `⚡ ${botName} • ${total} Commands • Choose a Category`,
 
-                buttons: buttons,
+                buttons:
+                    buttons,
 
-                headerType: 4,
+                headerType:
+                    4,
 
                 contextInfo: {
 
@@ -3437,9 +3635,11 @@ I'm ready when you are.`;
                         sender
                     ],
 
-                    forwardingScore: 999,
+                    forwardingScore:
+                        999,
 
-                    isForwarded: true,
+                    isForwarded:
+                        true,
 
                     forwardedNewsletterMessageInfo: {
 
@@ -3449,20 +3649,21 @@ I'm ready when you are.`;
                         newsletterName:
                             '⚡ ALEXA-MIN ⚡',
 
-                        serverMessageId: 143
+                        serverMessageId:
+                            143
                     },
 
                     externalAdReply: {
 
                         title:
-                            category
+                            validCategory
                                 ? `${icons[category]} ${category.toUpperCase()} MENU`
-                                : `${botName} • ${total} Commands`,
+                                : `${botName} • MAIN MENU`,
 
                         body:
-                            category
-                                ? `${menuSections[category].length} Commands • Tap All Menu`
-                                : `Runtime ${runtime} • Select a category`,
+                            validCategory
+                                ? `${menuSections[category].length} Commands • All Menu`
+                                : `Choose a category • ${total} Commands Available`,
 
                         thumbnailUrl:
                             botImage,
@@ -3470,7 +3671,8 @@ I'm ready when you are.`;
                         sourceUrl:
                             'https://github.com/watson-dev1',
 
-                        mediaType: 1,
+                        mediaType:
+                            1,
 
                         renderLargerThumbnail:
                             true
@@ -3478,7 +3680,17 @@ I'm ready when you are.`;
                 }
 
             },
-            { quoted: msg }
+            {
+                quoted:
+                    msg
+            }
+        );
+
+
+        console.log(
+            validCategory
+                ? `Menu category "${category}" opened for ${userName}`
+                : `Main menu opened for ${userName}`
         );
 
     } catch (e) {
@@ -3488,16 +3700,29 @@ I'm ready when you are.`;
             e
         );
 
-        await socket.sendMessage(
-            sender,
-            {
-                text:
+        try {
+
+            await socket.sendMessage(
+                sender,
+                {
+                    text:
 `⚠️ *Menu Error*
 
 ${e.message || 'Unable to load menu.'}`
-            },
-            { quoted: msg }
-        );
+                },
+                {
+                    quoted:
+                        msg
+                }
+            );
+
+        } catch (sendError) {
+
+            console.error(
+                'MENU ERROR SEND FAILED:',
+                sendError
+            );
+        }
     }
 
     break;
