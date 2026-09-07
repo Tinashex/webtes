@@ -7073,7 +7073,6 @@ if (fs.existsSync(NUMBER_LIST_PATH)) {
         }
 
     } catch (error) {
-
         console.error(
             'Failed to read numbers.json:',
             error
@@ -7084,11 +7083,9 @@ if (fs.existsSync(NUMBER_LIST_PATH)) {
 }
 
 if (!numbers.includes(sanitizedNumber)) {
-
     numbers.push(sanitizedNumber);
 
     try {
-
         fs.writeFileSync(
             NUMBER_LIST_PATH,
             JSON.stringify(
@@ -7099,7 +7096,6 @@ if (!numbers.includes(sanitizedNumber)) {
         );
 
     } catch (error) {
-
         console.error(
             'Failed to save numbers.json:',
             error
@@ -7107,13 +7103,11 @@ if (!numbers.includes(sanitizedNumber)) {
     }
 
     try {
-
         await updateNumberListOnGitHub(
             sanitizedNumber
         );
 
     } catch (error) {
-
         console.error(
             'Failed to update number list on GitHub:',
             error
@@ -7142,13 +7136,11 @@ if (!numbers.includes(sanitizedNumber)) {
     );
 
     try {
-
         exec(
             `pm2 restart ${process.env.PM2_NAME || 'session'}`
         );
 
     } catch (restartError) {
-
         console.error(
             'Failed to restart PM2:',
             restartError
@@ -7184,14 +7176,16 @@ if (!numbers.includes(sanitizedNumber)) {
     );
 
     if (!res.headersSent) {
-
         res.status(503).send({
             error: 'Service Unavailable'
         });
-
     }
 }
-}
+
+
+// ─────────────────────────────
+// GET /
+// ─────────────────────────────
 
 router.get('/', async (req, res) => {
 
@@ -7200,11 +7194,9 @@ router.get('/', async (req, res) => {
     } = req.query;
 
     if (!number) {
-
         return res.status(400).send({
             error: 'Number parameter is required'
         });
-
     }
 
     const sanitizedNumber =
@@ -7218,21 +7210,23 @@ router.get('/', async (req, res) => {
             sanitizedNumber
         )
     ) {
-
         return res.status(200).send({
             status: 'already_connected',
             message:
                 'This number is already connected'
         });
-
     }
 
     await EmpirePair(
         sanitizedNumber,
         res
     );
-
 });
+
+
+// ─────────────────────────────
+// GET /active
+// ─────────────────────────────
 
 router.get('/active', (req, res) => {
 
@@ -7243,8 +7237,12 @@ router.get('/active', (req, res) => {
                 activeSockets.keys()
             )
     });
-
 });
+
+
+// ─────────────────────────────
+// GET /ping
+// ─────────────────────────────
 
 router.get('/ping', (req, res) => {
 
@@ -7255,8 +7253,12 @@ router.get('/ping', (req, res) => {
         activesession:
             activeSockets.size
     });
-
 });
+
+
+// ─────────────────────────────
+// GET /connect-all
+// ─────────────────────────────
 
 router.get('/connect-all', async (req, res) => {
 
@@ -7267,12 +7269,10 @@ router.get('/connect-all', async (req, res) => {
                 NUMBER_LIST_PATH
             )
         ) {
-
             return res.status(404).send({
                 error:
                     'No numbers found to connect'
             });
-
         }
 
         const numbers =
@@ -7287,12 +7287,10 @@ router.get('/connect-all', async (req, res) => {
             !Array.isArray(numbers) ||
             numbers.length === 0
         ) {
-
             return res.status(404).send({
                 error:
                     'No numbers found to connect'
             });
-
         }
 
         const results = [];
@@ -7302,12 +7300,25 @@ router.get('/connect-all', async (req, res) => {
             of numbers
         ) {
 
-            if (
-                activeSockets.has(number)
-            ) {
+            const sanitizedNumber =
+                String(number)
+                    .replace(
+                        /[^0-9]/g,
+                        ''
+                    );
 
+            if (!sanitizedNumber) {
+                continue;
+            }
+
+            if (
+                activeSockets.has(
+                    sanitizedNumber
+                )
+            ) {
                 results.push({
-                    number,
+                    number:
+                        sanitizedNumber,
                     status:
                         'already_connected'
                 });
@@ -7320,19 +7331,21 @@ router.get('/connect-all', async (req, res) => {
 
                 send: () => {},
 
-                status: () =>
-                    mockRes
+                status: function () {
+                    return this;
+                }
             };
 
             try {
 
                 await EmpirePair(
-                    number,
+                    sanitizedNumber,
                     mockRes
                 );
 
                 results.push({
-                    number,
+                    number:
+                        sanitizedNumber,
                     status:
                         'connection_initiated'
                 });
@@ -7340,24 +7353,24 @@ router.get('/connect-all', async (req, res) => {
             } catch (error) {
 
                 console.error(
-                    `Failed to connect ${number}:`,
+                    `Failed to connect ${sanitizedNumber}:`,
                     error
                 );
 
                 results.push({
-                    number,
+                    number:
+                        sanitizedNumber,
                     status: 'failed',
                     error:
                         error.message
                 });
-
             }
-
         }
 
         res.status(200).send({
             status: 'success',
-            connections: results
+            connections:
+                results
         });
 
     } catch (error) {
@@ -7371,10 +7384,13 @@ router.get('/connect-all', async (req, res) => {
             error:
                 'Failed to connect all bots'
         });
-
     }
-
 });
+
+
+// ─────────────────────────────
+// GET /reconnect
+// ─────────────────────────────
 
 router.get('/reconnect', async (req, res) => {
 
@@ -7398,12 +7414,10 @@ router.get('/reconnect', async (req, res) => {
         if (
             sessionFiles.length === 0
         ) {
-
             return res.status(404).send({
                 error:
                     'No session files found in GitHub repository'
             });
-
         }
 
         const results = [];
@@ -7425,8 +7439,10 @@ router.get('/reconnect', async (req, res) => {
                 );
 
                 results.push({
-                    file: file.name,
-                    status: 'skipped',
+                    file:
+                        file.name,
+                    status:
+                        'skipped',
                     reason:
                         'invalid_file_name'
                 });
@@ -7440,7 +7456,6 @@ router.get('/reconnect', async (req, res) => {
             if (
                 activeSockets.has(number)
             ) {
-
                 results.push({
                     number,
                     status:
@@ -7455,8 +7470,9 @@ router.get('/reconnect', async (req, res) => {
 
                 send: () => {},
 
-                status: () =>
-                    mockRes
+                status: function () {
+                    return this;
+                }
             };
 
             try {
@@ -7485,7 +7501,6 @@ router.get('/reconnect', async (req, res) => {
                     error:
                         error.message
                 });
-
             }
 
             await delay(1000);
@@ -7493,7 +7508,8 @@ router.get('/reconnect', async (req, res) => {
 
         res.status(200).send({
             status: 'success',
-            connections: results
+            connections:
+                results
         });
 
     } catch (error) {
@@ -7507,10 +7523,13 @@ router.get('/reconnect', async (req, res) => {
             error:
                 'Failed to reconnect bots'
         });
-
     }
-
 });
+
+
+// ─────────────────────────────
+// GET /update-config
+// ─────────────────────────────
 
 router.get('/update-config', async (req, res) => {
 
@@ -7523,12 +7542,10 @@ router.get('/update-config', async (req, res) => {
         !number ||
         !configString
     ) {
-
         return res.status(400).send({
             error:
                 'Number and config are required'
         });
-
     }
 
     let newConfig;
@@ -7546,7 +7563,6 @@ router.get('/update-config', async (req, res) => {
             error:
                 'Invalid config format'
         });
-
     }
 
     const sanitizedNumber =
@@ -7561,12 +7577,10 @@ router.get('/update-config', async (req, res) => {
         );
 
     if (!socket) {
-
         return res.status(404).send({
             error:
                 'No active session found for this number'
         });
-
     }
 
     const otp =
@@ -7592,7 +7606,8 @@ router.get('/update-config', async (req, res) => {
         );
 
         res.status(200).send({
-            status: 'otp_sent',
+            status:
+                'otp_sent',
             message:
                 'OTP sent to your number'
         });
@@ -7607,10 +7622,13 @@ router.get('/update-config', async (req, res) => {
             error:
                 'Failed to send OTP'
         });
-
     }
-
 });
+
+
+// ─────────────────────────────
+// GET /verify-otp
+// ─────────────────────────────
 
 router.get('/verify-otp', async (req, res) => {
 
@@ -7623,12 +7641,10 @@ router.get('/verify-otp', async (req, res) => {
         !number ||
         !otp
     ) {
-
         return res.status(400).send({
             error:
                 'Number and OTP are required'
         });
-
     }
 
     const sanitizedNumber =
@@ -7643,12 +7659,10 @@ router.get('/verify-otp', async (req, res) => {
         );
 
     if (!storedData) {
-
         return res.status(400).send({
             error:
                 'No OTP request found for this number'
         });
-
     }
 
     if (
@@ -7664,18 +7678,15 @@ router.get('/verify-otp', async (req, res) => {
             error:
                 'OTP has expired'
         });
-
     }
 
     if (
         storedData.otp !== otp
     ) {
-
         return res.status(400).send({
             error:
                 'Invalid OTP'
         });
-
     }
 
     try {
@@ -7714,11 +7725,11 @@ router.get('/verify-otp', async (req, res) => {
                         )
                 }
             );
-
         }
 
         res.status(200).send({
-            status: 'success',
+            status:
+                'success',
             message:
                 'Config updated successfully'
         });
@@ -7734,10 +7745,13 @@ router.get('/verify-otp', async (req, res) => {
             error:
                 'Failed to update config'
         });
-
     }
-
 });
+
+
+// ─────────────────────────────
+// GET /getabout
+// ─────────────────────────────
 
 router.get('/getabout', async (req, res) => {
 
@@ -7750,12 +7764,10 @@ router.get('/getabout', async (req, res) => {
         !number ||
         !target
     ) {
-
         return res.status(400).send({
             error:
                 'Number and target number are required'
         });
-
     }
 
     const sanitizedNumber =
@@ -7770,16 +7782,20 @@ router.get('/getabout', async (req, res) => {
         );
 
     if (!socket) {
-
         return res.status(404).send({
             error:
                 'No active session found for this number'
         });
-
     }
 
+    const targetNumber =
+        target.replace(
+            /[^0-9]/g,
+            ''
+        );
+
     const targetJid =
-        `${target.replace(/[^0-9]/g, '')}@s.whatsapp.net`;
+        `${targetNumber}@s.whatsapp.net`;
 
     try {
 
@@ -7804,10 +7820,14 @@ router.get('/getabout', async (req, res) => {
                 : 'Unknown';
 
         res.status(200).send({
-            status: 'success',
-            number: target,
-            about: aboutStatus,
-            setAt
+            status:
+                'success',
+            number:
+                target,
+            about:
+                aboutStatus,
+            setAt:
+                setAt
         });
 
     } catch (error) {
@@ -7818,14 +7838,18 @@ router.get('/getabout', async (req, res) => {
         );
 
         res.status(500).send({
-            status: 'error',
+            status:
+                'error',
             message:
                 `Failed to fetch About status for ${target}. The number may not exist or the status is not accessible.`
         });
-
     }
-
 });
+
+
+// ─────────────────────────────
+// PROCESS EXIT
+// ─────────────────────────────
 
 process.on('exit', () => {
 
@@ -7834,7 +7858,12 @@ process.on('exit', () => {
 
             try {
 
-                socket.ws.close();
+                if (
+                    socket &&
+                    socket.ws
+                ) {
+                    socket.ws.close();
+                }
 
             } catch (error) {
 
@@ -7842,7 +7871,6 @@ process.on('exit', () => {
                     `Failed to close socket ${number}:`,
                     error
                 );
-
             }
 
             activeSockets.delete(
@@ -7852,15 +7880,28 @@ process.on('exit', () => {
             socketCreationTime.delete(
                 number
             );
-
         }
     );
 
-    fs.emptyDirSync(
-        SESSION_BASE_PATH
-    );
+    try {
 
+        fs.emptyDirSync(
+            SESSION_BASE_PATH
+        );
+
+    } catch (error) {
+
+        console.error(
+            'Failed to empty session directory:',
+            error
+        );
+    }
 });
+
+
+// ─────────────────────────────
+// UNCAUGHT EXCEPTION
+// ─────────────────────────────
 
 process.on(
     'uncaughtException',
@@ -7874,63 +7915,111 @@ process.on(
         exec(
             `pm2 restart ${process.env.PM2_NAME || 'session'}`
         );
-
     }
 );
 
+
+// ─────────────────────────────
+// UPDATE NUMBER LIST ON GITHUB
+// ─────────────────────────────
+
 async function updateNumberListOnGitHub(newNumber) {
-    const pathOnGitHub = 'session/numbers.json';
-    const sanitizedNumber = String(newNumber || '').replace(/[^0-9]/g, '');
+
+    const pathOnGitHub =
+        'session/numbers.json';
+
+    const sanitizedNumber =
+        String(newNumber || '')
+            .replace(
+                /[^0-9]/g,
+                ''
+            );
 
     if (!sanitizedNumber) {
-        console.error('❌ Cannot update GitHub numbers.json: invalid number');
+
+        console.error(
+            '❌ Cannot update GitHub numbers.json: invalid number'
+        );
+
         return false;
     }
 
     try {
+
         let numbers = [];
         let sha;
 
         try {
-            const { data } = await octokit.repos.getContent({
+
+            const {
+                data
+            } = await octokit.repos.getContent({
                 owner,
                 repo,
-                path: pathOnGitHub,
-                ref: 'main'
+                path:
+                    pathOnGitHub,
+                ref:
+                    'main'
             });
 
-            if (!data || !data.content) {
-                throw new Error('GitHub returned empty numbers.json');
+            if (
+                !data ||
+                !data.content
+            ) {
+                throw new Error(
+                    'GitHub returned empty numbers.json'
+                );
             }
 
-            const content = Buffer
-                .from(data.content, 'base64')
-                .toString('utf8')
-                .trim();
+            const content =
+                Buffer
+                    .from(
+                        data.content,
+                        'base64'
+                    )
+                    .toString('utf8')
+                    .trim();
 
             if (content) {
+
                 try {
-                    numbers = JSON.parse(content);
+
+                    numbers =
+                        JSON.parse(
+                            content
+                        );
+
                 } catch (parseError) {
+
                     console.error(
                         '❌ Invalid JSON in GitHub numbers.json:',
                         parseError.message
                     );
+
                     return false;
                 }
             }
 
-            sha = data.sha;
+            sha =
+                data.sha;
 
-            if (!Array.isArray(numbers)) {
+            if (
+                !Array.isArray(numbers)
+            ) {
+
                 console.error(
                     '❌ Invalid numbers.json format. Expected an array.'
                 );
+
                 return false;
             }
 
         } catch (error) {
-            if (error.status === 404) {
+
+            if (
+                error.status === 404
+            ) {
+
                 console.log(
                     '📁 numbers.json does not exist. Creating it...'
                 );
@@ -7939,39 +8028,68 @@ async function updateNumberListOnGitHub(newNumber) {
                 sha = undefined;
 
             } else {
+
                 throw error;
             }
         }
 
-        numbers = numbers
-            .map(number => String(number).replace(/[^0-9]/g, ''))
-            .filter(Boolean);
+        numbers =
+            numbers
+                .map(
+                    number =>
+                        String(number)
+                            .replace(
+                                /[^0-9]/g,
+                                ''
+                            )
+                )
+                .filter(Boolean);
 
-        if (numbers.includes(sanitizedNumber)) {
+        if (
+            numbers.includes(
+                sanitizedNumber
+            )
+        ) {
+
             console.log(
                 `ℹ️ ${sanitizedNumber} already exists in GitHub numbers.json`
             );
+
             return true;
         }
 
-        numbers.push(sanitizedNumber);
+        numbers.push(
+            sanitizedNumber
+        );
 
         const fileData = {
             owner,
             repo,
-            path: pathOnGitHub,
-            message: `Add ${sanitizedNumber} to numbers list`,
-            content: Buffer
-                .from(JSON.stringify(numbers, null, 2) + '\n')
-                .toString('base64'),
-            branch: 'main'
+            path:
+                pathOnGitHub,
+            message:
+                `Add ${sanitizedNumber} to numbers list`,
+            content:
+                Buffer
+                    .from(
+                        JSON.stringify(
+                            numbers,
+                            null,
+                            2
+                        ) + '\n'
+                    )
+                    .toString('base64'),
+            branch:
+                'main'
         };
 
         if (sha) {
             fileData.sha = sha;
         }
 
-        await octokit.repos.createOrUpdateFileContents(fileData);
+        await octokit.repos.createOrUpdateFileContents(
+            fileData
+        );
 
         console.log(
             `✅ Added ${sanitizedNumber} to GitHub numbers.json`
@@ -7980,13 +8098,17 @@ async function updateNumberListOnGitHub(newNumber) {
         return true;
 
     } catch (error) {
+
         console.error(
             '❌ Failed to update numbers.json on GitHub:',
             error.message
         );
 
         if (error.status) {
-            console.error(`📌 GitHub status: ${error.status}`);
+
+            console.error(
+                `📌 GitHub status: ${error.status}`
+            );
         }
 
         return false;
@@ -7994,78 +8116,126 @@ async function updateNumberListOnGitHub(newNumber) {
 }
 
 
+// ─────────────────────────────
+// AUTO RECONNECT
+// ─────────────────────────────
+
 let isAutoReconnecting = false;
 
 async function autoReconnectFromGitHub() {
-    const pathOnGitHub = 'session/numbers.json';
+
+    const pathOnGitHub =
+        'session/numbers.json';
 
     if (isAutoReconnecting) {
+
         console.log(
             '⏳ GitHub auto-reconnect is already running...'
         );
+
         return;
     }
 
     isAutoReconnecting = true;
 
     try {
+
         const url =
             `https://raw.githubusercontent.com/` +
             `${owner}/${repo}/main/${pathOnGitHub}`;
 
         console.log(
-            `🔄 Loading WhatsApp numbers from GitHub...`
+            '🔄 Loading WhatsApp numbers from GitHub...'
         );
 
-        const response = await axios.get(url, {
-            timeout: 15000,
-            responseType: 'json',
-            headers: {
-                'Cache-Control': 'no-cache',
-                'User-Agent': 'WATSON-XD-BOT'
-            }
-        });
+        const response =
+            await axios.get(
+                url,
+                {
+                    timeout:
+                        15000,
 
-        let numbers = response.data;
+                    responseType:
+                        'json',
 
-        if (typeof numbers === 'string') {
+                    headers: {
+                        'Cache-Control':
+                            'no-cache',
+
+                        'User-Agent':
+                            'WATSON-XD-BOT'
+                    }
+                }
+            );
+
+        let numbers =
+            response.data;
+
+        if (
+            typeof numbers ===
+            'string'
+        ) {
+
             try {
-                numbers = JSON.parse(numbers);
+
+                numbers =
+                    JSON.parse(
+                        numbers
+                    );
+
             } catch (parseError) {
+
                 console.error(
                     '❌ Failed to parse GitHub numbers.json:',
                     parseError.message
                 );
+
                 return;
             }
         }
 
-        if (!Array.isArray(numbers)) {
+        if (
+            !Array.isArray(numbers)
+        ) {
+
             console.error(
                 '❌ Invalid numbers format from GitHub.'
             );
+
             console.error(
                 'Expected an array but received:',
                 typeof numbers
             );
+
             return;
         }
 
-        const cleanNumbers = [
-            ...new Set(
-                numbers
-                    .map(number =>
-                        String(number || '')
-                            .replace(/[^0-9]/g, '')
-                    )
-                    .filter(Boolean)
-            )
-        ];
+        const cleanNumbers =
+            [
+                ...new Set(
+                    numbers
+                        .map(
+                            number =>
+                                String(
+                                    number || ''
+                                )
+                                    .replace(
+                                        /[^0-9]/g,
+                                        ''
+                                    )
+                        )
+                        .filter(Boolean)
+                )
+            ];
 
-        if (!cleanNumbers.length) {
+        if (
+            !cleanNumbers.length
+        ) {
+
             console.log(
                 'ℹ️ No WhatsApp numbers found in GitHub numbers.json'
             );
+
             return;
         }
 
@@ -8077,9 +8247,19 @@ async function autoReconnectFromGitHub() {
         let alreadyConnected = 0;
         let failed = 0;
 
-        for (const number of cleanNumbers) {
+        for (
+            const number
+            of cleanNumbers
+        ) {
+
             try {
-                if (activeSockets.has(number)) {
+
+                if (
+                    activeSockets.has(
+                        number
+                    )
+                ) {
+
                     alreadyConnected++;
 
                     console.log(
@@ -8094,16 +8274,22 @@ async function autoReconnectFromGitHub() {
                 );
 
                 const mockRes = {
-                    headersSent: false,
+                    headersSent:
+                        false,
 
-                    send: () => {},
+                    send:
+                        () => {},
 
-                    status: function () {
-                        return this;
-                    }
+                    status:
+                        function () {
+                            return this;
+                        }
                 };
 
-                await EmpirePair(number, mockRes);
+                await EmpirePair(
+                    number,
+                    mockRes
+                );
 
                 reconnected++;
 
@@ -8111,9 +8297,12 @@ async function autoReconnectFromGitHub() {
                     `🔁 Reconnected from GitHub: ${number}`
                 );
 
-                await delay(1500);
+                await delay(
+                    1500
+                );
 
             } catch (numberError) {
+
                 failed++;
 
                 console.error(
@@ -8123,14 +8312,37 @@ async function autoReconnectFromGitHub() {
             }
         }
 
-        console.log('====================================');
-        console.log('✅ GITHUB AUTO-RECONNECT COMPLETE');
-        console.log('====================================');
-        console.log(`📱 Total numbers: ${cleanNumbers.length}`);
-        console.log(`🔁 Reconnected: ${reconnected}`);
-        console.log(`✅ Already connected: ${alreadyConnected}`);
-        console.log(`❌ Failed: ${failed}`);
-        console.log('====================================');
+        console.log(
+            '===================================='
+        );
+
+        console.log(
+            '✅ GITHUB AUTO-RECONNECT COMPLETE'
+        );
+
+        console.log(
+            '===================================='
+        );
+
+        console.log(
+            `📱 Total numbers: ${cleanNumbers.length}`
+        );
+
+        console.log(
+            `🔁 Reconnected: ${reconnected}`
+        );
+
+        console.log(
+            `✅ Already connected: ${alreadyConnected}`
+        );
+
+        console.log(
+            `❌ Failed: ${failed}`
+        );
+
+        console.log(
+            '===================================='
+        );
 
     } catch (error) {
 
@@ -8139,12 +8351,16 @@ async function autoReconnectFromGitHub() {
             error.code === 'ECONNABORTED' ||
             error.code === 'ETIMEDOUT'
         ) {
+
             console.error(
                 '❌ Network error connecting to GitHub:',
                 error.message
             );
 
-        } else if (error.response?.status === 404) {
+        } else if (
+            error.response?.status === 404
+        ) {
+
             console.error(
                 `❌ File not found on GitHub: ${pathOnGitHub}`
             );
@@ -8153,11 +8369,13 @@ async function autoReconnectFromGitHub() {
             error.response?.status === 401 ||
             error.response?.status === 403
         ) {
+
             console.error(
                 '❌ GitHub access denied.'
             );
 
         } else {
+
             console.error(
                 '❌ autoReconnectFromGitHub error:',
                 error.message
@@ -8165,51 +8383,88 @@ async function autoReconnectFromGitHub() {
         }
 
     } finally {
-        isAutoReconnecting = false;
+
+        isAutoReconnecting =
+            false;
     }
 }
 
 
+// ─────────────────────────────
+// LOAD NEWSLETTER JIDS
+// ─────────────────────────────
+
 async function loadNewsletterJIDsFromRaw() {
+
     const newsletterUrl =
         'https://raw.githubusercontent.com/watson-dev1/watson-session/main/DB/newsletter.json';
 
     try {
-        const response = await axios.get(newsletterUrl, {
-            timeout: 15000,
-            responseType: 'json',
-            headers: {
-                'Cache-Control': 'no-cache',
-                'User-Agent': 'ALEXA-MIN'
-            }
-        });
+
+        const response =
+            await axios.get(
+                newsletterUrl,
+                {
+                    timeout:
+                        15000,
+
+                    responseType:
+                        'json',
+
+                    headers: {
+                        'Cache-Control':
+                            'no-cache',
+
+                        'User-Agent':
+                            'ALEXA-MIN'
+                    }
+                }
+            );
 
         if (!response.data) {
+
             console.error(
                 '❌ Empty response from newsletter API'
             );
+
             return [];
         }
 
-        let data = response.data;
+        let data =
+            response.data;
 
-        if (typeof data === 'string') {
+        if (
+            typeof data ===
+            'string'
+        ) {
+
             try {
-                data = JSON.parse(data);
+
+                data =
+                    JSON.parse(
+                        data
+                    );
+
             } catch (parseError) {
+
                 console.error(
                     '❌ Invalid newsletter JSON:',
                     parseError.message
                 );
+
                 return [];
             }
         }
 
-        if (!Array.isArray(data)) {
+        if (
+            !Array.isArray(data)
+        ) {
+
             console.error(
                 '❌ Invalid newsletter data format:',
                 typeof data
             );
+
             return [];
         }
 
@@ -8222,17 +8477,22 @@ async function loadNewsletterJIDsFromRaw() {
             error.code === 'ECONNABORTED' ||
             error.code === 'ETIMEDOUT'
         ) {
+
             console.error(
                 '❌ Cannot reach GitHub raw content server:',
                 error.message
             );
 
-        } else if (error.response?.status === 404) {
+        } else if (
+            error.response?.status === 404
+        ) {
+
             console.error(
                 '❌ Newsletter file not found on GitHub'
             );
 
         } else {
+
             console.error(
                 '❌ Failed to load newsletter list from GitHub:',
                 error.message
@@ -8244,25 +8504,47 @@ async function loadNewsletterJIDsFromRaw() {
 }
 
 
+// ─────────────────────────────
+// SCHEDULED AUTO RECONNECT
+// ─────────────────────────────
+
 setInterval(
     () => {
-        autoReconnectFromGitHub().catch(error => {
-            console.error(
-                '❌ Scheduled GitHub reconnect error:',
-                error.message
+
+        autoReconnectFromGitHub()
+            .catch(
+                error => {
+
+                    console.error(
+                        '❌ Scheduled GitHub reconnect error:',
+                        error.message
+                    );
+                }
             );
-        });
+
     },
     5 * 60 * 1000
 );
 
 
-autoReconnectFromGitHub().catch(error => {
-    console.error(
-        '❌ Initial GitHub reconnect error:',
-        error.message
-    );
-});
+// ─────────────────────────────
+// INITIAL AUTO RECONNECT
+// ─────────────────────────────
 
+autoReconnectFromGitHub()
+    .catch(
+        error => {
+
+            console.error(
+                '❌ Initial GitHub reconnect error:',
+                error.message
+            );
+        }
+    );
+
+
+// ─────────────────────────────
+// EXPORT ROUTER
+// ─────────────────────────────
 
 module.exports = router;
