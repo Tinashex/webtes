@@ -41,9 +41,25 @@ const config = {
     AUTO_RECORDING: 'false',
     AUTO_REACT: 'false',
     ANTI_LINK: 'true',
-    AUTO_LIKE_EMOJI: ['❤️', '💚', '🌚', '😍', '💀', '🧡', '💛', '💙', '👻', '🖤', '🤍', '🥀'],
-    REACTXEMOJIS: ['😂', '❤️', '🔥', '👏', '😮', '😢', '🤣', '👍', '🎉', '🤔', '🙏', '😍', '😊', '🥰', '💕', '🤩', '✨', '😎', '🥳', '🙌'],
+
+    AUTO_LIKE_EMOJI: [
+        '❤️', '💚', '🌚', '😍', '💀', '🧡',
+        '💛', '💙', '👻', '🖤', '🤍', '🥀'
+    ],
+
+    REACTXEMOJIS: [
+        '😂', '❤️', '🔥', '👏', '😮', '😢',
+        '🤣', '👍', '🎉', '🤔', '🙏', '😍',
+        '😊', '🥰', '💕', '🤩', '✨', '😎',
+        '🥳', '🙌'
+    ],
+
     PREFIX: '.',
+
+    BOT_NAME: 'ALEXA-MINI',
+    VERSION: '3.0.0 Stable',
+    OWNER_NAME: 'Watson Fourpence',
+
     MAX_RETRIES: 3,
     ADMIN_LIST_PATH: './admin.json',
     IK_IMAGE_PATH: './watson-md.jpg',
@@ -51,7 +67,10 @@ const config = {
     NEWSLETTER_MESSAGE_ID: '428',
     OTP_EXPIRY: 300000,
     OWNER_NUMBER: '263781330745',
-    CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbB0E2MBvvsiMnWBM72n',
+
+    CHANNEL_LINK:
+        'https://whatsapp.com/channel/0029VbB0E2MBvvsiMnWBM72n',
+
     DEFAULT_SETTINGS: {
         AUTO_VIEW_STATUS: 'true',
         AUTO_LIKE_STATUS: 'true',
@@ -60,47 +79,303 @@ const config = {
         ANTI_LINK: 'true',
         MODE: 'public',
         PREFIX: '.',
-        AUTO_LIKE_EMOJI: ['❤️', '💚', '🌚', '😍', '💀', '🧡', '💛', '💙', '👻', '🖤', '🤍', '🥀'],
-        REACTXEMOJIS: ['😂', '❤️', '🔥', '👏', '😮', '😢', '🤣', '👍', '🎉', '🤔', '🙏', '😍', '😊', '🥰', '💕', '🤩', '✨', '😎', '🥳', '🙌'],
+
+        BOT_NAME: 'ALEXA-MINI',
+        VERSION: '3.0.0 Stable',
+        OWNER_NAME: 'Watson Fourpence',
+
+        AUTO_LIKE_EMOJI: [
+            '❤️', '💚', '🌚', '😍', '💀', '🧡',
+            '💛', '💙', '👻', '🖤', '🤍', '🥀'
+        ],
+
+        REACTXEMOJIS: [
+            '😂', '❤️', '🔥', '👏', '😮', '😢',
+            '🤣', '👍', '🎉', '🤔', '🙏', '😍',
+            '😊', '🥰', '💕', '🤩', '✨', '😎',
+            '🥳', '🙌'
+        ]
     }
 };
 
-const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN || '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' });
-const owner = 'watsonx';
+
+// ─────────────────────────────
+// GITHUB
+// ─────────────────────────────
+
+const octokit = new Octokit({
+    auth: process.env.GITHUB_TOKEN
+});
+
+const githubOwner = 'watsonx';
 const repo = 'watson-dev1';
+
+
+// ─────────────────────────────
+// GLOBAL STORAGE
+// ─────────────────────────────
 
 const activeSockets = new Map();
 const socketCreationTime = new Map();
+const groupSettings = new Map();
+
 const SESSION_BASE_PATH = './session';
 const NUMBER_LIST_PATH = './numbers.json';
+
 const otpStore = new Map();
 
+
+// ─────────────────────────────
+// BOT GLOBAL CONFIG VALUES
+// DO NOT DECLARE botName/owner AGAIN
+// ─────────────────────────────
+
+const botName =
+    config?.BOT_NAME ||
+    'ALEXA-MINI';
+
+const botVersion =
+    config?.VERSION ||
+    '3.0.0 Stable';
+    
+const botImage =
+            config?.IK_IMAGE_PATH ||
+            config?.IMAGE_PATH ||
+            'https://files.catbox.moe/2q6j6k.jpg';
+
+const ownerName =
+    config?.OWNER_NAME ||
+    'Watson Fourpence';
+
+
+// ─────────────────────────────
+// SESSION DIRECTORY
+// ─────────────────────────────
+
 if (!fs.existsSync(SESSION_BASE_PATH)) {
-    fs.mkdirSync(SESSION_BASE_PATH, { recursive: true });
+    fs.mkdirSync(SESSION_BASE_PATH, {
+        recursive: true
+    });
 }
 
-function loadAdmins() {
-    try {
-        if (fs.existsSync(config.ADMIN_LIST_PATH)) {
-            return JSON.parse(fs.readFileSync(config.ADMIN_LIST_PATH, 'utf8'));
+
+// ─────────────────────────────
+// 👥 GROUP PARTICIPANT HANDLERS
+// WELCOME / GOODBYE
+// ─────────────────────────────
+
+function setupGroupParticipantHandlers(socket) {
+
+    socket.ev.on(
+        'group-participants.update',
+        async (update) => {
+
+            try {
+
+                const {
+                    id,
+                    participants,
+                    action
+                } = update;
+
+
+                // ─────────────────────────
+                // GET GROUP SETTINGS
+                // ─────────────────────────
+
+                const settings =
+                    groupSettings.get(id);
+
+                if (!settings) {
+                    return;
+                }
+
+
+                // ─────────────────────────
+                // GET GROUP INFORMATION
+                // ─────────────────────────
+
+                const metadata =
+                    await socket.groupMetadata(id);
+
+                const groupName =
+                    metadata.subject || 'Group';
+
+
+                // ─────────────────────────
+                // 👋 NEW MEMBER
+                // ─────────────────────────
+
+                if (
+                    action === 'add' &&
+                    settings.welcome
+                ) {
+
+                    for (
+                        const participant
+                        of participants
+                    ) {
+
+                        const number =
+                            participant.split('@')[0];
+
+                        const welcomeText =
+`╭━━━〔 👋 WELCOME 〕━━━╮
+┃
+┃ Hey @${number}! 🥰
+┃
+┃ Welcome to:
+┃ *${groupName}*
+┃
+┃ 📜 Please check the group rules.
+┃ 🤖 I'm ${botName}.
+┃
+┃ Enjoy your stay! ❤️
+┃
+╰━━━━━━━━━━━━━━━━━━━━╯`;
+
+                        await socket.sendMessage(
+                            id,
+                            {
+                                text: welcomeText,
+                                mentions: [
+                                    participant
+                                ]
+                            }
+                        );
+                    }
+                }
+
+
+                // ─────────────────────────
+                // 👋 MEMBER LEFT
+                // ─────────────────────────
+
+                if (
+                    (
+                        action === 'remove' ||
+                        action === 'leave'
+                    ) &&
+                    settings.goodbye
+                ) {
+
+                    for (
+                        const participant
+                        of participants
+                    ) {
+
+                        const number =
+                            participant.split('@')[0];
+
+                        const goodbyeText =
+`╭━━━〔 👋 GOODBYE 〕━━━╮
+┃
+┃ @${number} has left the group.
+┃
+┃ 👋 Goodbye and take care!
+┃
+┃ *${groupName}*
+┃
+╰━━━━━━━━━━━━━━━━━━━━╯`;
+
+                        await socket.sendMessage(
+                            id,
+                            {
+                                text: goodbyeText,
+                                mentions: [
+                                    participant
+                                ]
+                            }
+                        );
+                    }
+                }
+
+            } catch (error) {
+
+                console.error(
+                    'GROUP PARTICIPANT ERROR:',
+                    error
+                );
+            }
         }
+    );
+}
+
+
+// ─────────────────────────────
+// LOAD ADMINS
+// ─────────────────────────────
+
+function loadAdmins() {
+
+    try {
+
+        if (
+            fs.existsSync(
+                config.ADMIN_LIST_PATH
+            )
+        ) {
+
+            return JSON.parse(
+                fs.readFileSync(
+                    config.ADMIN_LIST_PATH,
+                    'utf8'
+                )
+            );
+        }
+
         return [];
+
     } catch (error) {
-        console.error('Failed to load admin list:', error);
+
+        console.error(
+            'Failed to load admin list:',
+            error
+        );
+
         return [];
     }
 }
 
-function formatMessage(title, content, footer) {
+
+// ─────────────────────────────
+// FORMAT MESSAGE
+// ─────────────────────────────
+
+function formatMessage(
+    title,
+    content,
+    footer
+) {
+
     return `*${title}*\n\n${content}\n\n> *${footer}*`;
 }
 
+
+// ─────────────────────────────
+// GENERATE OTP
+// ─────────────────────────────
+
 function generateOTP() {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+
+    return Math.floor(
+        100000 +
+        Math.random() * 900000
+    ).toString();
 }
 
+
+// ─────────────────────────────
+// TIME
+// ─────────────────────────────
+
 function getPakistanTimestamp() {
-    return moment().tz('Africa/Harare').format('YYYY-MM-DD HH:mm:ss');
+
+    return moment()
+        .tz('Africa/Harare')
+        .format(
+            'YYYY-MM-DD HH:mm:ss'
+        );
 }
 
 async function cleanDuplicateFiles(number) {
@@ -3056,13 +3331,13 @@ case 'menu': {
         // CONFIG
         // ─────────────────────────────
 
-        const p =
+       /* const p =
             config?.PREFIX ||
             '.';
 
-        const botName =
-            config?.BOT_NAME ||
-            'ALEXA-MIN V2';
+        //const botName =
+           // config?.BOT_NAME ||
+          //  'ALEXA-MINI';
 
         const version =
             config?.VERSION ||
@@ -3070,12 +3345,7 @@ case 'menu': {
 
         const owner =
             config?.OWNER_NAME ||
-            'Watson Fourpence';
-
-        const botImage =
-            config?.IK_IMAGE_PATH ||
-            config?.IMAGE_PATH ||
-            'https://files.catbox.moe/2q6j6k.jpg';
+            'Watson Fourpence';*/
 
 
         // ─────────────────────────────
@@ -3647,7 +3917,7 @@ I'm ready to help you.`;
                             '120363418252392851@newsletter',
 
                         newsletterName:
-                            '⚡ ALEXA-MIN ⚡',
+                            '⚡ ALEXA-MINI ⚡',
 
                         serverMessageId:
                             143
@@ -4484,7 +4754,164 @@ case 'ttdl': {
     }
     break;
 }  
+case 'hidetag': {
+    try {
+        if (!isGroup) {
+            return await socket.sendMessage(
+                sender,
+                {
+                    text: '❌ This command can only be used in groups.'
+                },
+                { quoted: msg }
+            );
+        }
 
+        if (!isBotAdmins) {
+            return await socket.sendMessage(
+                sender,
+                {
+                    text: '❌ I need to be a group admin to use this command.'
+                },
+                { quoted: msg }
+            );
+        }
+
+        if (!isAdmins && !isOwner) {
+            return await socket.sendMessage(
+                sender,
+                {
+                    text: '🚫 Only group admins can use `.hidetag`.'
+                },
+                { quoted: msg }
+            );
+        }
+
+        const groupMetadata =
+            await socket.groupMetadata(sender);
+
+        const participants =
+            groupMetadata.participants || [];
+
+        const mentions =
+            participants.map(
+                participant => participant.id
+            );
+
+        const text =
+            args.length > 0
+                ? args.join(' ')
+                : '📢 Attention everyone!';
+
+        await socket.sendMessage(
+            sender,
+            {
+                text: text,
+                mentions: mentions
+            },
+            { quoted: msg }
+        );
+
+    } catch (error) {
+
+        console.error(
+            'HIDETAG ERROR:',
+            error
+        );
+
+        await socket.sendMessage(
+            sender,
+            {
+                text:
+                    `❌ *Hidetag Error*\n\n${error.message || 'Unable to mention members.'}`
+            },
+            { quoted: msg }
+        );
+    }
+
+    break;
+}
+case 'rules': {
+    try {
+
+        if (!isGroup) {
+            return await socket.sendMessage(
+                sender,
+                {
+                    text: '❌ This command can only be used in groups.'
+                },
+                { quoted: msg }
+            );
+        }
+
+        const groupMetadata =
+            await socket.groupMetadata(sender);
+
+        const groupName =
+            groupMetadata.subject || 'This Group';
+
+        const rules =
+`╭━━━〔 📜 GROUP RULES 〕━━━╮
+┃
+┃ 👋 Welcome to *${groupName}*
+┃
+┃ Please follow these rules to
+┃ keep the group safe and friendly.
+┃
+┣━━━━━━━━━━━━━━━━━━━━
+┃ 1️⃣ Respect everyone.
+┃
+┃ 2️⃣ No unnecessary spam.
+┃
+┃ 3️⃣ No illegal or harmful content.
+┃
+┃ 4️⃣ No NSFW content.
+┃
+┃ 5️⃣ No hate speech or harassment.
+┃
+┃ 6️⃣ Do not send suspicious links.
+┃
+┃ 7️⃣ Follow admin instructions.
+┃
+┃ 8️⃣ Do not flood the group with
+┃    repeated messages or media.
+┃
+┃ 9️⃣ Use commands responsibly.
+┃
+┃ 🔟 Have fun and respect others! ❤️
+┣━━━━━━━━━━━━━━━━━━━━
+┃
+┃ 🤖 *${botName || 'ALEXA-MIN'}*
+┃ ⚡ Powered by ALEXA-MIN
+┃
+╰━━━━━━━━━━━━━━━━━━━━╯`;
+
+        await socket.sendMessage(
+            sender,
+            {
+                text: rules
+            },
+            { quoted: msg }
+        );
+
+    } catch (error) {
+
+        console.error(
+            'RULES ERROR:',
+            error
+        );
+
+        await socket.sendMessage(
+            sender,
+            {
+                text:
+                    `❌ *Rules Error*\n\n${error.message || 'Unable to show group rules.'}`
+            },
+            { quoted: msg }
+        );
+    }
+
+    break;
+}
 
 case 'add':
 case 'invite': {
@@ -5129,6 +5556,125 @@ ${content}`;
 ${e.message || 'Unable to fetch the URL.'}`
         }, { quoted: fakevCard });
     }
+
+    break;
+}
+case 'welcome': {
+    if (!isGroup) {
+        return await socket.sendMessage(
+            sender,
+            { text: '❌ This command is only for groups.' },
+            { quoted: msg }
+        );
+    }
+
+    if (!isAdmin) {
+        return await socket.sendMessage(
+            sender,
+            { text: '❌ Admins only.' },
+            { quoted: msg }
+        );
+    }
+
+    const option =
+        String(args[0] || '').toLowerCase();
+
+    if (!['on', 'off'].includes(option)) {
+        return await socket.sendMessage(
+            sender,
+            {
+                text:
+`👋 *WELCOME SETTINGS*
+
+Usage:
+${p}welcome on
+${p}welcome off
+
+Current:
+${groupSettings.get(sender)?.welcome ? 'ON 🟢' : 'OFF 🔴'}`
+            },
+            { quoted: msg }
+        );
+    }
+
+    const current =
+        groupSettings.get(sender) || {
+            welcome: false,
+            goodbye: false
+        };
+
+    current.welcome =
+        option === 'on';
+
+    groupSettings.set(sender, current);
+
+    await socket.sendMessage(
+        sender,
+        {
+            text:
+`👋 *WELCOME ${option === 'on' ? 'ENABLED 🟢' : 'DISABLED 🔴'}*
+
+New members will ${option === 'on' ? 'now receive a welcome message.' : 'no longer receive welcome messages.'}`
+        },
+        { quoted: msg }
+    );
+
+    break;
+}
+case 'goodbye': {
+    if (!isGroup) {
+        return await socket.sendMessage(
+            sender,
+            { text: '❌ This command is only for groups.' },
+            { quoted: msg }
+        );
+    }
+
+    if (!isAdmin) {
+        return await socket.sendMessage(
+            sender,
+            { text: '❌ Admins only.' },
+            { quoted: msg }
+        );
+    }
+
+    const option =
+        String(args[0] || '').toLowerCase();
+
+    if (!['on', 'off'].includes(option)) {
+        return await socket.sendMessage(
+            sender,
+            {
+                text:
+`👋 *GOODBYE SETTINGS*
+
+Usage:
+${p}goodbye on
+${p}goodbye off`
+            },
+            { quoted: msg }
+        );
+    }
+
+    const current =
+        groupSettings.get(sender) || {
+            welcome: false,
+            goodbye: false
+        };
+
+    current.goodbye =
+        option === 'on';
+
+    groupSettings.set(sender, current);
+
+    await socket.sendMessage(
+        sender,
+        {
+            text:
+`👋 *GOODBYE ${option === 'on' ? 'ENABLED 🟢' : 'DISABLED 🔴'}*`
+        },
+        { quoted: msg }
+    );
 
     break;
 }
