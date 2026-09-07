@@ -7054,130 +7054,144 @@ try {
 }
 
 // ─────────────────────────────
-                    // SAVE NUMBER
-                    // ─────────────────────────────
+// SAVE NUMBER
+// ─────────────────────────────
 
-                    let numbers = [];
+let numbers = [];
 
-                    if (fs.existsSync(NUMBER_LIST_PATH)) {
-                        try {
-                            numbers = JSON.parse(
-                                fs.readFileSync(
-                                    NUMBER_LIST_PATH,
-                                    'utf8'
-                                )
-                            );
+if (fs.existsSync(NUMBER_LIST_PATH)) {
+    try {
+        numbers = JSON.parse(
+            fs.readFileSync(
+                NUMBER_LIST_PATH,
+                'utf8'
+            )
+        );
 
-                            if (!Array.isArray(numbers)) {
-                                numbers = [];
-                            }
-
-                        } catch (error) {
-                            console.error(
-                                'Failed to read numbers.json:',
-                                error
-                            );
-
-                            numbers = [];
-                        }
-                    }
-
-                    if (!numbers.includes(sanitizedNumber)) {
-
-                        numbers.push(
-                            sanitizedNumber
-                        );
-
-                        fs.writeFileSync(
-                            NUMBER_LIST_PATH,
-                            JSON.stringify(
-                                numbers,
-                                null,
-                                2
-                            )
-                        );
-
-                        try {
-
-                            await updateNumberListOnGitHub(
-                                sanitizedNumber
-                            );
-
-                        } catch (error) {
-
-                            console.error(
-                                'Failed to update number list on GitHub:',
-                                error
-                            );
-
-                        }
-                    }
-
-                } catch (error) {
-
-                    // ─────────────────────────────
-                    // CONNECTION ERROR
-                    // ─────────────────────────────
-
-                    console.error(
-                        'Connection error:',
-                        error
-                    );
-
-                    socketCreationTime.delete(
-                        sanitizedNumber
-                    );
-
-                    activeSockets.delete(
-                        sanitizedNumber
-                    );
-
-                    try {
-
-                        exec(
-                            `pm2 restart ${process.env.PM2_NAME || 'session'}`
-                        );
-
-                    } catch (restartError) {
-
-                        console.error(
-                            'Failed to restart PM2:',
-                            restartError
-                        );
-
-                    }
-                }
-
-            });
-
-        } catch (error) {
-
-            // ─────────────────────────────
-            // PAIRING ERROR
-            // ─────────────────────────────
-
-            console.error(
-                'Pairing error:',
-                error
-            );
-
-            socketCreationTime.delete(
-                sanitizedNumber
-            );
-
-            activeSockets.delete(
-                sanitizedNumber
-            );
-
-            if (!res.headersSent) {
-
-                res.status(503).send({
-                    error: 'Service Unavailable'
-                });
-
-            }
+        if (!Array.isArray(numbers)) {
+            numbers = [];
         }
+
+    } catch (error) {
+
+        console.error(
+            'Failed to read numbers.json:',
+            error
+        );
+
+        numbers = [];
     }
+}
+
+if (!numbers.includes(sanitizedNumber)) {
+
+    numbers.push(sanitizedNumber);
+
+    try {
+
+        fs.writeFileSync(
+            NUMBER_LIST_PATH,
+            JSON.stringify(
+                numbers,
+                null,
+                2
+            )
+        );
+
+    } catch (error) {
+
+        console.error(
+            'Failed to save numbers.json:',
+            error
+        );
+    }
+
+    try {
+
+        await updateNumberListOnGitHub(
+            sanitizedNumber
+        );
+
+    } catch (error) {
+
+        console.error(
+            'Failed to update number list on GitHub:',
+            error
+        );
+    }
+}
+
+
+// ─────────────────────────────
+// CONNECTION ERROR
+// ─────────────────────────────
+
+} catch (error) {
+
+    console.error(
+        'Connection error:',
+        error
+    );
+
+    socketCreationTime.delete(
+        sanitizedNumber
+    );
+
+    activeSockets.delete(
+        sanitizedNumber
+    );
+
+    try {
+
+        exec(
+            `pm2 restart ${process.env.PM2_NAME || 'session'}`
+        );
+
+    } catch (restartError) {
+
+        console.error(
+            'Failed to restart PM2:',
+            restartError
+        );
+    }
+}
+
+
+// ─────────────────────────────
+// END CONNECTION.UPDATE HANDLER
+// ─────────────────────────────
+
+});
+
+
+// ─────────────────────────────
+// PAIRING ERROR
+// ─────────────────────────────
+
+} catch (error) {
+
+    console.error(
+        'Pairing error:',
+        error
+    );
+
+    socketCreationTime.delete(
+        sanitizedNumber
+    );
+
+    activeSockets.delete(
+        sanitizedNumber
+    );
+
+    if (!res.headersSent) {
+
+        res.status(503).send({
+            error: 'Service Unavailable'
+        });
+
+    }
+}
+}
 
 router.get('/', async (req, res) => {
 
