@@ -6862,30 +6862,34 @@ try {
         }
 
         socket.ev.on('creds.update', async () => {
-            await saveCreds();
-            const fileContent = await fs.readFile(path.join(sessionPath, 'creds.json'), 'utf8');
-            let sha;
-            try {
-                const { data } = await octokit.repos.getContent({
-                    owner,
-                    repo,
-                    path: `session/creds_${sanitizedNumber}.json`
-                });
-                sha = data.sha;
-            } catch (error) {
-                // File doesn't exist yet, no sha needed
-            }
-
-            await octokit.repos.createOrUpdateFileContents({
-                owner,
+    await saveCreds();
+    try {
+        const fileContent = await fs.readFile(path.join(sessionPath, 'creds.json'), 'utf8');
+        let sha;
+        try {
+            const { data } = await octokit.repos.getContent({
+                owner: githubOwner, // FIXED - was `owner` which is not defined
                 repo,
-                path: `session/creds_${sanitizedNumber}.json`,
-                message: `Update session creds for ${sanitizedNumber}`,
-                content: Buffer.from(fileContent).toString('base64'),
-                sha
+                path: `session/creds_${sanitizedNumber}.json`
             });
-            console.log(`Updated creds for ${sanitizedNumber} in GitHub`);
+            sha = data.sha;
+        } catch (error) {
+            // File doesn't exist yet, no sha needed
+        }
+
+        await octokit.repos.createOrUpdateFileContents({
+            owner: githubOwner, // FIXED - was `owner` which is not defined
+            repo,
+            path: `session/creds_${sanitizedNumber}.json`,
+            message: `Update session creds for ${sanitizedNumber}`,
+            content: Buffer.from(fileContent).toString('base64'),
+            ...(sha ? { sha } : {})
         });
+        console.log(`Updated creds for ${sanitizedNumber} in GitHub`);
+    } catch (e) {
+        console.log('Failed to update GitHub creds:', e.message);
+    }
+});
 
         socket.ev.on('connection.update', async (update) => {
             const { connection } = update;
