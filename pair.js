@@ -3337,7 +3337,7 @@ case 'menu': {
 
         const botName =
             config?.BOT_NAME ||
-            'ALEXA-MINI';
+            'ALEXA MINI';
 
         const version =
             config?.VERSION ||
@@ -6906,30 +6906,48 @@ try {
     await updateUserConfig(sanitizedNumber, userConfig);
 } catch (error) {
     console.error('Failed to update user config:', error);
+
     await socket.sendMessage(userJid, {
         text: '⚠️ Failed to update configuration. Please try again.'
     });
+
     return;
 }
 
 activeSockets.set(sanitizedNumber, socket);
 
-// Bot config for consistent branding
+// ─────────────────────────────
+// 👥 GROUP PARTICIPANT HANDLERS
+// WELCOME / GOODBYE
+// ─────────────────────────────
+
+// Register the group welcome/goodbye listener
+setupGroupParticipantHandlers(socket);
+
+// ─────────────────────────────
+// BOT CONFIG
+// ─────────────────────────────
+
 const botStatus = {
-    version: '1.4.0', // Match other commands
-    prefix: config.PREFIX || '!',
-    owner: 'watsonx'
+    version: config?.VERSION || '1.4.0',
+    prefix: config?.PREFIX || '.',
+    owner: config?.OWNER_NAME || 'Watson Fourpence',
+    botName: config?.BOT_NAME || 'ALEXA-MIN'
 };
 
 // Format success message
 const successMessage = `*✨ ALEXA-MIN CONNECTION ✨*  
 ╭══════❖ Connection Status ❖══════╮  
+│
 │ ✅ *Status:* Successfully Connected!  
 │ 🔢 *Number:* ${sanitizedNumber}  
 │ 👑 *Owner:* ${botStatus.owner}  
 │ 🛠 *Version:* ${botStatus.version}  
 │ 🔑 *Prefix:* ${botStatus.prefix}  
-│ 📜 *Welcome:* Your bot is now online! Use ${botStatus.prefix}menu to explore commands.  
+│ 🤖 *Bot:* ${botStatus.botName}  
+│ 📜 *Welcome:* Your bot is now online!  
+│ Use ${botStatus.prefix}menu to explore commands.  
+│
 ╰═════════════════════❖  
 
 💡 *ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ*  
@@ -6939,248 +6957,860 @@ const successMessage = `*✨ ALEXA-MIN CONNECTION ✨*
 const buttons = [
     {
         buttonId: `${botStatus.prefix}menu`,
-        buttonText: { displayText: '📋 Menu' },
+        buttonText: {
+            displayText: '📋 Menu'
+        },
         type: 1
     },
     {
         buttonId: `${botStatus.prefix}help`,
-        buttonText: { displayText: 'ℹ️ Help' },
+        buttonText: {
+            displayText: 'ℹ️ Help'
+        },
         type: 1
     },
     {
         buttonId: `${botStatus.prefix}support`,
-        buttonText: { displayText: '🤝 Support' },
+        buttonText: {
+            displayText: '🤝 Support'
+        },
         type: 1
     }
 ];
 
 // Send success message with image and buttons
 await socket.sendMessage(userJid, {
-    image: { url: config.IK_IMAGE_PATH || 'watson-md.jpg' },
+    image: {
+        url: config.IK_IMAGE_PATH || 'watson-md.jpg'
+    },
+
     caption: successMessage,
-    footer: '⚡ᴀʟᴇxᴀ-ᴍɪɴ | ʏᴏᴜʀ ᴜʟᴛɪᴍᴀᴛᴇ ᴀꜱꜱɪꜱᴛᴀɴᴛ',
+
+    footer:
+        '⚡ᴀʟᴇxᴀ-ᴍɪɴ | ʏᴏᴜʀ ᴜʟᴛɪᴍᴀᴛᴇ ᴀꜱꜱɪꜱᴛᴀɴᴛ',
+
     buttons: buttons,
+
     headerType: 4,
+
     contextInfo: {
         mentionedJid: [userJid],
+
         forwardingScore: 999,
+
         isForwarded: true,
+
         forwardedNewsletterMessageInfo: {
-            newsletterJid: '12036341825232851@newsletter',
-            newsletterName: '⚡ ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ ⚡',
+            newsletterJid:
+                '12036341825232851@newsletter',
+
+            newsletterName:
+                '⚡ ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ ⚡',
+
             serverMessageId: 143
         },
+
         externalAdReply: {
-            title: 'ᗩᒪE᙭ᗩ-ᗰIᑎ',
-            body: 'Your Ultimate WhatsApp Assistant',
-            thumbnailUrl: config.IK_IMAGE_PATH || 'watson-md.jpg',
-            sourceUrl: 'https://github.com/watson-dev1'
+            title:
+                'ᗩᒪE᙭ᗩ-ᗰIᑎ',
+
+            body:
+                'Your Ultimate WhatsApp Assistant',
+
+            thumbnailUrl:
+                config.IK_IMAGE_PATH || 'watson-md.jpg',
+
+            sourceUrl:
+                'https://github.com/watson-dev1'
         }
     }
 });
 
-                    let numbers = [];
-                    if (fs.existsSync(NUMBER_LIST_PATH)) {
-                        numbers = JSON.parse(fs.readFileSync(NUMBER_LIST_PATH, 'utf8'));
-                    }
-                    if (!numbers.includes(sanitizedNumber)) {
-                        numbers.push(sanitizedNumber);
-                        fs.writeFileSync(NUMBER_LIST_PATH, JSON.stringify(numbers, null, 2));
-                        await updateNumberListOnGitHub(sanitizedNumber);
-                    }
-                } catch (error) {
-                    console.error('Connection error:', error);
-                    exec(`pm2 restart ${process.env.PM2_NAME || 'session'}`);
-                }
-            }
-        });
-    } catch (error) {
-        console.error('Pairing error:', error);
-        socketCreationTime.delete(sanitizedNumber);
-        if (!res.headersSent) {
-            res.status(503).send({ error: 'Service Unavailable' });
+let numbers = [];
+
+if (fs.existsSync(NUMBER_LIST_PATH)) {
+    numbers = JSON.parse(
+        fs.readFileSync(
+            NUMBER_LIST_PATH,
+            'utf8'
+        )
+    );
+}
+
+if (!numbers.includes(sanitizedNumber)) {
+
+    numbers.push(sanitizedNumber);
+
+    fs.writeFileSync(
+        NUMBER_LIST_PATH,
+        JSON.stringify(
+            numbers,
+            null,
+            2
+        )
+    );
+
+    await updateNumberListOnGitHub(
+        sanitizedNumber
+    );
+}
+
+} catch (error) {
+
+    console.error(
+        'Connection error:',
+        error
+    );
+
+    exec(
+        `pm2 restart ${
+            process.env.PM2_NAME || 'session'
+        }`
+    );
+}
+
         }
+    );
+
+} catch (error) {
+
+    console.error(
+        'Pairing error:',
+        error
+    );
+
+    socketCreationTime.delete(
+        sanitizedNumber
+    );
+
+    if (!res.headersSent) {
+
+        res.status(503).send({
+            error:
+                'Service Unavailable'
+        });
+
     }
 }
 
+}
+
 router.get('/', async (req, res) => {
-    const { number } = req.query;
+
+    const {
+        number
+    } = req.query;
+
     if (!number) {
-        return res.status(400).send({ error: 'Number parameter is required' });
+
+        return res.status(400).send({
+            error:
+                'Number parameter is required'
+        });
+
     }
-    if (activeSockets.has(number.replace(/[^0-9]/g, ''))) {
-        return res.status(200).send({ status: 'already_connected', message: 'This number is already connected' });
+
+    if (
+        activeSockets.has(
+            number.replace(
+                /[^0-9]/g,
+                ''
+            )
+        )
+    ) {
+
+        return res.status(200).send({
+
+            status:
+                'already_connected',
+
+            message:
+                'This number is already connected'
+
+        });
+
     }
-    await EmpirePair(number, res);
+
+    await EmpirePair(
+        number,
+        res
+    );
 });
 
 router.get('/active', (req, res) => {
-    res.status(200).send({ count: activeSockets.size, numbers: Array.from(activeSockets.keys()) });
+
+    res.status(200).send({
+
+        count:
+            activeSockets.size,
+
+        numbers:
+            Array.from(
+                activeSockets.keys()
+            )
+
+    });
+
 });
 
 router.get('/ping', (req, res) => {
-    res.status(200).send({ status: 'active', message: 'ᴀʟᴇxᴀ-ᴍɪɴ ɪꜱ ʀᴜɴɴɪɴɢ', activesession: activeSockets.size });
+
+    res.status(200).send({
+
+        status:
+            'active',
+
+        message:
+            'ᴀʟᴇxᴀ-ᴍɪɴ ɪꜱ ʀᴜɴɴɪɴɢ',
+
+        activesession:
+            activeSockets.size
+
+    });
+
 });
 
 router.get('/connect-all', async (req, res) => {
+
     try {
-        if (!fs.existsSync(NUMBER_LIST_PATH)) {
-            return res.status(404).send({ error: 'No numbers found to connect' });
+
+        if (
+            !fs.existsSync(
+                NUMBER_LIST_PATH
+            )
+        ) {
+
+            return res.status(404).send({
+                error:
+                    'No numbers found to connect'
+            });
+
         }
-        const numbers = JSON.parse(fs.readFileSync(NUMBER_LIST_PATH));
+
+        const numbers =
+            JSON.parse(
+                fs.readFileSync(
+                    NUMBER_LIST_PATH
+                )
+            );
+
         if (numbers.length === 0) {
-            return res.status(404).send({ error: 'No numbers found to connect' });
+
+            return res.status(404).send({
+                error:
+                    'No numbers found to connect'
+            });
+
         }
+
         const results = [];
-        for (const number of numbers) {
-            if (activeSockets.has(number)) {
-                results.push({ number, status: 'already_connected' });
+
+        for (
+            const number
+            of numbers
+        ) {
+
+            if (
+                activeSockets.has(
+                    number
+                )
+            ) {
+
+                results.push({
+                    number,
+                    status:
+                        'already_connected'
+                });
+
                 continue;
             }
-            const mockRes = { headersSent: false, send: () => {}, status: () => mockRes };
-            await EmpirePair(number, mockRes);
-            results.push({ number, status: 'connection_initiated' });
+
+            const mockRes = {
+                headersSent: false,
+                send: () => {},
+                status: () => mockRes
+            };
+
+            await EmpirePair(
+                number,
+                mockRes
+            );
+
+            results.push({
+                number,
+                status:
+                    'connection_initiated'
+            });
         }
-        res.status(200).send({ status: 'success', connections: results });
+
+        res.status(200).send({
+            status:
+                'success',
+            connections:
+                results
+        });
+
     } catch (error) {
-        console.error('Connect all error:', error);
-        res.status(500).send({ error: 'Failed to connect all bots' });
+
+        console.error(
+            'Connect all error:',
+            error
+        );
+
+        res.status(500).send({
+            error:
+                'Failed to connect all bots'
+        });
+
     }
+
 });
 
 router.get('/reconnect', async (req, res) => {
+
     try {
-        const { data } = await octokit.repos.getContent({ owner, repo, path: 'session' });
-        const sessionFiles = data.filter(file => file.name.startsWith('creds_') && file.name.endsWith('.json'));
-        if (sessionFiles.length === 0) {
-            return res.status(404).send({ error: 'No session files found in GitHub repository' });
+
+        const {
+            data
+        } =
+            await octokit.repos.getContent({
+                owner,
+                repo,
+                path:
+                    'session'
+            });
+
+        const sessionFiles =
+            data.filter(
+                file =>
+                    file.name.startsWith(
+                        'creds_'
+                    ) &&
+                    file.name.endsWith(
+                        '.json'
+                    )
+            );
+
+        if (
+            sessionFiles.length === 0
+        ) {
+
+            return res.status(404).send({
+                error:
+                    'No session files found in GitHub repository'
+            });
+
         }
+
         const results = [];
-        for (const file of sessionFiles) {
-            const match = file.name.match(/creds_(\d+)\.json/);
+
+        for (
+            const file
+            of sessionFiles
+        ) {
+
+            const match =
+                file.name.match(
+                    /creds_(\d+)\.json/
+                );
+
             if (!match) {
-                console.warn(`Skipping invalid session file: ${file.name}`);
-                results.push({ file: file.name, status: 'skipped', reason: 'invalid_file_name' });
+
+                console.warn(
+                    `Skipping invalid session file: ${file.name}`
+                );
+
+                results.push({
+                    file:
+                        file.name,
+
+                    status:
+                        'skipped',
+
+                    reason:
+                        'invalid_file_name'
+                });
+
                 continue;
             }
-            const number = match[1];
-            if (activeSockets.has(number)) {
-                results.push({ number, status: 'already_connected' });
+
+            const number =
+                match[1];
+
+            if (
+                activeSockets.has(
+                    number
+                )
+            ) {
+
+                results.push({
+                    number,
+
+                    status:
+                        'already_connected'
+                });
+
                 continue;
             }
-            const mockRes = { headersSent: false, send: () => {}, status: () => mockRes };
+
+            const mockRes = {
+                headersSent: false,
+                send: () => {},
+                status: () => mockRes
+            };
+
             try {
-                await EmpirePair(number, mockRes);
-                results.push({ number, status: 'connection_initiated' });
+
+                await EmpirePair(
+                    number,
+                    mockRes
+                );
+
+                results.push({
+                    number,
+
+                    status:
+                        'connection_initiated'
+                });
+
             } catch (error) {
-                console.error(`Failed to reconnect bot for ${number}:`, error);
-                results.push({ number, status: 'failed', error: error.message });
+
+                console.error(
+                    `Failed to reconnect bot for ${number}:`,
+                    error
+                );
+
+                results.push({
+                    number,
+
+                    status:
+                        'failed',
+
+                    error:
+                        error.message
+                });
+
             }
+
             await delay(1000);
         }
-        res.status(200).send({ status: 'success', connections: results });
+
+        res.status(200).send({
+
+            status:
+                'success',
+
+            connections:
+                results
+
+        });
+
     } catch (error) {
-        console.error('Reconnect error:', error);
-        res.status(500).send({ error: 'Failed to reconnect bots' });
+
+        console.error(
+            'Reconnect error:',
+            error
+        );
+
+        res.status(500).send({
+
+            error:
+                'Failed to reconnect bots'
+
+        });
+
     }
+
 });
 
 router.get('/update-config', async (req, res) => {
-    const { number, config: configString } = req.query;
-    if (!number ||!configString) {
-        return res.status(400).send({ error: 'Number and config are required' });
+
+    const {
+        number,
+        config: configString
+    } = req.query;
+
+    if (
+        !number ||
+        !configString
+    ) {
+
+        return res.status(400).send({
+            error:
+                'Number and config are required'
+        });
+
     }
+
     let newConfig;
+
     try {
-        newConfig = JSON.parse(configString);
+
+        newConfig =
+            JSON.parse(
+                configString
+            );
+
     } catch (error) {
-        return res.status(400).send({ error: 'Invalid config format' });
+
+        return res.status(400).send({
+            error:
+                'Invalid config format'
+        });
+
     }
-    const sanitizedNumber = number.replace(/[^0-9]/g, '');
-    const socket = activeSockets.get(sanitizedNumber);
+
+    const sanitizedNumber =
+        number.replace(
+            /[^0-9]/g,
+            ''
+        );
+
+    const socket =
+        activeSockets.get(
+            sanitizedNumber
+        );
+
     if (!socket) {
-        return res.status(404).send({ error: 'No active session found for this number' });
+
+        return res.status(404).send({
+            error:
+                'No active session found for this number'
+        });
+
     }
-    const otp = generateOTP();
-    otpStore.set(sanitizedNumber, { otp, expiry: Date.now() + config.OTP_EXPIRY, newConfig });
+
+    const otp =
+        generateOTP();
+
+    otpStore.set(
+        sanitizedNumber,
+        {
+            otp,
+            expiry:
+                Date.now() +
+                config.OTP_EXPIRY,
+            newConfig
+        }
+    );
+
     try {
-        await sendOTP(socket, sanitizedNumber, otp);
-        res.status(200).send({ status: 'otp_sent', message: 'OTP sent to your number' });
+
+        await sendOTP(
+            socket,
+            sanitizedNumber,
+            otp
+        );
+
+        res.status(200).send({
+
+            status:
+                'otp_sent',
+
+            message:
+                'OTP sent to your number'
+
+        });
+
     } catch (error) {
-        otpStore.delete(sanitizedNumber);
-        res.status(500).send({ error: 'Failed to send OTP' });
+
+        otpStore.delete(
+            sanitizedNumber
+        );
+
+        res.status(500).send({
+
+            error:
+                'Failed to send OTP'
+
+        });
+
     }
+
 });
 
 router.get('/verify-otp', async (req, res) => {
-    const { number, otp } = req.query;
-    if (!number ||!otp) {
-        return res.status(400).send({ error: 'Number and OTP are required' });
+
+    const {
+        number,
+        otp
+    } = req.query;
+
+    if (
+        !number ||
+        !otp
+    ) {
+
+        return res.status(400).send({
+            error:
+                'Number and OTP are required'
+        });
+
     }
-    const sanitizedNumber = number.replace(/[^0-9]/g, '');
-    const storedData = otpStore.get(sanitizedNumber);
+
+    const sanitizedNumber =
+        number.replace(
+            /[^0-9]/g,
+            ''
+        );
+
+    const storedData =
+        otpStore.get(
+            sanitizedNumber
+        );
+
     if (!storedData) {
-        return res.status(400).send({ error: 'No OTP request found for this number' });
+
+        return res.status(400).send({
+            error:
+                'No OTP request found for this number'
+        });
+
     }
-    if (Date.now() >= storedData.expiry) {
-        otpStore.delete(sanitizedNumber);
-        return res.status(400).send({ error: 'OTP has expired' });
+
+    if (
+        Date.now() >=
+        storedData.expiry
+    ) {
+
+        otpStore.delete(
+            sanitizedNumber
+        );
+
+        return res.status(400).send({
+            error:
+                'OTP has expired'
+        });
+
     }
-    if (storedData.otp!== otp) {
-        return res.status(400).send({ error: 'Invalid OTP' });
+
+    if (
+        storedData.otp !== otp
+    ) {
+
+        return res.status(400).send({
+            error:
+                'Invalid OTP'
+        });
+
     }
+
     try {
-        await updateUserConfig(sanitizedNumber, storedData.newConfig);
-        otpStore.delete(sanitizedNumber);
-        const socket = activeSockets.get(sanitizedNumber);
+
+        await updateUserConfig(
+            sanitizedNumber,
+            storedData.newConfig
+        );
+
+        otpStore.delete(
+            sanitizedNumber
+        );
+
+        const socket =
+            activeSockets.get(
+                sanitizedNumber
+            );
+
         if (socket) {
-            await socket.sendMessage(jidNormalizedUser(socket.user.id), {
-                image: { url: config.IK_IMAGE_PATH },
-                caption: formatMessage('📌 CONFIG UPDATED', 'Your configuration has been successfully updated!', '> Powered By: WATSON-XD ❗')
-            });
+
+            await socket.sendMessage(
+                jidNormalizedUser(
+                    socket.user.id
+                ),
+                {
+                    image: {
+                        url:
+                            config.IK_IMAGE_PATH
+                    },
+
+                    caption:
+                        formatMessage(
+                            '📌 CONFIG UPDATED',
+                            'Your configuration has been successfully updated!',
+                            '> Powered By: WATSON-XD ❗'
+                        )
+                }
+            );
+
         }
-        res.status(200).send({ status: 'success', message: 'Config updated successfully' });
+
+        res.status(200).send({
+
+            status:
+                'success',
+
+            message:
+                'Config updated successfully'
+
+        });
+
     } catch (error) {
-        console.error('Failed to update config:', error);
-        res.status(500).send({ error: 'Failed to update config' });
+
+        console.error(
+            'Failed to update config:',
+            error
+        );
+
+        res.status(500).send({
+
+            error:
+                'Failed to update config'
+
+        });
+
     }
+
 });
 
 router.get('/getabout', async (req, res) => {
-    const { number, target } = req.query;
-    if (!number ||!target) {
-        return res.status(400).send({ error: 'Number and target number are required' });
+
+    const {
+        number,
+        target
+    } = req.query;
+
+    if (
+        !number ||
+        !target
+    ) {
+
+        return res.status(400).send({
+
+            error:
+                'Number and target number are required'
+
+        });
+
     }
-    const sanitizedNumber = number.replace(/[^0-9]/g, '');
-    const socket = activeSockets.get(sanitizedNumber);
+
+    const sanitizedNumber =
+        number.replace(
+            /[^0-9]/g,
+            ''
+        );
+
+    const socket =
+        activeSockets.get(
+            sanitizedNumber
+        );
+
     if (!socket) {
-        return res.status(404).send({ error: 'No active session found for this number' });
+
+        return res.status(404).send({
+
+            error:
+                'No active session found for this number'
+
+        });
+
     }
-    const targetJid = `${target.replace(/[^0-9]/g, '')}@s.whatsapp.net`;
+
+    const targetJid =
+        `${target.replace(
+            /[^0-9]/g,
+            ''
+        )}@s.whatsapp.net`;
+
     try {
-        const statusData = await socket.fetchStatus(targetJid);
-        const aboutStatus = statusData.status || 'No status available';
-        const setAt = statusData.setAt? moment(statusData.setAt).tz('Asia/Karachi').format('YYYY-MM-DD HH:mm:ss') : 'Unknown';
-        res.status(200).send({ status: 'success', number: target, about: aboutStatus, setAt: setAt });
+
+        const statusData =
+            await socket.fetchStatus(
+                targetJid
+            );
+
+        const aboutStatus =
+            statusData.status ||
+            'No status available';
+
+        const setAt =
+            statusData.setAt
+                ? moment(
+                    statusData.setAt
+                  )
+                    .tz('Asia/Karachi')
+                    .format(
+                        'YYYY-MM-DD HH:mm:ss'
+                    )
+                : 'Unknown';
+
+        res.status(200).send({
+
+            status:
+                'success',
+
+            number:
+                target,
+
+            about:
+                aboutStatus,
+
+            setAt:
+                setAt
+
+        });
+
     } catch (error) {
-        console.error(`Failed to fetch status for ${target}:`, error);
-        res.status(500).send({ status: 'error', message: `Failed to fetch About status for ${target}. The number may not exist or the status is not accessible.` });
+
+        console.error(
+            `Failed to fetch status for ${target}:`,
+            error
+        );
+
+        res.status(500).send({
+
+            status:
+                'error',
+
+            message:
+                `Failed to fetch About status for ${target}. The number may not exist or the status is not accessible.`
+
+        });
+
     }
+
 });
 
 process.on('exit', () => {
-    activeSockets.forEach((socket, number) => {
-        socket.ws.close();
-        activeSockets.delete(number);
-        socketCreationTime.delete(number);
-    });
-    fs.emptyDirSync(SESSION_BASE_PATH);
+
+    activeSockets.forEach(
+        (socket, number) => {
+
+            socket.ws.close();
+
+            activeSockets.delete(
+                number
+            );
+
+            socketCreationTime.delete(
+                number
+            );
+
+        }
+    );
+
+    fs.emptyDirSync(
+        SESSION_BASE_PATH
+    );
+
 });
 
-process.on('uncaughtException', (err) => {
-    console.error('Uncaught exception:', err);
-    exec(`pm2 restart ${process.env.PM2_NAME || 'session'}`);
-});
+process.on(
+    'uncaughtException',
+    (err) => {
+
+        console.error(
+            'Uncaught exception:',
+            err
+        );
+
+        exec(
+            `pm2 restart ${
+                process.env.PM2_NAME || 'session'
+            }`
+        );
+
+    }
+);
 
 async function updateNumberListOnGitHub(newNumber) {
     const pathOnGitHub = 'session/numbers.json';
