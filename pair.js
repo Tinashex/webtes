@@ -98,6 +98,32 @@ const config = {
     }
 };
 
+// ─────────────────────────────
+// FIX FOR: owner is not defined / isOwner is not defined
+// ─────────────────────────────
+const OWNER_NUMBERS = [config.OWNER_NUMBER].flat().map(n => n.replace(/[^0-9]/g, ''));
+
+function getSanitizedNumber(jid = '') {
+    return jid.split('@')[0].replace(/[^0-9]/g, '');
+}
+
+function isOwnerCheck(jid, fromMe = false) {
+    if (fromMe) return true;
+    const num = getSanitizedNumber(jid);
+    return OWNER_NUMBERS.some(o => num.includes(o) || o.includes(num));
+}
+
+// prevent ReferenceError for userConfig / sanitizedNumber
+let userConfig = {...config.DEFAULT_SETTINGS };
+async function updateUserConfig(number, newConf) {
+    try {
+        userConfig = newConf;
+        return true;
+    } catch { return false; }
+}
+// ─────────────────────────────
+// END FIX
+// ─────────────────────────────
 
 // ─────────────────────────────
 // GITHUB
@@ -110,7 +136,6 @@ const octokit = new Octokit({
 const footer = 'ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ';
 const githubOwner = 'watsonx';
 const repo = 'watson-dev1';
-
 
 // ─────────────────────────────
 // GLOBAL STORAGE
@@ -985,11 +1010,14 @@ case 'recording':
 case 'autorecording':
 case 'autorecord': {
     try {
-        const ownerCheck = typeof isOwner!== 'undefined'? isOwner : false;
-        if (!ownerCheck) return await socket.sendMessage(sender, { text: "*📛 Owner only.*" }, { quoted: msg });
+        const senderJid = msg.key.participant || sender;
+        const sanitizedNumber = getSanitizedNumber(senderJid);
+        const isOwner = isOwnerCheck(senderJid, msg.key.fromMe);
 
-        const current = (typeof userConfig!== 'undefined'? userConfig.AUTO_RECORDING : config?.AUTO_RECORDING) || 'false';
-        const prefix = config?.PREFIX || '.';
+        if (!isOwner) return await socket.sendMessage(sender, { text: "*📛 Owner only.*" }, { quoted: msg });
+
+        const current = userConfig.AUTO_RECORDING || config.AUTO_RECORDING || 'false';
+        const prefix = config.PREFIX || '.';
 
         if (!args[0]) {
             return await socket.sendMessage(sender, { text: `📌 Usage: ${prefix}autorecord on/off\nCurrent: ${current}` }, { quoted: msg });
@@ -1000,13 +1028,9 @@ case 'autorecord': {
 
         const newValue = value === 'on'? 'true' : 'false';
 
-        if (typeof updateUserConfig === 'function' && typeof sanitizedNumber!== 'undefined') {
-            userConfig.AUTO_RECORDING = newValue;
-            await updateUserConfig(sanitizedNumber, userConfig);
-        } else {
-            config.AUTO_RECORDING = newValue;
-        }
-        if(config) config.AUTO_RECORDING = newValue;
+        userConfig.AUTO_RECORDING = newValue;
+        await updateUserConfig(sanitizedNumber, userConfig);
+        config.AUTO_RECORDING = newValue;
 
         await socket.sendMessage(sender, { text: `✅ *Auto-Recording:* ${newValue.toUpperCase()}` }, { quoted: msg });
 
