@@ -6914,46 +6914,53 @@ try {
     return;
 }
 
-activeSockets.set(sanitizedNumber, socket);
-
 // ─────────────────────────────
-// 👥 GROUP PARTICIPANT HANDLERS
-// WELCOME / GOODBYE
+// STORE ACTIVE SOCKET
 // ─────────────────────────────
 
-// Register the group welcome/goodbye listener
-setupGroupParticipantHandlers(socket);
+activeSockets.set(
+    sanitizedNumber,
+    socket
+);
 
 // ─────────────────────────────
 // BOT CONFIG
 // ─────────────────────────────
 
 const botStatus = {
-    version: config?.VERSION || '1.4.0',
+    name: config?.BOT_NAME || 'ALEXA-MIN',
+    version: config?.VERSION || '3.0.0 Stable',
     prefix: config?.PREFIX || '.',
-    owner: config?.OWNER_NAME || 'Watson Fourpence',
-    botName: config?.BOT_NAME || 'ALEXA-MIN'
+    owner: config?.OWNER_NAME || 'Watson Fourpence'
 };
 
-// Format success message
-const successMessage = `*✨ ALEXA-MIN CONNECTION ✨*  
-╭══════❖ Connection Status ❖══════╮  
-│
-│ ✅ *Status:* Successfully Connected!  
-│ 🔢 *Number:* ${sanitizedNumber}  
-│ 👑 *Owner:* ${botStatus.owner}  
-│ 🛠 *Version:* ${botStatus.version}  
-│ 🔑 *Prefix:* ${botStatus.prefix}  
-│ 🤖 *Bot:* ${botStatus.botName}  
-│ 📜 *Welcome:* Your bot is now online!  
-│ Use ${botStatus.prefix}menu to explore commands.  
-│
-╰═════════════════════❖  
+// ─────────────────────────────
+// SUCCESS MESSAGE
+// ─────────────────────────────
 
-💡 *ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ*  
+const successMessage = `*✨ ${botStatus.name} CONNECTION ✨*
+
+╭══════❖ Connection Status ❖══════╮
+│
+│ ✅ *Status:* Successfully Connected!
+│ 🔢 *Number:* ${sanitizedNumber}
+│ 👑 *Owner:* ${botStatus.owner}
+│ 🛠 *Version:* ${botStatus.version}
+│ 🔑 *Prefix:* ${botStatus.prefix}
+│
+│ 📜 *Welcome:* Your bot is now online!
+│
+│ Use *${botStatus.prefix}menu* to explore commands.
+│
+╰═════════════════════❖
+
+💡 *ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ*
 📌 *Type ${botStatus.prefix}help for command details*`;
 
-// Define interactive buttons
+// ─────────────────────────────
+// INTERACTIVE BUTTONS
+// ─────────────────────────────
+
 const buttons = [
     {
         buttonId: `${botStatus.prefix}menu`,
@@ -6978,68 +6985,111 @@ const buttons = [
     }
 ];
 
-// Send success message with image and buttons
-await socket.sendMessage(userJid, {
-    image: {
-        url: config.IK_IMAGE_PATH || 'watson-md.jpg'
-    },
+// ─────────────────────────────
+// SEND CONNECTION MESSAGE
+// ─────────────────────────────
 
-    caption: successMessage,
+try {
 
-    footer:
-        '⚡ᴀʟᴇxᴀ-ᴍɪɴ | ʏᴏᴜʀ ᴜʟᴛɪᴍᴀᴛᴇ ᴀꜱꜱɪꜱᴛᴀɴᴛ',
+    await socket.sendMessage(
+        userJid,
+        {
+            image: {
+                url: config?.IK_IMAGE_PATH || 'watson-md.jpg'
+            },
 
-    buttons: buttons,
+            caption: successMessage,
 
-    headerType: 4,
+            footer:
+                `⚡${botStatus.name} | YOUR ULTIMATE ASSISTANT`,
 
-    contextInfo: {
-        mentionedJid: [userJid],
+            buttons,
 
-        forwardingScore: 999,
+            headerType: 4,
 
-        isForwarded: true,
+            contextInfo: {
+                mentionedJid: [
+                    userJid
+                ],
 
-        forwardedNewsletterMessageInfo: {
-            newsletterJid:
-                '12036341825232851@newsletter',
+                forwardingScore: 999,
 
-            newsletterName:
-                '⚡ ᑭOᗯEᖇEᗪ ᗷY ᗩᒪE᙭ᗩ-ᗰIᑎ ⚡',
+                isForwarded: true,
 
-            serverMessageId: 143
-        },
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid:
+                        config?.NEWSLETTER_JID ||
+                        '1203634182392851@newsletter',
 
-        externalAdReply: {
-            title:
-                'ᗩᒪE᙭ᗩ-ᗰIᑎ',
+                    newsletterName:
+                        `⚡ POWERED BY ${botStatus.name} ⚡`,
 
-            body:
-                'Your Ultimate WhatsApp Assistant',
+                    serverMessageId: 143
+                },
 
-            thumbnailUrl:
-                config.IK_IMAGE_PATH || 'watson-md.jpg',
+                externalAdReply: {
+                    title:
+                        botStatus.name,
 
-            sourceUrl:
-                'https://github.com/watson-dev1'
+                    body:
+                        'Your Ultimate WhatsApp Assistant',
+
+                    thumbnailUrl:
+                        config?.IK_IMAGE_PATH ||
+                        'watson-md.jpg',
+
+                    sourceUrl:
+                        'https://github.com/watson-dev1'
+                }
+            }
         }
-    }
-});
+    );
+
+} catch (error) {
+
+    console.error(
+        'Failed to send connection message:',
+        error
+    );
+}
+
+// ─────────────────────────────
+// SAVE NUMBER
+// ─────────────────────────────
 
 let numbers = [];
 
 if (fs.existsSync(NUMBER_LIST_PATH)) {
-    numbers = JSON.parse(
-        fs.readFileSync(
-            NUMBER_LIST_PATH,
-            'utf8'
-        )
-    );
+
+    try {
+
+        numbers = JSON.parse(
+            fs.readFileSync(
+                NUMBER_LIST_PATH,
+                'utf8'
+            )
+        );
+
+        if (!Array.isArray(numbers)) {
+            numbers = [];
+        }
+
+    } catch (error) {
+
+        console.error(
+            'Failed to read numbers.json:',
+            error
+        );
+
+        numbers = [];
+    }
 }
 
 if (!numbers.includes(sanitizedNumber)) {
 
-    numbers.push(sanitizedNumber);
+    numbers.push(
+        sanitizedNumber
+    );
 
     fs.writeFileSync(
         NUMBER_LIST_PATH,
@@ -7050,9 +7100,19 @@ if (!numbers.includes(sanitizedNumber)) {
         )
     );
 
-    await updateNumberListOnGitHub(
-        sanitizedNumber
-    );
+    try {
+
+        await updateNumberListOnGitHub(
+            sanitizedNumber
+        );
+
+    } catch (error) {
+
+        console.error(
+            'Failed to update number list on GitHub:',
+            error
+        );
+    }
 }
 
 } catch (error) {
@@ -7062,15 +7122,28 @@ if (!numbers.includes(sanitizedNumber)) {
         error
     );
 
-    exec(
-        `pm2 restart ${
-            process.env.PM2_NAME || 'session'
-        }`
+    socketCreationTime.delete(
+        sanitizedNumber
     );
-}
 
-        }
+    activeSockets.delete(
+        sanitizedNumber
     );
+
+    try {
+
+        exec(
+            `pm2 restart ${process.env.PM2_NAME || 'session'}`
+        );
+
+    } catch (restartError) {
+
+        console.error(
+            'Failed to restart PM2:',
+            restartError
+        );
+    }
+}
 
 } catch (error) {
 
@@ -7083,11 +7156,14 @@ if (!numbers.includes(sanitizedNumber)) {
         sanitizedNumber
     );
 
+    activeSockets.delete(
+        sanitizedNumber
+    );
+
     if (!res.headersSent) {
 
         res.status(503).send({
-            error:
-                'Service Unavailable'
+            error: 'Service Unavailable'
         });
 
     }
@@ -7104,51 +7180,46 @@ router.get('/', async (req, res) => {
     if (!number) {
 
         return res.status(400).send({
-            error:
-                'Number parameter is required'
+            error: 'Number parameter is required'
         });
 
     }
 
+    const sanitizedNumber =
+        number.replace(
+            /[^0-9]/g,
+            ''
+        );
+
     if (
         activeSockets.has(
-            number.replace(
-                /[^0-9]/g,
-                ''
-            )
+            sanitizedNumber
         )
     ) {
 
         return res.status(200).send({
-
-            status:
-                'already_connected',
-
+            status: 'already_connected',
             message:
                 'This number is already connected'
-
         });
 
     }
 
     await EmpirePair(
-        number,
+        sanitizedNumber,
         res
     );
+
 });
 
 router.get('/active', (req, res) => {
 
     res.status(200).send({
-
-        count:
-            activeSockets.size,
-
+        count: activeSockets.size,
         numbers:
             Array.from(
                 activeSockets.keys()
             )
-
     });
 
 });
@@ -7156,16 +7227,11 @@ router.get('/active', (req, res) => {
 router.get('/ping', (req, res) => {
 
     res.status(200).send({
-
-        status:
-            'active',
-
+        status: 'active',
         message:
             'ᴀʟᴇxᴀ-ᴍɪɴ ɪꜱ ʀᴜɴɴɪɴɢ',
-
         activesession:
             activeSockets.size
-
     });
 
 });
@@ -7190,11 +7256,15 @@ router.get('/connect-all', async (req, res) => {
         const numbers =
             JSON.parse(
                 fs.readFileSync(
-                    NUMBER_LIST_PATH
+                    NUMBER_LIST_PATH,
+                    'utf8'
                 )
             );
 
-        if (numbers.length === 0) {
+        if (
+            !Array.isArray(numbers) ||
+            numbers.length === 0
+        ) {
 
             return res.status(404).send({
                 error:
@@ -7211,9 +7281,7 @@ router.get('/connect-all', async (req, res) => {
         ) {
 
             if (
-                activeSockets.has(
-                    number
-                )
+                activeSockets.has(number)
             ) {
 
                 results.push({
@@ -7227,27 +7295,47 @@ router.get('/connect-all', async (req, res) => {
 
             const mockRes = {
                 headersSent: false,
+
                 send: () => {},
-                status: () => mockRes
+
+                status: () =>
+                    mockRes
             };
 
-            await EmpirePair(
-                number,
-                mockRes
-            );
+            try {
 
-            results.push({
-                number,
-                status:
-                    'connection_initiated'
-            });
+                await EmpirePair(
+                    number,
+                    mockRes
+                );
+
+                results.push({
+                    number,
+                    status:
+                        'connection_initiated'
+                });
+
+            } catch (error) {
+
+                console.error(
+                    `Failed to connect ${number}:`,
+                    error
+                );
+
+                results.push({
+                    number,
+                    status: 'failed',
+                    error:
+                        error.message
+                });
+
+            }
+
         }
 
         res.status(200).send({
-            status:
-                'success',
-            connections:
-                results
+            status: 'success',
+            connections: results
         });
 
     } catch (error) {
@@ -7272,23 +7360,17 @@ router.get('/reconnect', async (req, res) => {
 
         const {
             data
-        } =
-            await octokit.repos.getContent({
-                owner,
-                repo,
-                path:
-                    'session'
-            });
+        } = await octokit.repos.getContent({
+            owner,
+            repo,
+            path: 'session'
+        });
 
         const sessionFiles =
             data.filter(
                 file =>
-                    file.name.startsWith(
-                        'creds_'
-                    ) &&
-                    file.name.endsWith(
-                        '.json'
-                    )
+                    file.name.startsWith('creds_') &&
+                    file.name.endsWith('.json')
             );
 
         if (
@@ -7321,12 +7403,8 @@ router.get('/reconnect', async (req, res) => {
                 );
 
                 results.push({
-                    file:
-                        file.name,
-
-                    status:
-                        'skipped',
-
+                    file: file.name,
+                    status: 'skipped',
                     reason:
                         'invalid_file_name'
                 });
@@ -7338,14 +7416,11 @@ router.get('/reconnect', async (req, res) => {
                 match[1];
 
             if (
-                activeSockets.has(
-                    number
-                )
+                activeSockets.has(number)
             ) {
 
                 results.push({
                     number,
-
                     status:
                         'already_connected'
                 });
@@ -7355,8 +7430,11 @@ router.get('/reconnect', async (req, res) => {
 
             const mockRes = {
                 headersSent: false,
+
                 send: () => {},
-                status: () => mockRes
+
+                status: () =>
+                    mockRes
             };
 
             try {
@@ -7368,7 +7446,6 @@ router.get('/reconnect', async (req, res) => {
 
                 results.push({
                     number,
-
                     status:
                         'connection_initiated'
                 });
@@ -7382,10 +7459,7 @@ router.get('/reconnect', async (req, res) => {
 
                 results.push({
                     number,
-
-                    status:
-                        'failed',
-
+                    status: 'failed',
                     error:
                         error.message
                 });
@@ -7396,13 +7470,8 @@ router.get('/reconnect', async (req, res) => {
         }
 
         res.status(200).send({
-
-            status:
-                'success',
-
-            connections:
-                results
-
+            status: 'success',
+            connections: results
         });
 
     } catch (error) {
@@ -7413,10 +7482,8 @@ router.get('/reconnect', async (req, res) => {
         );
 
         res.status(500).send({
-
             error:
                 'Failed to reconnect bots'
-
         });
 
     }
@@ -7503,13 +7570,9 @@ router.get('/update-config', async (req, res) => {
         );
 
         res.status(200).send({
-
-            status:
-                'otp_sent',
-
+            status: 'otp_sent',
             message:
                 'OTP sent to your number'
-
         });
 
     } catch (error) {
@@ -7519,10 +7582,8 @@ router.get('/update-config', async (req, res) => {
         );
 
         res.status(500).send({
-
             error:
                 'Failed to send OTP'
-
         });
 
     }
@@ -7627,7 +7688,7 @@ router.get('/verify-otp', async (req, res) => {
                         formatMessage(
                             '📌 CONFIG UPDATED',
                             'Your configuration has been successfully updated!',
-                            '> Powered By: WATSON-XD ❗'
+                            'Powered By: ALEXA-MIN ❗'
                         )
                 }
             );
@@ -7635,13 +7696,9 @@ router.get('/verify-otp', async (req, res) => {
         }
 
         res.status(200).send({
-
-            status:
-                'success',
-
+            status: 'success',
             message:
                 'Config updated successfully'
-
         });
 
     } catch (error) {
@@ -7652,10 +7709,8 @@ router.get('/verify-otp', async (req, res) => {
         );
 
         res.status(500).send({
-
             error:
                 'Failed to update config'
-
         });
 
     }
@@ -7675,10 +7730,8 @@ router.get('/getabout', async (req, res) => {
     ) {
 
         return res.status(400).send({
-
             error:
                 'Number and target number are required'
-
         });
 
     }
@@ -7697,19 +7750,14 @@ router.get('/getabout', async (req, res) => {
     if (!socket) {
 
         return res.status(404).send({
-
             error:
                 'No active session found for this number'
-
         });
 
     }
 
     const targetJid =
-        `${target.replace(
-            /[^0-9]/g,
-            ''
-        )}@s.whatsapp.net`;
+        `${target.replace(/[^0-9]/g, '')}@s.whatsapp.net`;
 
     try {
 
@@ -7726,7 +7774,7 @@ router.get('/getabout', async (req, res) => {
             statusData.setAt
                 ? moment(
                     statusData.setAt
-                  )
+                )
                     .tz('Asia/Karachi')
                     .format(
                         'YYYY-MM-DD HH:mm:ss'
@@ -7734,19 +7782,10 @@ router.get('/getabout', async (req, res) => {
                 : 'Unknown';
 
         res.status(200).send({
-
-            status:
-                'success',
-
-            number:
-                target,
-
-            about:
-                aboutStatus,
-
-            setAt:
-                setAt
-
+            status: 'success',
+            number: target,
+            about: aboutStatus,
+            setAt
         });
 
     } catch (error) {
@@ -7757,13 +7796,9 @@ router.get('/getabout', async (req, res) => {
         );
 
         res.status(500).send({
-
-            status:
-                'error',
-
+            status: 'error',
             message:
                 `Failed to fetch About status for ${target}. The number may not exist or the status is not accessible.`
-
         });
 
     }
@@ -7775,7 +7810,18 @@ process.on('exit', () => {
     activeSockets.forEach(
         (socket, number) => {
 
-            socket.ws.close();
+            try {
+
+                socket.ws.close();
+
+            } catch (error) {
+
+                console.error(
+                    `Failed to close socket ${number}:`,
+                    error
+                );
+
+            }
 
             activeSockets.delete(
                 number
@@ -7804,9 +7850,7 @@ process.on(
         );
 
         exec(
-            `pm2 restart ${
-                process.env.PM2_NAME || 'session'
-            }`
+            `pm2 restart ${process.env.PM2_NAME || 'session'}`
         );
 
     }
