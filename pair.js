@@ -3331,13 +3331,13 @@ case 'menu': {
         // CONFIG
         // ─────────────────────────────
 
-       /* const p =
+        const p =
             config?.PREFIX ||
             '.';
 
-        //const botName =
-           // config?.BOT_NAME ||
-          //  'ALEXA-MINI';
+        const botName =
+            config?.BOT_NAME ||
+            'ALEXA-MINI';
 
         const version =
             config?.VERSION ||
@@ -3345,7 +3345,7 @@ case 'menu': {
 
         const owner =
             config?.OWNER_NAME ||
-            'Watson Fourpence';*/
+            'Watson Fourpence';
 
 
         // ─────────────────────────────
